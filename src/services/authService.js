@@ -42,6 +42,7 @@ const signUp = async (reqBody = {}) => {
 const signIn = async (reqBody = {}) => {
   const user = await userRepo.findOneByEmail(reqBody.email)
   if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
+  if (user.isBlocked) throw new ApiError(StatusCodes.FORBIDDEN, 'User is blocked')
   const isValidPassword = await verifyPassword(reqBody.password, user.password)
   if (!isValidPassword) throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
 

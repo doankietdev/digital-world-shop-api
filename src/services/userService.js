@@ -40,6 +40,7 @@ const removeNoUpdateCurrentUserFields = (updateData = {}) => {
 
 const removeNoUpdateUserFields = (updateData = {}) => {
   const noUpdateFields = [
+    'isBlocked',
     'cart',
     'wishlist',
     'passwordChangedAt',
@@ -88,10 +89,18 @@ const deleteUser = async(userId) => {
   return removeNoResponseFields(user)
 }
 
+const setBlocked = async(userId, reqBody) => {
+  const { blocked } = reqBody || {}
+  const user = await userRepo.updateById(userId, { isBlocked: blocked })
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+  return removeNoResponseFields(user)
+}
+
 export default {
   getCurrent,
   getAll,
   updateCurrent,
   updateUser,
-  deleteUser
+  deleteUser,
+  setBlocked
 }

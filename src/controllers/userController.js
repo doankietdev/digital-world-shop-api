@@ -47,10 +47,20 @@ const deleteUser = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const setBlocked = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Set blocked user successfully',
+    metadata: {
+      user: await userService.setBlocked(req.params.id, req.body)
+    }
+  }).send(res)
+})
+
 export default {
   getCurrent,
   getAll,
   updateCurrent,
   updateUser,
-  deleteUser
+  deleteUser,
+  setBlocked
 }
