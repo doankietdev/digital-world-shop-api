@@ -29,12 +29,11 @@ const removeNoResponseFields = (user = {}) => {
   return nextUser
 }
 
-const signUp = async (reqBody) => {
-  const { firstName, lastName, mobile, email, password } = reqBody || {}
-  const user = await userRepo.findOneByEmail(reqBody.email)
+const signUp = async ({ firstName, lastName, mobile, email, password }) => {
+  const user = await userRepo.findOneByEmail(email)
   if (user) {
     let errorMessage = '"email" is already in use'
-    if (user.mobile === reqBody.mobile) {
+    if (user.mobile === mobile) {
       errorMessage = `${errorMessage}. "mobile" are already in use`
     }
     throw new ApiError(StatusCodes.CONFLICT, errorMessage)
@@ -61,12 +60,12 @@ const signUp = async (reqBody) => {
   }
 }
 
-const signIn = async (reqBody = {}) => {
-  const user = await userRepo.findOneByEmail(reqBody.email)
+const signIn = async ({ email, password }) => {
+  const user = await userRepo.findOneByEmail(email)
   if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
   if (user.isBlocked)
     throw new ApiError(StatusCodes.FORBIDDEN, 'User is blocked')
-  const isValidPassword = await verifyPassword(reqBody.password, user.password)
+  const isValidPassword = await verifyPassword(password, user.password)
   if (!isValidPassword)
     throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
 
@@ -164,8 +163,7 @@ const signOut = async (token) => {
   }
 }
 
-const forgotPassword = async (reqBody) => {
-  const { email } = reqBody || {}
+const forgotPassword = async (email) => {
   if (!email) throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing email')
   const user = await userRepo.findOneByEmail(email)
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
@@ -190,8 +188,7 @@ const forgotPassword = async (reqBody) => {
   })
 }
 
-const resetPassword = async (reqBody) => {
-  const { userId, token, password } = reqBody || {}
+const resetPassword = async ({ userId, token, password }) => {
   const user = await userRepo.findOneById(userId)
   if (!user)
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Reset password failed')

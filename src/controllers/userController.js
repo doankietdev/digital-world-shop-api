@@ -21,10 +21,11 @@ const getAll = asyncHandler(async (req, res) => {
 })
 
 const updateCurrent = asyncHandler(async (req, res) => {
+  const userId = req.user?._id
   new SuccessResponse({
     message: 'Update current user successfully',
     metadata: {
-      user: await userService.updateCurrent(req.user?._id, req.body)
+      user: await userService.updateCurrent(userId, req.body)
     }
   }).send(res)
 })
@@ -51,7 +52,7 @@ const setBlocked = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Set blocked user successfully',
     metadata: {
-      user: await userService.setBlocked(req.params.id, req.body)
+      user: await userService.setBlocked(req.params.id, req.body.blocked)
     }
   }).send(res)
 })

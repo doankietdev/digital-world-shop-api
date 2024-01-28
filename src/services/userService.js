@@ -69,16 +69,40 @@ const getAll = async () => {
   })
 }
 
-const updateCurrent = async (userId, reqBody) => {
-  const updateData = removeNoUpdateCurrentUserFields({ ...reqBody })
-  const user = await userRepo.updateById(userId, updateData)
+const updateCurrent = async (userId, {
+  firstName,
+  lastName,
+  mobile,
+  password,
+  address
+}) => {
+  const user = await userRepo.updateById(userId, {
+    firstName,
+    lastName,
+    mobile,
+    password,
+    address
+  })
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
   return removeNoResponseFields(user)
 }
 
-const updateUser = async (userId, reqBody) => {
-  const updateData = removeNoUpdateUserFields({ ...reqBody })
-  const user = await userRepo.updateById(userId, updateData)
+const updateUser = async (userId, {
+  firstName,
+  lastName,
+  mobile,
+  password,
+  address,
+  role
+}) => {
+  const user = await userRepo.updateById(userId, {
+    firstName,
+    lastName,
+    mobile,
+    password,
+    address,
+    role
+  })
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
   return removeNoResponseFields(user)
 }
@@ -89,8 +113,7 @@ const deleteUser = async(userId) => {
   return removeNoResponseFields(user)
 }
 
-const setBlocked = async(userId, reqBody) => {
-  const { blocked } = reqBody || {}
+const setBlocked = async(userId, blocked) => {
   const user = await userRepo.updateById(userId, { isBlocked: blocked })
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
   return removeNoResponseFields(user)
