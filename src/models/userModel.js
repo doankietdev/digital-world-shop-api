@@ -15,9 +15,8 @@ const userSchema = new Schema({
   address: [{ type: Schema.Types.ObjectId, ref: 'Address' }],
   wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
   isBlocked: { type: Boolean, default: false },
-  passwordChangeAt: { type: Date, default: null },
+  passwordChangedAt: { type: Date, default: null },
   passwordResetToken: { type: String, default: null },
-  passwordResetExpires: { type: String, default: null },
   publicKey: { type: String, required: true },
   privateKey: { type: String, required: true },
   usedRefreshTokens: { type: Array, default: [] }

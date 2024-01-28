@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 import mongoose from 'mongoose'
-import { BUID_MODE, MONGODB } from './environment'
+import { BUILD_MODE, MONGODB } from './environment'
 import { DEV_ENV } from '~/utils/constants'
 
 let dbInstance = null
 
 export const connectDB = async () => {
   if (!dbInstance) {
-    if (BUID_MODE === DEV_ENV) {
+    if (BUILD_MODE === DEV_ENV) {
       mongoose.set('debug', true)
       mongoose.set('debug', { color: true })
     }

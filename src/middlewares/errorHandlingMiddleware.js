@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import ErrorResponse from '~/utils/ErrorResponse'
-import { BUID_MODE } from '~/configs/environment'
+import { BUILD_MODE } from '~/configs/environment'
 import { DEV_ENV } from '~/utils/constants'
 
 // eslint-disable-next-line no-unused-vars
@@ -13,7 +13,7 @@ const errorHandlingMiddleware = (error, req, res, next) => {
     stack: error.stack
   })
 
-  if (BUID_MODE !== DEV_ENV) delete errorResponse.stack
+  if (BUILD_MODE !== DEV_ENV) delete errorResponse.stack
 
   // write error Log to file,
   // shoot error message to Slack group, Telegram, Email...

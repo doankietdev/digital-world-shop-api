@@ -23,9 +23,18 @@ const pushUsedRefreshToken = async (userId, usedRefreshToken) => {
   ))?.toObject()
 }
 
+const updateById = async (id, update = {}) => {
+  return (await userModel.findOneAndUpdate(
+    { _id: id },
+    { ...update },
+    { new: true }
+  ))?.toObject()
+}
+
 export default {
   createNew,
   findOneByEmail,
   findOneById,
-  pushUsedRefreshToken
+  pushUsedRefreshToken,
+  updateById
 }

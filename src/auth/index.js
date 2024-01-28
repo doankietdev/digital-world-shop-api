@@ -1,7 +1,6 @@
 import bcrypt from 'bcrypt'
 import forge from 'node-forge'
 import jwt from 'jsonwebtoken'
-import { AUTH } from '~/configs/environment'
 
 const { rsa, publicKeyToPem, privateKeyToPem } = forge.pki
 
@@ -22,22 +21,17 @@ export const generateKeyPairRSA = () => {
   }
 }
 
-export const generateTokenPair = (
-  payload = {},
-  privateKey = ''
-) => {
-  const accessToken = jwt.sign(payload, privateKey, {
+export const generateToken = (payload = {}, privateKey, expiresIn) => {
+  return jwt.sign(payload, privateKey, {
     algorithm: 'RS256',
-    expiresIn: AUTH.ACCESS_TOKEN_EXPIRES
+    expiresIn
   })
-  const refreshToken = jwt.sign(payload, privateKey, {
-    algorithm: 'RS256',
-    expiresIn: AUTH.REFRESH_TOKEN_EXPIRES
-  })
-
-  return { accessToken, refreshToken }
 }
 
 export const verifyToken = (token, publicKey) => {
   return jwt.verify(token, publicKey)
 }
+
+// export const generatePasswordResetToken = (payload = {}, privateKey) => {
+//   const 
+// }

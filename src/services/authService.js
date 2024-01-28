@@ -1,8 +1,10 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import userRepo from '~/repositories/userRepo'
 import ApiError from '~/utils/ApiError'
-import { verifyPassword, generateKeyPairRSA, generateTokenPair, verifyToken } from '~/auth'
+import { verifyPassword, generateKeyPairRSA, generateToken, verifyToken, hashPassword } from '~/auth'
 import tokenRepo from '~/repositories/tokenRepo'
+import { APP, AUTH } from '~/configs/environment'
+import sendMail from '~/utils/sendMail'
 
 const removeNoResponseFields = (user = {}) => {
   const noResponseFields = [
@@ -43,10 +45,9 @@ const signIn = async (reqBody = {}) => {
   const isValidPassword = await verifyPassword(reqBody.password, user.password)
   if (!isValidPassword) throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
 
-  const { accessToken, refreshToken } = generateTokenPair({
-    userId: user._id,
-    email: user.email
-  }, user.privateKey)
+  const payload = { userId: user._id, email: user.email }
+  const accessToken = generateToken(payload, user.privateKey, AUTH.ACCESS_TOKEN_EXPIRES)
+  const refreshToken = generateToken(payload, user.privateKey, AUTH.REFRESH_TOKEN_EXPIRES)
 
   const token = await tokenRepo.createNew({
     userId: user._id,
@@ -63,7 +64,7 @@ const signIn = async (reqBody = {}) => {
   }
 }
 
-const refreshToken = async (userId, refreshToken) => {
+const handleRefreshToken = async (userId, refreshToken) => {
   try {
     if (!userId && !refreshToken) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Refresh token failed')
@@ -78,19 +79,19 @@ const refreshToken = async (userId, refreshToken) => {
     if (!token) throw new ApiError(StatusCodes.UNAUTHORIZED, 'Refresh token failed')
 
     verifyToken(refreshToken, user.publicKey)
-    const newTokenPair = generateTokenPair({
-      userId: user._id, email: user.email
-    }, user.privateKey)
+
+    const payload = { userId: user._id, email: user.email }
+    const newAccessToken = generateToken(payload, user.privateKey, AUTH.ACCESS_TOKEN_EXPIRES)
+    const newRefreshToken = generateToken(payload, user.privateKey, AUTH.REFRESH_TOKEN_EXPIRES)
+
     await tokenRepo.createNew({
       userId: user?._id,
-      accessToken: newTokenPair.accessToken,
-      refreshToken: newTokenPair.refreshToken
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken
     })
     await tokenRepo.deleteOne({ userId, refreshToken })
-    return {
-      accessToken: newTokenPair.accessToken,
-      refreshToken: newTokenPair.refreshToken
-    }
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken }
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       await tokenRepo.deleteOne({ userId, refreshToken })
@@ -113,9 +114,59 @@ const signOut = async (token) => {
   }
 }
 
+const forgotPassword = async (reqBody) => {
+  const { email } = reqBody || {}
+  if (!email) throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing email')
+  const user = await userRepo.findOneByEmail(email)
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
+  const passwordResetToken = generateToken({
+    userId: user._id,
+    email: user.email
+  }, user.privateKey, AUTH.PASSWORD_RESET_TOKEN_EXPIRES)
+  await userRepo.updateById(user?._id, { passwordResetToken })
+
+  const html = `
+    Please click on the link below to change your password
+    <a href="${APP.PROTOCOL}://${APP.HOST}:${APP.PORT}/api/v1/auth/reset-password/${user._id}/${passwordResetToken}">Click here</a>
+  `
+  return await sendMail(email, {
+    subject: 'Forgot password',
+    html
+  })
+}
+
+const resetPassword = async (reqBody) => {
+  const { userId, token, password } = reqBody || {}
+  const user = await userRepo.findOneById(userId)
+  if (!user) throw new ApiError(StatusCodes.BAD_REQUEST, 'Reset password failed') 
+  if (user.passwordResetToken !== token) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Reset password failed')
+  }
+  try {
+    verifyToken(token, user.publicKey)
+    await userRepo.updateById(user?._id, {
+      password: await hashPassword(password),
+      passwordChangedAt: Date.now()
+    })
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      await userRepo.updateById(user?._id, { passwordResetToken: null })
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Expired token')
+    }
+    if (error.name === 'JsonWebTokenError') {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid token')
+    }
+    if (error.name === 'ApiError') throw error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, ReasonPhrases.INTERNAL_SERVER_ERROR)
+  }
+}
+
 export default {
   signUp,
   signIn,
   signOut,
-  refreshToken
+  handleRefreshToken,
+  forgotPassword,
+  resetPassword
 }

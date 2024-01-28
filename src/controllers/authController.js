@@ -32,9 +32,9 @@ const signIn = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
-const refreshToken = asyncHandler(async (req, res) => {
+const handleRefreshToken = asyncHandler(async (req, res) => {
   const userId = req.headers[HEADER_KEYS.USER_ID]
-  const { accessToken, refreshToken } = await authService.refreshToken(userId, req.cookies.refreshToken)
+  const { accessToken, refreshToken } = await authService.handleRefreshToken(userId, req.cookies.refreshToken)
 
   res.cookie('refreshToken', refreshToken, {
     maxAge: AUTH.REFRESH_TOKEN_EXPIRES,
@@ -59,9 +59,25 @@ const signOut = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const forgotPassword = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Send your mail. Please check mail',
+    metadata: await authService.forgotPassword(req.body)
+  }).send(res)
+})
+
+const resetPassword = asyncHandler(async (req, res) => {
+  await authService.resetPassword(req.body)
+  new SuccessResponse({
+    message: 'Reset password successfully'
+  }).send(res)
+})
+
 export default {
   signUp,
   signIn,
-  refreshToken,
-  signOut
+  handleRefreshToken,
+  signOut,
+  forgotPassword,
+  resetPassword
 }

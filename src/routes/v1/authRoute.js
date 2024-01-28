@@ -5,12 +5,12 @@ import authMiddleware from '~/middlewares/authMiddleware'
 
 const router = express.Router()
 
-router.post('/signup', authValidation.signUp, authController.signUp)
-router.post('/signin', authValidation.signIn, authController.signIn)
-router.get('/refresh-token', authController.refreshToken)
+router.post('/sign-up', authValidation.signUp, authController.signUp)
+router.post('/sign-in', authValidation.signIn, authController.signIn)
+router.get('/refresh-token', authController.handleRefreshToken)
+router.post('/forgot-password', authController.forgotPassword)
+router.post('/reset-password', authController.resetPassword)
 
-router.use(authMiddleware.authenticate)
-
-router.post('/signout', authController.signOut)
+router.post('/sign-out', authMiddleware.authenticate, authController.signOut)
 
 export default router

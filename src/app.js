@@ -7,7 +7,7 @@ import morgan from 'morgan'
 import notFoundHandlingMiddleware from './middlewares/notFoundHandlingMiddleware'
 import errorHandlingMiddleware from './middlewares/errorHandlingMiddleware'
 import { DEV_ENV } from './utils/constants'
-import { BUID_MODE } from './configs/environment'
+import { BUILD_MODE } from './configs/environment'
 import { corsOptions } from './configs/cors'
 import { route } from './routes'
 
@@ -19,7 +19,7 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(helmet())
 app.use(compression())
-BUID_MODE === DEV_ENV && app.use(morgan('dev'))
+BUILD_MODE === DEV_ENV && app.use(morgan('dev'))
 
 route(app)
 
