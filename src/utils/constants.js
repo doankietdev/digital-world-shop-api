@@ -5,3 +5,7 @@ export const HEADER_KEYS = {
   USER_ID: 'x-user-id',
   AUTHORIZATION: 'authorization'
 }
+export const ROLES = {
+  ADMIN: 'admin',
+  CUSTOMER: 'customer'
+}

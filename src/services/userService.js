@@ -19,12 +19,79 @@ const removeNoResponseFields = (user = {}) => {
   return nextUser
 }
 
+const removeNoUpdateCurrentUserFields = (updateData = {}) => {
+  const noUpdateFields = [
+    'role',
+    'cart',
+    'wishlist',
+    'isBlocked',
+    'passwordChangedAt',
+    'passwordResetToken',
+    'publicKey',
+    'privateKey',
+    'usedRefreshTokens'
+  ]
+  const nextUpdateData = { ...updateData }
+  noUpdateFields.forEach(field => {
+    delete nextUpdateData[field]
+  })
+  return nextUpdateData
+}
+
+const removeNoUpdateUserFields = (updateData = {}) => {
+  const noUpdateFields = [
+    'cart',
+    'wishlist',
+    'passwordChangedAt',
+    'passwordResetToken',
+    'publicKey',
+    'privateKey',
+    'usedRefreshTokens'
+  ]
+  const nextUpdateData = { ...updateData }
+  noUpdateFields.forEach(field => {
+    delete nextUpdateData[field]
+  })
+  return nextUpdateData
+}
+
 const getCurrent = async (userId) => {
   const user = await userRepo.findOneById(userId)
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
   return removeNoResponseFields(user)
 }
 
+const getAll = async () => {
+  const users = await userRepo.findAll()
+  return users.map(user => {
+    return removeNoResponseFields(user)
+  })
+}
+
+const updateCurrent = async (userId, reqBody) => {
+  const updateData = removeNoUpdateCurrentUserFields({ ...reqBody })
+  const user = await userRepo.updateById(userId, updateData)
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
+  return removeNoResponseFields(user)
+}
+
+const updateUser = async (userId, reqBody) => {
+  const updateData = removeNoUpdateUserFields({ ...reqBody })
+  const user = await userRepo.updateById(userId, updateData)
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+  return removeNoResponseFields(user)
+}
+
+const deleteUser = async(userId) => {
+  const user = await userRepo.deleteById(userId)
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+  return removeNoResponseFields(user)
+}
+
 export default {
-  getCurrent
+  getCurrent,
+  getAll,
+  updateCurrent,
+  updateUser,
+  deleteUser
 }

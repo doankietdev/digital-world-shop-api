@@ -8,6 +8,11 @@ const createNew = async (user = {}) => {
   }
 }
 
+const findAll = async () => {
+  const users = await userModel.find()
+  return users.map(user => user.toObject())
+}
+
 const findOneByEmail = async (email = '') => {
   return (await userModel.findOne({ email }))?.toObject()
 }
@@ -31,10 +36,16 @@ const updateById = async (id, update = {}) => {
   ))?.toObject()
 }
 
+const deleteById = async (id) => {
+  return (await userModel.findByIdAndDelete(id)).toObject()
+}
+
 export default {
   createNew,
+  findAll,
   findOneByEmail,
   findOneById,
   pushUsedRefreshToken,
-  updateById
+  updateById,
+  deleteById
 }

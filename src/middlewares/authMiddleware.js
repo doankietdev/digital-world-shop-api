@@ -10,8 +10,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
   try {
     const userId = req.headers[HEADER_KEYS.USER_ID]
     const authorization = req.headers[HEADER_KEYS.AUTHORIZATION]
-
-    if (!userId && !authorization?.includes('Bearer')) {
+    if (!userId || !authorization?.includes('Bearer')) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
     }
     const accessToken = authorization?.split(' ')[1]
@@ -27,7 +26,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
     if (decodedUser.userId !== user?._id.toString()) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
     }
-    req.decodedUser = decodedUser
+    req.user = { _id: user._id, role: user.role }
     req.token = token
     next()
   } catch (error) {
@@ -42,6 +41,15 @@ const authenticate = asyncHandler(async (req, res, next) => {
   }
 })
 
+const checkPermission = (role) => {
+  return asyncHandler(async (req, res, next) => {
+    const hasPermission = req.user?.role === role
+    if (!hasPermission) throw new ApiError(StatusCodes.FORBIDDEN, 'User has no permissions')
+    next()
+  })
+}
+
 export default {
-  authenticate
+  authenticate,
+  checkPermission
 }
