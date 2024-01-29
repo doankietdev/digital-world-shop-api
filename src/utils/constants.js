@@ -9,3 +9,4 @@ export const ROLES = {
   ADMIN: 'admin',
   CUSTOMER: 'customer'
 }
+export const PRODUCT_COLORS = ['black', 'grown', 'red']

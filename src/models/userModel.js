@@ -27,7 +27,7 @@ const userSchema = new Schema({
   collection: COLLECTION_NAME
 })
 
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     next()
   }
