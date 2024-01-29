@@ -1,7 +1,6 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
 import tokenModel from '~/models/tokenModel'
-import userRepo from '~/repositories/userRepo'
 import ApiError from '~/utils/ApiError'
 import { verifyPassword, generateKeyPairRSA, generateToken, verifyToken, hashPassword } from '~/auth'
 import { APP, AUTH } from '~/configs/environment'
@@ -21,7 +20,7 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
     const { publicKey, privateKey } = generateKeyPairRSA()
     const newUser = await userModel.create({
       firstName, lastName, mobile, email,
-      password, publicKey, privateKey
+      password, publicKey, privateKey, role: 'user'
     })
     return {
       _id: newUser._id,
@@ -34,7 +33,8 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
       wishlist: newUser.wishlist
     }
   } catch (error) {
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, ReasonPhrases.INTERNAL_SERVER_ERROR)
+    if (error.name === 'ApiError') throw error
+    throw new ApiError(StatusCodes.BAD_REQUEST, error.message)
   }
 }
 
@@ -115,7 +115,7 @@ const handleRefreshToken = async (userId, refreshToken) => {
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid refresh token')
     }
     if (error.name === 'ApiError') throw error
-    throw new ApiError( StatusCodes.INTERNAL_SERVER_ERROR, ReasonPhrases.INTERNAL_SERVER_ERROR)
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Handling refresh token failed')
   }
 }
 
@@ -145,7 +145,6 @@ const forgotPassword = async (email) => {
       foundUser.privateKey,
       AUTH.PASSWORD_RESET_TOKEN_EXPIRES
     )
-    await userRepo.updateById(foundUser?._id, { passwordResetToken })
     await userModel.findOneAndUpdate(
       { _id: foundUser?._id },
       { passwordResetToken }
@@ -162,7 +161,7 @@ const forgotPassword = async (email) => {
     return mailResult.accepted[0]
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Handling forgotten password failed')
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Handling forgot password failed')
   }
 }
 

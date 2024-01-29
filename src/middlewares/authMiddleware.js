@@ -1,7 +1,7 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import { verifyToken } from '~/auth'
-import tokenRepo from '~/repositories/tokenRepo'
-import userRepo from '~/repositories/userRepo'
+import tokenModel from '~/models/tokenModel'
+import userModel from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
 import { HEADER_KEYS } from '~/utils/constants'
@@ -16,10 +16,10 @@ const authenticate = asyncHandler(async (req, res, next) => {
     const accessToken = authorization?.split(' ')[1]
     if (!accessToken) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
-    const user = await userRepo.findOneById(userId)
+    const user = await userModel.findById(userId)
     if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
-    const token = await tokenRepo.findOne({ userId: user?._id, accessToken })
+    const token = await tokenModel.findOne({ userId: user?._id, accessToken })
     if (!token) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
     const decodedUser = verifyToken(accessToken, user.publicKey)

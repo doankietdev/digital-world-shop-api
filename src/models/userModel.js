@@ -11,7 +11,7 @@ const userSchema = new Schema({
   mobile: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, default: ROLES.CUSTOMER },
+  role: { type: String, default: ROLES.CUSTOMER, enum: Object.values(ROLES) },
   cart: { type: Array, default: [] },
   address: [{ type: Schema.Types.ObjectId, ref: 'Address' }],
   wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
