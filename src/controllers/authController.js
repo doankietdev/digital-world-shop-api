@@ -59,7 +59,9 @@ const signOut = asyncHandler(async (req, res) => {
 const forgotPassword = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Send your mail. Please check mail',
-    metadata: await authService.forgotPassword(req.body.email)
+    metadata: {
+      mail: await authService.forgotPassword(req.body.email)
+    }
   }).send(res)
 })
 
