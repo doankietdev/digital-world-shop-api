@@ -2,6 +2,22 @@ import { StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
 
+const getUser = async (userId) => {
+  const foundUser = await userModel.findById(userId)
+  if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
+  return {
+    _id: foundUser._id,
+    firstName: foundUser.firstName,
+    lastName: foundUser.lastName,
+    email: foundUser.email,
+    mobile: foundUser.mobile,
+    address: foundUser.address,
+    cart: foundUser.cart,
+    wishlist: foundUser.wishlist,
+    role: foundUser.role
+  }
+}
+
 const getCurrent = async (userId) => {
   const foundUser = await userModel.findById(userId)
   if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
@@ -144,6 +160,7 @@ const setBlocked = async(userId, blocked) => {
 }
 
 export default {
+  getUser,
   getCurrent,
   getAll,
   updateCurrent,
