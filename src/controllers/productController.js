@@ -47,10 +47,20 @@ const deleteProduct = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const rating = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Rating product successfully',
+    metadata: {
+      product: await productService.rating(req.user?._id, req.body)
+    }
+  }).send(res)
+})
+
 export default {
   createNew,
   getProduct,
   getProducts,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  rating
 }

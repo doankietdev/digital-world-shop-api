@@ -83,10 +83,46 @@ const deleteProduct = async (id) => {
   }
 }
 
+const rating = async (userId, { productId, star, comment }) => {
+  const foundProduct = await productModel.findById(productId)
+  if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+
+  const sumStar = foundProduct.ratings?.reduce((accumulator, rating) => {
+    if (rating.postedBy.equals(userId)) return accumulator
+    return accumulator += rating.star
+  }, 0) + star
+
+  const isRatedUser = foundProduct.ratings?.some(rating => rating.postedBy.equals(userId))
+
+  const numberRatings = foundProduct.ratings?.length
+  let averageRatings = isRatedUser
+    ? sumStar / numberRatings
+    : sumStar / numberRatings + 1
+
+  let updatedProduct = null
+  if (isRatedUser) {
+    updatedProduct = await productModel.findOneAndUpdate(
+      { _id: productId, ratings: { $elemMatch: { postedBy: userId } } },
+      { $set: { 'ratings.$.star': star, 'ratings.$.comment': comment, averageRatings } },
+      { new: true }
+    )
+  } else {
+    updatedProduct = await productModel.findByIdAndUpdate(
+      productId,
+      { $push: { ratings: { star, comment, postedBy: userId } }, $set: { averageRatings } },
+      { new: true }
+    )
+  }
+  if (!updatedProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+
+  return updatedProduct
+}
+
 export default {
   createNew,
   getProduct,
   getProducts,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  rating
 }

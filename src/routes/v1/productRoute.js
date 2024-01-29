@@ -13,6 +13,11 @@ router.route('/')
 
 router.use(authMiddleware.authenticate)
 
+router.route('/rating').patch(
+  productValidation.rating,
+  productController.rating
+)
+
 router.route('/:id')
   .patch(
     authMiddleware.checkPermission(ROLES.ADMIN),

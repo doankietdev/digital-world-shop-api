@@ -17,12 +17,13 @@ const productSchema = new Schema({
   color: { type: String, enum: PRODUCT_COLORS, default: null },
   ratings: [
     {
+      _id: false,
       star: { type: Number, required: true },
-      postedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+      postedBy: { type: Schema.Types.ObjectId, ref: 'User', unique: true, required: true },
       comment: { type: String, default: null }
     }
   ],
-  totalRatings: { type: Number, default: 0 }
+  averageRatings: { type: Number, default: 0 }
 }, {
   versionKey: false,
   timestamps: true,
