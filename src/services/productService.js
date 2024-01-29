@@ -2,7 +2,6 @@ import { StatusCodes } from 'http-status-codes'
 import productModel from '~/models/productModel'
 import ApiError from '~/utils/ApiError'
 import slugify from 'slugify'
-import { query } from 'express'
 import { queryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
 
@@ -84,38 +83,44 @@ const deleteProduct = async (id) => {
 }
 
 const rating = async (userId, { productId, star, comment }) => {
-  const foundProduct = await productModel.findById(productId)
-  if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+  try {
+    const foundProduct = await productModel.findById(productId)
+    if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
 
-  const sumStar = foundProduct.ratings?.reduce((accumulator, rating) => {
-    if (rating.postedBy.equals(userId)) return accumulator
-    return accumulator += rating.star
-  }, 0) + star
+    let isRated = false
+    const sumStar = foundProduct.ratings?.reduce((accumulator, rating) => {
+      if (rating.postedBy.equals(userId)) {
+        isRated = true
+        return accumulator
+      }
+      return accumulator += rating.star
+    }, 0) + star
 
-  const isRatedUser = foundProduct.ratings?.some(rating => rating.postedBy.equals(userId))
+    const numberRatings = foundProduct.ratings?.length
+    let averageRatings = isRated
+      ? sumStar / numberRatings
+      : sumStar / numberRatings + 1
 
-  const numberRatings = foundProduct.ratings?.length
-  let averageRatings = isRatedUser
-    ? sumStar / numberRatings
-    : sumStar / numberRatings + 1
-
-  let updatedProduct = null
-  if (isRatedUser) {
-    updatedProduct = await productModel.findOneAndUpdate(
-      { _id: productId, ratings: { $elemMatch: { postedBy: userId } } },
-      { $set: { 'ratings.$.star': star, 'ratings.$.comment': comment, averageRatings } },
-      { new: true }
-    )
-  } else {
-    updatedProduct = await productModel.findByIdAndUpdate(
-      productId,
-      { $push: { ratings: { star, comment, postedBy: userId } }, $set: { averageRatings } },
-      { new: true }
-    )
+    let updatedProduct = null
+    if (isRated) {
+      updatedProduct = await productModel.findOneAndUpdate(
+        { _id: productId, ratings: { $elemMatch: { postedBy: userId } } },
+        { $set: { 'ratings.$.star': star, 'ratings.$.comment': comment, averageRatings } },
+        { new: true }
+      )
+    } else {
+      updatedProduct = await productModel.findOneAndUpdate(
+        { _id: productId },
+        { $push: { ratings: { star, comment, postedBy: userId } }, $set: { averageRatings } },
+        { new: true }
+      )
+    }
+    if (!updatedProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    return updatedProduct
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    throw ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Rating failed')
   }
-  if (!updatedProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
-
-  return updatedProduct
 }
 
 export default {
