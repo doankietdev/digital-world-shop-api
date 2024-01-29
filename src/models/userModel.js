@@ -24,6 +24,7 @@ const userSchema = new Schema({
 }, {
   versionKey: false,
   timestamps: true,
+  collation: { locale: 'en' },
   collection: COLLECTION_NAME
 })
 

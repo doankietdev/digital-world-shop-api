@@ -26,6 +26,7 @@ const productSchema = new Schema({
 }, {
   versionKey: false,
   timestamps: true,
+  collation: { locale: 'en' },
   collection: COLLECTION_NAME
 })
 export default model(DOCUMENT_NAME, productSchema)
