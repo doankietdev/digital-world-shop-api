@@ -8,15 +8,17 @@ const router = express.Router()
 
 router.route('/:id')
   .get(productValidation.getProduct, productController.getProduct)
+
 router.route('/')
   .get(productController.getProducts)
 
 router.use(authMiddleware.authenticate)
 
-router.route('/rating').patch(
-  productValidation.rating,
-  productController.rating
-)
+router.route('/rating')
+  .patch(
+    productValidation.rating,
+    productController.rating
+  )
 
 router.route('/:id')
   .patch(

@@ -2,11 +2,13 @@ import express from 'express'
 import authRoute from './authRoute'
 import userRoute from './userRoute'
 import productRoute from './productRoute'
+import productCategoryRoute from './productCategoryRoute'
 
 const router = express.Router()
 
 router.use('/auth', authRoute)
 router.use('/users', userRoute)
 router.use('/products', productRoute)
+router.use('/product-categories', productCategoryRoute)
 
 export default router

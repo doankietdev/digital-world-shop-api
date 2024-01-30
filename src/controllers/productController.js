@@ -24,7 +24,7 @@ const getProducts = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get products successfully',
     metadata: {
-      product: await productService.getProducts(req.query)
+      ...await productService.getProducts(req.query)
     }
   }).send(res)
 })
