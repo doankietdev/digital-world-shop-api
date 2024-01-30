@@ -24,7 +24,7 @@ const getCategories = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get product categories successfully',
     metadata: {
-      categories: await productCategoryService.getCategories(req.query)
+      ...await productCategoryService.getCategories(req.query)
     }
   }).send(res)
 })

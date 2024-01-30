@@ -1,3 +1,5 @@
+import slugify from 'slugify'
+
 export const parseQueryParams = (reqQuery = {}) => {
   const queryObj = { ...reqQuery }
   const excludeFields = [
@@ -22,4 +24,8 @@ export const parseQueryParams = (reqQuery = {}) => {
   const skip = (page - 1) * limit
 
   return { query, sort, fields, skip, limit, page }
+}
+
+export const generateSlug = (string) => {
+  return slugify(`${string}-${Date.now()}`, { lower: true, locale: 'vi', strict: true })
 }

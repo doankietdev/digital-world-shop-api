@@ -2,14 +2,14 @@ import { StatusCodes } from 'http-status-codes'
 import productModel from '~/models/productModel'
 import ApiError from '~/utils/ApiError'
 import slugify from 'slugify'
-import { parseQueryParams } from '~/utils/formatter'
+import { generateSlug, parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
 
 const createNew = async (reqBody) => {
   try {
     return await productModel.create({
       ...reqBody,
-      slug: slugify(`${reqBody.title}-${Date.now()}`, { lower: true, locale: 'vi', strict: true })
+      slug: generateSlug(reqBody.title)
     })
   } catch (error) {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Create new product failed')
@@ -55,9 +55,7 @@ const updateProduct = async (id, reqBody) => {
   try {
     const updateData = reqBody.title ? {
       ...reqBody,
-      slug: slugify(`${reqBody.title}-${Date.now()}`, {
-        lower: true, locale: 'vi', strict: true
-      })
+      slug: generateSlug(reqBody.title)
     } : { ...reqBody }
     const product = await productModel.findByIdAndUpdate(
       id,
