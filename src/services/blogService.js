@@ -21,7 +21,12 @@ const getBlog = async (id, reqQuery) => {
     const { fields } = parseQueryParams(reqQuery)
     const SELECT_USER_FIELDS = '_id firstName lastName'
 
-    const blog = await blogModel.findById(id)
+    const blog = await blogModel
+      .findByIdAndUpdate(
+        id,
+        { $inc: { numberViews: 1 } },
+        { new: true }
+      )
       .select(fields)
       .populate({
         path: 'likes',

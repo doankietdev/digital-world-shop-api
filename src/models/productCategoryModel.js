@@ -1,7 +1,5 @@
 import { Schema, model } from 'mongoose'
-
-export const PRODUCT_CATEGORY_COLLECTION_NAME = 'productCategories'
-export const PRODUCT_CATEGORY_MODEL_NAME = 'ProductCategory'
+import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 
 const productCategorySchema = new Schema({
   title: { type: String, unique: true, index: true, required: true }
@@ -9,7 +7,7 @@ const productCategorySchema = new Schema({
   versionKey: false,
   timestamps: true,
   collation: { locale: 'en' },
-  collection: PRODUCT_CATEGORY_COLLECTION_NAME
+  collection: COLLECTION_NAMES.PRODUCT_CATEGORY
 })
 
-export default model(PRODUCT_CATEGORY_MODEL_NAME, productCategorySchema)
+export default model(MODEL_NAMES.PRODUCT_CATEGORY, productCategorySchema)

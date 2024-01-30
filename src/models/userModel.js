@@ -1,10 +1,6 @@
 import { Schema, model } from 'mongoose'
 import { hashPassword } from '~/utils/auth'
-import { ROLES } from '~/utils/constants'
-import { PRODUCT_MODEL_NAME } from './productModel'
-
-export const USER_COLLECTION_NAME = 'users'
-export const USER_MODEL_NAME = 'User'
+import { ROLES, COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 
 const userSchema = new Schema({
   firstName: { type: String, required: true },
@@ -15,7 +11,7 @@ const userSchema = new Schema({
   role: { type: String, default: ROLES.CUSTOMER, enum: Object.values(ROLES) },
   cart: { type: Array, default: [] },
   address: [{ type: Schema.Types.ObjectId, ref: 'Address' }],
-  wishlist: [{ type: Schema.Types.ObjectId, ref: PRODUCT_MODEL_NAME }],
+  wishlist: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.PRODUCT }],
   isBlocked: { type: Boolean, default: false },
   passwordChangedAt: { type: Date, default: null },
   passwordResetToken: { type: String, default: null },
@@ -26,7 +22,7 @@ const userSchema = new Schema({
   versionKey: false,
   timestamps: true,
   collation: { locale: 'en' },
-  collection: USER_COLLECTION_NAME
+  collection: COLLECTION_NAMES.USER
 })
 
 userSchema.pre('save', async function(next) {
@@ -36,4 +32,4 @@ userSchema.pre('save', async function(next) {
   this.password = await hashPassword(this.password)
 })
 
-export default model(USER_MODEL_NAME, userSchema)
+export default model(MODEL_NAMES.USER, userSchema)

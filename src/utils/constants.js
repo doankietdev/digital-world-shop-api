@@ -10,3 +10,19 @@ export const ROLES = {
   CUSTOMER: 'customer'
 }
 export const PRODUCT_COLORS = ['black', 'grown', 'red']
+
+export const COLLECTION_NAMES = {
+  USER: 'users',
+  TOKEN: 'keyTokens',
+  PRODUCT: 'products',
+  PRODUCT_CATEGORY: 'productCategories',
+  BLOG: 'blogs'
+}
+
+export const MODEL_NAMES = {
+  USER: 'User',
+  TOKEN: 'KeyToken',
+  PRODUCT: 'Product',
+  PRODUCT_CATEGORY: 'ProductCategory',
+  BLOG: 'Blog'
+}

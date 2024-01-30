@@ -1,17 +1,14 @@
 import { Schema, model } from 'mongoose'
-import { USER_MODEL_NAME } from './userModel'
-
-export const TOKEN_COLLECTION_NAME = 'keyTokens'
-export const TOKEN_MODEL_NAME = 'KeyToken'
+import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 
 const tokenSchema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: USER_MODEL_NAME, required: true },
+  userId: { type: Schema.Types.ObjectId, ref: MODEL_NAMES.USER, required: true },
   accessToken: { type: String, required: true },
   refreshToken: { type: String, required: true }
 }, {
   versionKey: false,
   timestamps: true,
-  collection: TOKEN_COLLECTION_NAME
+  collection: COLLECTION_NAMES.TOKEN
 })
 
-export default model(TOKEN_MODEL_NAME, tokenSchema)
+export default model(MODEL_NAMES.TOKEN, tokenSchema)
