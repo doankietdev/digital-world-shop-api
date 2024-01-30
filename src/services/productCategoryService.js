@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes'
 import productCategoryModel from '~/models/productCategoryModel'
 import ApiError from '~/utils/ApiError'
-import { queryParams } from '~/utils/formatter'
+import { parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
 
 const createNew = async (reqBody) => {
@@ -15,7 +15,7 @@ const createNew = async (reqBody) => {
 
 const getCategory = async (id, reqQuery) => {
   try {
-    const { fields } = queryParams(reqQuery)
+    const { fields } = parseQueryParams(reqQuery)
     const category = await productCategoryModel.findById(id).select(fields)
     if (!category) throw new ApiError(StatusCodes.NOT_FOUND, 'Product category not found')
     return category
@@ -27,7 +27,7 @@ const getCategory = async (id, reqQuery) => {
 
 const getCategories = async (reqQuery) => {
   try {
-    const { query, sort, fields, skip, limit, page } = queryParams(reqQuery)
+    const { query, sort, fields, skip, limit, page } = parseQueryParams(reqQuery)
     const [categories, totalCategories] = await Promise.all([
       productCategoryModel
         .find(query)

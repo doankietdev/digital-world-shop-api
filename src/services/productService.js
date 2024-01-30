@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes'
 import productModel from '~/models/productModel'
 import ApiError from '~/utils/ApiError'
 import slugify from 'slugify'
-import { queryParams } from '~/utils/formatter'
+import { parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
 
 const createNew = async (reqBody) => {
@@ -18,7 +18,7 @@ const createNew = async (reqBody) => {
 
 const getProduct = async (id, reqQuery) => {
   try {
-    const { fields } = queryParams(reqQuery)
+    const { fields } = parseQueryParams(reqQuery)
     const product = await productModel.findById(id).select(fields)
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
@@ -30,7 +30,7 @@ const getProduct = async (id, reqQuery) => {
 
 const getProducts = async (reqQuery) => {
   try {
-    const { query, sort, fields, skip, limit, page } = queryParams(reqQuery)
+    const { query, sort, fields, skip, limit, page } = parseQueryParams(reqQuery)
     const [products, totalProducts] = await Promise.all([
       productModel
         .find(query)

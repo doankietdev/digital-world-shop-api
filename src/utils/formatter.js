@@ -1,4 +1,4 @@
-export const queryParams = (reqQuery = {}) => {
+export const parseQueryParams = (reqQuery = {}) => {
   const queryObj = { ...reqQuery }
   const excludeFields = [
     '_limit',
