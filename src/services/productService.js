@@ -16,9 +16,10 @@ const createNew = async (reqBody) => {
   }
 }
 
-const getProduct = async (id) => {
+const getProduct = async (id, reqQuery) => {
   try {
-    const product = await productModel.findById(id)
+    const { fields } = queryParams(reqQuery)
+    const product = await productModel.findById(id).select(fields)
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
   } catch (error) {
