@@ -1,4 +1,4 @@
-import { ReasonPhrases, StatusCodes } from 'http-status-codes'
+import { StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
 import tokenModel from '~/models/tokenModel'
 import ApiError from '~/utils/ApiError'
