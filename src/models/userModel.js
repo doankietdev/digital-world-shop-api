@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose'
 import { hashPassword } from '~/utils/auth'
 import { ROLES } from '~/utils/constants'
+import { PRODUCT_MODEL_NAME } from './productModel'
 
 export const USER_COLLECTION_NAME = 'users'
 export const USER_MODEL_NAME = 'User'
@@ -14,7 +15,7 @@ const userSchema = new Schema({
   role: { type: String, default: ROLES.CUSTOMER, enum: Object.values(ROLES) },
   cart: { type: Array, default: [] },
   address: [{ type: Schema.Types.ObjectId, ref: 'Address' }],
-  wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
+  wishlist: [{ type: Schema.Types.ObjectId, ref: PRODUCT_MODEL_NAME }],
   isBlocked: { type: Boolean, default: false },
   passwordChangedAt: { type: Date, default: null },
   passwordResetToken: { type: String, default: null },
