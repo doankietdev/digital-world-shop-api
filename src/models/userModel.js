@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose'
-import { hashPassword } from '~/auth'
+import { hashPassword } from '~/utils/auth'
 import { ROLES } from '~/utils/constants'
 
 const COLLECTION_NAME = 'users'

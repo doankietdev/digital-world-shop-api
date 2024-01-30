@@ -1,5 +1,5 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
-import { verifyToken } from '~/auth'
+import { verifyToken } from '~/utils/auth'
 import tokenModel from '~/models/tokenModel'
 import userModel from '~/models/userModel'
 import ApiError from '~/utils/ApiError'

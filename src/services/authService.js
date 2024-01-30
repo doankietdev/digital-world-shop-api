@@ -2,7 +2,13 @@ import { StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
 import tokenModel from '~/models/tokenModel'
 import ApiError from '~/utils/ApiError'
-import { verifyPassword, generateKeyPairRSA, generateToken, verifyToken, hashPassword } from '~/auth'
+import {
+  verifyPassword,
+  generateKeyPairRSA,
+  generateToken,
+  verifyToken,
+  hashPassword
+} from '~/utils/auth'
 import { APP, AUTH } from '~/configs/environment'
 import sendMail from '~/utils/sendMail'
 
