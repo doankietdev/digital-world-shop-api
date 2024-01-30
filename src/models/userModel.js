@@ -2,8 +2,8 @@ import { Schema, model } from 'mongoose'
 import { hashPassword } from '~/utils/auth'
 import { ROLES } from '~/utils/constants'
 
-const COLLECTION_NAME = 'users'
-const DOCUMENT_NAME = 'User'
+export const USER_COLLECTION_NAME = 'users'
+export const USER_MODEL_NAME = 'User'
 
 const userSchema = new Schema({
   firstName: { type: String, required: true },
@@ -25,7 +25,7 @@ const userSchema = new Schema({
   versionKey: false,
   timestamps: true,
   collation: { locale: 'en' },
-  collection: COLLECTION_NAME
+  collection: USER_COLLECTION_NAME
 })
 
 userSchema.pre('save', async function(next) {
@@ -35,4 +35,4 @@ userSchema.pre('save', async function(next) {
   this.password = await hashPassword(this.password)
 })
 
-export default model(DOCUMENT_NAME, userSchema)
+export default model(USER_MODEL_NAME, userSchema)

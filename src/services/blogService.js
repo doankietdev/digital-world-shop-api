@@ -19,7 +19,18 @@ const createNew = async (reqBody) => {
 const getBlog = async (id, reqQuery) => {
   try {
     const { fields } = parseQueryParams(reqQuery)
-    const blog = await blogModel.findById(id).select(fields)
+    const SELECT_USER_FIELDS = '_id firstName lastName'
+
+    const blog = await blogModel.findById(id)
+      .select(fields)
+      .populate({
+        path: 'likes',
+        select: SELECT_USER_FIELDS
+      })
+      .populate({
+        path: 'dislikes',
+        select: SELECT_USER_FIELDS
+      })
     if (!blog) throw new ApiError(StatusCodes.NOT_FOUND, 'Blog not found')
     return blog
   } catch (error) {
@@ -31,13 +42,23 @@ const getBlog = async (id, reqQuery) => {
 const getBlogs = async (reqQuery) => {
   try {
     const { query, sort, fields, skip, limit, page } = parseQueryParams(reqQuery)
+    const SELECT_USER_FIELDS = '_id firstName lastName'
+
     const [blogs, totalBlogs] = await Promise.all([
       blogModel
         .find(query)
         .sort(sort)
         .select(fields)
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .populate({
+          path: 'likes',
+          select: SELECT_USER_FIELDS
+        })
+        .populate({
+          path: 'dislikes',
+          select: SELECT_USER_FIELDS
+        }),
       blogModel.countDocuments()
     ])
     return {
@@ -59,11 +80,22 @@ const updateBlog = async (id, reqBody) => {
       ...reqBody,
       slug: generateSlug(reqBody.title)
     } : { ...reqBody }
-    const blog = await blogModel.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    )
+    const SELECT_USER_FIELDS = '_id firstName lastName'
+
+    const blog = await blogModel
+      .findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true }
+      )
+      .populate({
+        path: 'likes',
+        select: SELECT_USER_FIELDS
+      })
+      .populate({
+        path: 'dislikes',
+        select: SELECT_USER_FIELDS
+      })
     if (!blog) throw new ApiError(StatusCodes.NOT_FOUND, 'Blog not found')
     return blog
   } catch (error) {
