@@ -55,9 +55,13 @@ const getBlogs = async (reqQuery) => {
 
 const updateBlog = async (id, reqBody) => {
   try {
+    const updateData = reqBody.title ? {
+      ...reqBody,
+      slug: generateSlug(reqBody.title)
+    } : { ...reqBody }
     const blog = await blogModel.findByIdAndUpdate(
       id,
-      reqBody,
+      updateData,
       { new: true }
     )
     if (!blog) throw new ApiError(StatusCodes.NOT_FOUND, 'Blog not found')
