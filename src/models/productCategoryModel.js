@@ -7,7 +7,16 @@ const productCategorySchema = new Schema({
   versionKey: false,
   timestamps: true,
   collation: { locale: 'en' },
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+  id: false,
   collection: COLLECTION_NAMES.PRODUCT_CATEGORY
+})
+
+productCategorySchema.virtual('products', {
+  ref: MODEL_NAMES.PRODUCT,
+  localField: '_id',
+  foreignField: 'category'
 })
 
 export default model(MODEL_NAMES.PRODUCT_CATEGORY, productCategorySchema)

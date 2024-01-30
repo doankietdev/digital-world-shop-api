@@ -20,7 +20,11 @@ const productSchema = new Schema({
     {
       _id: false,
       star: { type: Number, required: true },
-      postedBy: { type: Schema.Types.ObjectId, ref: MODEL_NAMES.USER, unique: true, required: true },
+      postedBy: {
+        type: Schema.Types.ObjectId,
+        ref: MODEL_NAMES.USER,
+        required: true
+      },
       comment: { type: String, default: null }
     }
   ],
