@@ -6,7 +6,7 @@ const getUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get current user successfully',
     metadata: {
-      user: await userService.getUser(req.params?.id)
+      user: await userService.getUser(req.params?.id, req.query)
     }
   }).send(res)
 })
@@ -15,7 +15,7 @@ const getCurrent = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get current user successfully',
     metadata: {
-      user: await userService.getCurrent(req.user?._id)
+      user: await userService.getCurrent(req.user?._id, req.query)
     }
   }).send(res)
 })
@@ -24,7 +24,7 @@ const getAll = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get users successfully',
     metadata: {
-      users: await userService.getAll()
+      ...await userService.getAll(req.query)
     }
   }).send(res)
 })

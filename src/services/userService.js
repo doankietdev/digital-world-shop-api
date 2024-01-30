@@ -1,9 +1,12 @@
 import { StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
+import { parseQueryParams } from '~/utils/formatter'
+import { calculateTotalPages } from '~/utils/util'
 
-const getUser = async (userId) => {
-  const foundUser = await userModel.findById(userId)
+const getUser = async (userId, reqQuery) => {
+  const { fields } = parseQueryParams(reqQuery)
+  const foundUser = await userModel.findById(userId).select(fields)
   if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
   return {
     _id: foundUser._id,
@@ -14,12 +17,15 @@ const getUser = async (userId) => {
     address: foundUser.address,
     cart: foundUser.cart,
     wishlist: foundUser.wishlist,
-    role: foundUser.role
+    role: foundUser.role,
+    createdAt: foundUser.createdAt,
+    updatedAt: foundUser.updatedAt
   }
 }
 
-const getCurrent = async (userId) => {
-  const foundUser = await userModel.findById(userId)
+const getCurrent = async (userId, reqQuery) => {
+  const { fields } = parseQueryParams(reqQuery)
+  const foundUser = await userModel.findById(userId).select(fields)
   if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
   return {
     _id: foundUser._id,
@@ -29,13 +35,26 @@ const getCurrent = async (userId) => {
     mobile: foundUser.mobile,
     address: foundUser.address,
     cart: foundUser.cart,
-    wishlist: foundUser.wishlist
+    wishlist: foundUser.wishlist,
+    createdAt: foundUser.createdAt,
+    updatedAt: foundUser.updatedAt
   }
 }
 
-const getAll = async () => {
-  const users = await userModel.find()
-  return users.map(user => {
+const getAll = async (reqQuery) => {
+  const { query, sort, fields, limit, skip, page } = parseQueryParams(reqQuery)
+
+  const [users, totalUsers] = await Promise.all([
+    userModel
+      .find(query)
+      .sort(sort)
+      .select(fields)
+      .skip(skip)
+      .limit(limit),
+    userModel.countDocuments()
+  ])
+
+  const responseUser = users.map(user => {
     return {
       _id: user._id,
       firstName: user.firstName,
@@ -51,6 +70,13 @@ const getAll = async () => {
       updatedAt: user.updatedAt
     }
   })
+
+  return {
+    page,
+    totalPages: calculateTotalPages(totalUsers, limit),
+    totalUsers,
+    users: responseUser
+  }
 }
 
 const updateCurrent = async (userId, {
