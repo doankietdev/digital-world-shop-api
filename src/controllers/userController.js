@@ -11,7 +11,7 @@ const getUser = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
-const getCurrent = asyncHandler(async (req, res) => {
+const getCurrentUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get current user successfully',
     metadata: {
@@ -20,7 +20,7 @@ const getCurrent = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
-const getAll = asyncHandler(async (req, res) => {
+const getUsers = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get users successfully',
     metadata: {
@@ -29,7 +29,7 @@ const getAll = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
-const updateCurrent = asyncHandler(async (req, res) => {
+const updateCurrentUser = asyncHandler(async (req, res) => {
   const userId = req.user?._id
   new SuccessResponse({
     message: 'Update current user successfully',
@@ -68,9 +68,9 @@ const setBlocked = asyncHandler(async (req, res) => {
 
 export default {
   getUser,
-  getCurrent,
-  getAll,
-  updateCurrent,
+  getCurrentUser,
+  getUsers,
+  updateCurrentUser,
   updateUser,
   deleteUser,
   setBlocked

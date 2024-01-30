@@ -23,7 +23,7 @@ const getUser = async (userId, reqQuery) => {
   }
 }
 
-const getCurrent = async (userId, reqQuery) => {
+const getCurrentUser = async (userId, reqQuery) => {
   const { fields } = parseQueryParams(reqQuery)
   const foundUser = await userModel.findById(userId).select(fields)
   if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
@@ -41,7 +41,7 @@ const getCurrent = async (userId, reqQuery) => {
   }
 }
 
-const getAll = async (reqQuery) => {
+const getUsers = async (reqQuery) => {
   const { query, sort, fields, limit, skip, page } = parseQueryParams(reqQuery)
 
   const [users, totalUsers] = await Promise.all([
@@ -79,7 +79,7 @@ const getAll = async (reqQuery) => {
   }
 }
 
-const updateCurrent = async (userId, {
+const updateCurrentUser = async (userId, {
   firstName,
   lastName,
   mobile,
@@ -187,9 +187,9 @@ const setBlocked = async(userId, blocked) => {
 
 export default {
   getUser,
-  getCurrent,
-  getAll,
-  updateCurrent,
+  getCurrentUser,
+  getUsers,
+  updateCurrentUser,
   updateUser,
   deleteUser,
   setBlocked

@@ -5,7 +5,7 @@ import asyncHandler from '~/utils/asyncHandler'
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 import { ROLES } from '~/utils/constants'
 
-const updateCurrent = asyncHandler(async (req, res, next) => {
+const updateCurrentUser = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     firstName: Joi.string(),
     lastName: Joi.string(),
@@ -78,8 +78,8 @@ const deleteUser = asyncHandler(async (req, res, next) => {
 })
 
 export default {
-  updateCurrent,
+  updateCurrentUser,
   updateUser,
   setBlocked,
-  deleteUser,
+  deleteUser
 }
