@@ -17,19 +17,23 @@ const createNew = async (reqBody) => {
 const getDiscount = async (id, reqQuery) => {
   try {
     const { fields } = parseQueryParams(reqQuery)
-    const discount = await discountModel.findById(id).select(fields)
-    // .populate({
-    //   path: 'applicableProducts',
-    //   select: '-color -ratings -createdAt -updatedAt'
-    // })
-    // .populate({
-    //   path: 'applicableCategories',
-    //   select: '-createdAt -updatedAt',
-    //   populate: {
-    //     path: 'products',
-    //     select: '-color -ratings -createdAt -updatedAt'
-    //   }
-    // })
+    const discount = await discountModel
+      .findById(id)
+      .select(fields)
+      .populate({
+        path: 'products',
+        populate: {
+          path: 'discounts',
+          select: '-createdAt -updatedAt'
+        }
+      })
+      .populate({
+        path: 'products',
+        populate: {
+          path: 'category',
+          select: '-createdAt -updatedAt'
+        }
+      })
     if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
     return discount
   } catch (error) {
