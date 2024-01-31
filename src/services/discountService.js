@@ -53,7 +53,8 @@ const getDiscountByCodePublic = async (code, reqQuery) => {
       'type',
       'value',
       'expireAt',
-      'applyFor'
+      'applyFor',
+      'products'
     ]
     const discount = (await discountModel
       .findOne({ code })
