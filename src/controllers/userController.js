@@ -15,7 +15,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get current user successfully',
     metadata: {
-      user: await userService.getCurrent(req.user?._id, req.query)
+      user: await userService.getCurrentUser(req.user?._id, req.query)
     }
   }).send(res)
 })
@@ -34,7 +34,7 @@ const updateCurrentUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Update current user successfully',
     metadata: {
-      user: await userService.updateCurrent(userId, req.body)
+      user: await userService.updateCurrentUser(userId, req.body)
     }
   }).send(res)
 })

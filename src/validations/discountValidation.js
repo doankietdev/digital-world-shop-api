@@ -48,6 +48,19 @@ const getDiscount = asyncHandler(async (req, res, next) => {
   }
 })
 
+const getDiscountByCodePublic = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    code: Joi.string().required()
+  })
+
+  try {
+    await correctCondition.validateAsync(req.params)
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
 const updateDiscount = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
@@ -92,6 +105,7 @@ const deleteDiscount = asyncHandler(async (req, res, next) => {
 export default {
   createNew,
   getDiscount,
+  getDiscountByCodePublic,
   updateDiscount,
   deleteDiscount
 }

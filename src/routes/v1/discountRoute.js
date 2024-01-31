@@ -6,6 +6,15 @@ import { ROLES } from '~/utils/constants'
 
 const router = express.Router()
 
+router.route('/public/:code')
+  .get(
+    discountValidation.getDiscountByCodePublic,
+    discountController.getDiscountByCodePublic
+  )
+
+router.route('/public')
+  .get(discountController.getDiscountsPublic)
+
 router.use(authMiddleware.authenticate)
 
 router.route('/:id')
