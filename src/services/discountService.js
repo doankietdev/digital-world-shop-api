@@ -51,7 +51,23 @@ const getDiscountByCodePublic = async (code, reqQuery) => {
       'applyFor',
       'products'
     ]
-    const discount = await discountModel.findOne({ code }).select(fields)
+    const discount = await discountModel
+      .findOne({ code })
+      .select(fields)
+      .populate({
+        path: 'products',
+        populate: {
+          path: 'discounts',
+          select: '-createdAt -updatedAt'
+        }
+      })
+      .populate({
+        path: 'products',
+        populate: {
+          path: 'category',
+          select: '-createdAt -updatedAt'
+        }
+      })
     if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
     return defaultFields.reduce(
       (resDiscount, field) => ({ ...resDiscount, [field]: discount[field] }),
@@ -77,7 +93,12 @@ const getDiscountsPublic = async (reqQuery) => {
       'products'
     ]
     const [discounts, totalDiscounts] = await Promise.all([
-      discountModel.find(query).sort(sort).select(fields).skip(skip).limit(limit),
+      discountModel
+        .find(query)
+        .sort(sort)
+        .select(fields)
+        .skip(skip)
+        .limit(limit),
       discountModel.countDocuments()
     ])
     return {
