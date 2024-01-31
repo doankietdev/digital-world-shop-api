@@ -17,7 +17,7 @@ const createNew = async (reqBody) => {
 const getDiscount = async (id, reqQuery) => {
   try {
     const { fields } = parseQueryParams(reqQuery)
-    const discount = await discountModel
+    const discount = (await discountModel
       .findById(id)
       .select(fields)
       .populate({
@@ -33,8 +33,9 @@ const getDiscount = async (id, reqQuery) => {
           path: 'category',
           select: '-createdAt -updatedAt'
         }
-      })
+      })).toObject()
     if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
+    discount.products?.forEach(product => delete product?.discounts)
     return discount
   } catch (error) {
     if (error.name === ApiError.name) throw error
@@ -52,10 +53,9 @@ const getDiscountByCodePublic = async (code, reqQuery) => {
       'type',
       'value',
       'expireAt',
-      'applyFor',
-      'products'
+      'applyFor'
     ]
-    const discount = await discountModel
+    const discount = (await discountModel
       .findOne({ code })
       .select(fields)
       .populate({
@@ -71,8 +71,9 @@ const getDiscountByCodePublic = async (code, reqQuery) => {
           path: 'category',
           select: '-createdAt -updatedAt'
         }
-      })
+      })).toObject()
     if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
+    discount.products?.forEach(product => delete product?.discounts)
     return defaultFields.reduce(
       (resDiscount, field) => ({ ...resDiscount, [field]: discount[field] }),
       {}
@@ -93,8 +94,7 @@ const getDiscountsPublic = async (reqQuery) => {
       'type',
       'value',
       'expireAt',
-      'applyFor',
-      'products'
+      'applyFor'
     ]
     const [discounts, totalDiscounts] = await Promise.all([
       discountModel
@@ -124,6 +124,15 @@ const getDiscountsPublic = async (reqQuery) => {
 
 const getDiscounts = async (reqQuery) => {
   try {
+    const defaultFields = [
+      '_id',
+      'code',
+      'name',
+      'type',
+      'value',
+      'expireAt',
+      'applyFor'
+    ]
     const { query, sort, fields, skip, limit, page } = parseQueryParams(reqQuery)
     const [discounts, totalDiscounts] = await Promise.all([
       discountModel.find(query).sort(sort).select(fields).skip(skip).limit(limit),
@@ -133,7 +142,12 @@ const getDiscounts = async (reqQuery) => {
       page,
       totalPages: calculateTotalPages(totalDiscounts, limit),
       totalDiscounts,
-      discounts
+      discounts: discounts.map((discount) =>
+        defaultFields.reduce(
+          (resDiscount, field) => ({ ...resDiscount, [field]: discount[field] }),
+          {}
+        )
+      )
     }
   } catch (error) {
     if (error.name === ApiError.name) throw error
