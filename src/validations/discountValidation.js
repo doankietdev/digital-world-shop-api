@@ -15,10 +15,7 @@ const createNew = asyncHandler(async (req, res, next) => {
     maxUsage: Joi.number(),
     expireAt: Joi.date().required(),
     applyTypes: Joi.string().valid(...Object.values(DISCOUNT_APPLY_TYPES)),
-    applicableProducts: Joi.array().items(
-      Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
-    ),
-    applicableCategories: Joi.array().items(
+    products: Joi.array().items(
       Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
     ),
     isActive: Joi.boolean()
@@ -72,10 +69,7 @@ const updateDiscount = asyncHandler(async (req, res, next) => {
     maxUsage: Joi.number(),
     expireAt: Joi.date(),
     applyTypes: Joi.string().valid(...Object.values(DISCOUNT_APPLY_TYPES)),
-    applicableProducts: Joi.array().items(
-      Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
-    ).unique(),
-    applicableCategories: Joi.array().items(
+    products: Joi.array().items(
       Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
     ).unique(),
     isActive: Joi.boolean()

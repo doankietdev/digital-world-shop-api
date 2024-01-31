@@ -21,11 +21,9 @@ const getProduct = async (id, reqQuery) => {
     const { fields } = parseQueryParams(reqQuery)
     const product = await productModel
       .findById(id)
+      .populate('category', '-createdAt -updatedAt')
+      .populate('discounts', '-createdAt -updatedAt')
       .select(fields)
-      .populate({
-        path: 'category',
-        select: '-createdAt -updatedAt'
-      })
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
   } catch (error) {
@@ -44,10 +42,8 @@ const getProducts = async (reqQuery) => {
         .select(fields)
         .skip(skip)
         .limit(limit)
-        .populate({
-          path: 'category',
-          select: '-createdAt -updatedAt'
-        }),
+        .populate('category', '-createdAt -updatedAt')
+        .populate('discounts', '-createdAt -updatedAt'),
       productModel.countDocuments()
     ])
     return {

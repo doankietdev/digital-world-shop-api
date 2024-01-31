@@ -12,19 +12,16 @@ const discountSchema = new Schema({
   },
   value: { type: Number, required: true },
   maxUsage: { type: Number, default: null },
+  currentUsage: { type: Number, default: null },
   expireAt: { type: Date, required: true },
   applyFor: {
     type: String,
     enum: Object.values(DISCOUNT_APPLY_TYPES),
     default: DISCOUNT_APPLY_TYPES.SPECIFIC
   },
-  applicableProducts: [{
+  products: [{
     type: Schema.Types.ObjectId,
     ref: MODEL_NAMES.PRODUCT
-  }],
-  applicableCategories: [{
-    type: Schema.Types.ObjectId,
-    ref: MODEL_NAMES.PRODUCT_CATEGORY
   }],
   isActive: { type: Boolean, default: false }
 }, {

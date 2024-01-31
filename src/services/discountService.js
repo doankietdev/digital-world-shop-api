@@ -49,8 +49,7 @@ const getDiscountByCodePublic = async (code, reqQuery) => {
       'value',
       'expireAt',
       'applyFor',
-      'applicableProducts',
-      'applicableCategories'
+      'products'
     ]
     const discount = await discountModel.findOne({ code }).select(fields)
     if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
@@ -75,8 +74,7 @@ const getDiscountsPublic = async (reqQuery) => {
       'value',
       'expireAt',
       'applyFor',
-      'applicableProducts',
-      'applicableCategories'
+      'products'
     ]
     const [discounts, totalDiscounts] = await Promise.all([
       discountModel.find(query).sort(sort).select(fields).skip(skip).limit(limit),
