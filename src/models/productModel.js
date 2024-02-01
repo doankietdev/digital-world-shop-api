@@ -33,29 +33,8 @@ const productSchema = new Schema({
   versionKey: false,
   timestamps: true,
   collation: { locale: 'en' },
-  toObject: { virtuals: true },
-  toJSON: { virtuals: true },
-  id: false,
   collection: COLLECTION_NAMES.PRODUCT
 })
 
-productSchema.virtual('discounts', {
-  ref: MODEL_NAMES.DISCOUNT,
-  localField: '_id',
-  foreignField: 'products'
-})
-
-productSchema.virtual('newPrice').get(function() {
-  if (!this.discounts) return undefined
-  const { totalPercentage, totalFixed } = this.discounts.reduce((acc, discount) => {
-    if (discount.type === DISCOUNT_TYPES.PERCENTAGE) {
-      acc.totalPercentage += discount.value
-    } else if (discount.type === DISCOUNT_TYPES.FIXED) {
-      acc.totalFixed += discount.value
-    }
-    return acc
-  }, { totalPercentage: 0, totalFixed: 0 })
-  return this.price - totalFixed - (this.price * totalPercentage / 100)
-})
 
 export default model(MODEL_NAMES.PRODUCT, productSchema)

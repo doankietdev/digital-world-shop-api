@@ -73,7 +73,13 @@ const getDiscountByCodePublic = async (code, reqQuery) => {
           select: '-createdAt -updatedAt'
         }
       })).toObject()
+
     if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
+
+    const IS_EXPIRED = Date.now() >= new Date(discount.expireAt).getTime()
+    if (IS_EXPIRED)
+      throw new ApiError(StatusCodes.GONE, 'Discount code has expired')
+
     discount.products?.forEach(product => delete product?.discounts)
     return defaultFields.reduce(
       (resDiscount, field) => ({ ...resDiscount, [field]: discount[field] }),
