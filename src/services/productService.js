@@ -5,11 +5,14 @@ import { generateSlug, parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
 import { DISCOUNT_APPLY_TYPES, DISCOUNT_TYPES } from '~/utils/constants'
 import discountRepo from '~/repositories/discountRepo'
+import cloudinaryProvider from '~/providers/cloudinaryProvider'
 
-const createNew = async (reqBody) => {
+const createNew = async (reqFiles, reqBody) => {
   try {
+    const images = await cloudinaryProvider.uploadMultiple(reqFiles)
     return await productModel.create({
       ...reqBody,
+      images,
       slug: generateSlug(reqBody.title)
     })
   } catch (error) {
@@ -127,7 +130,7 @@ const getProducts = async (reqQuery) => {
   }
 }
 
-const updateProduct = async (id, reqBody) => {
+const updateProduct = async (id, reqFiles, reqBody) => {
   try {
     const updateData = reqBody.title
       ? {
@@ -135,7 +138,19 @@ const updateProduct = async (id, reqBody) => {
         slug: generateSlug(reqBody.title)
       }
       : { ...reqBody }
-    const product = await productModel.findByIdAndUpdate(id, updateData, { new: true })
+    const foundProduct = await productModel.findById(id)
+    if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+
+    const [images] = await Promise.all([
+      cloudinaryProvider.uploadMultiple(reqFiles),
+      cloudinaryProvider.deleteMultiple(foundProduct.images.map(image => image.id))
+    ])
+
+    const product = await productModel.findByIdAndUpdate(
+      id,
+      { ...updateData, images },
+      { new: true }
+    )
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
   } catch (error) {
@@ -148,6 +163,7 @@ const deleteProduct = async (id) => {
   try {
     const product = await productModel.findByIdAndDelete(id)
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    await cloudinaryProvider.deleteMultiple(product.images.map(image => image.id))
     return product
   } catch (error) {
     if (error.name === 'ApiError') throw error

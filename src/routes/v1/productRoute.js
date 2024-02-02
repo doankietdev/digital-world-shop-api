@@ -3,6 +3,7 @@ import productValidation from '~/validations/productValidation'
 import productController from '~/controllers/productController'
 import authMiddleware from '~/middlewares/authMiddleware'
 import { ROLES } from '~/utils/constants'
+import uploadMiddleware from '~/middlewares/uploadMiddleware'
 
 const router = express.Router()
 
@@ -23,6 +24,7 @@ router.route('/rating')
 router.route('/:id')
   .patch(
     authMiddleware.checkPermission(ROLES.ADMIN),
+    uploadMiddleware.array('images'),
     productValidation.updateProduct,
     productController.updateProduct
   )
@@ -35,6 +37,7 @@ router.route('/:id')
 router.route('/')
   .post(
     authMiddleware.checkPermission(ROLES.ADMIN),
+    uploadMiddleware.array('images'),
     productValidation.createNew,
     productController.createNew
   )
