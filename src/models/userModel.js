@@ -10,6 +10,18 @@ const imageSchema = new Schema({
   versionKey: false
 })
 
+const productInCartSchema = new Schema({
+  product: {
+    type: Schema.Types.ObjectId,
+    ref: MODEL_NAMES.PRODUCT,
+    required: true
+  },
+  quantity: { type: Number, required: true }
+}, {
+  _id: false,
+  versionKey: false
+})
+
 const userSchema = new Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
@@ -18,7 +30,7 @@ const userSchema = new Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, default: ROLES.CUSTOMER, enum: Object.values(ROLES) },
-  cart: { type: Array, default: [] },
+  cart: [productInCartSchema],
   addresses: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.ADDRESS }],
   wishlist: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.PRODUCT }],
   isBlocked: { type: Boolean, default: false },
