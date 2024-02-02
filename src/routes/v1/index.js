@@ -5,6 +5,7 @@ import productRoute from './productRoute'
 import productCategoryRoute from './productCategoryRoute'
 import blogRoute from './blogRoute'
 import discountRoute from './discountRoute'
+import addressRoute from './addressRoute'
 
 const router = express.Router()
 
@@ -14,5 +15,6 @@ router.use('/products', productRoute)
 router.use('/product-categories', productCategoryRoute)
 router.use('/blogs', blogRoute)
 router.use('/discounts', discountRoute)
+router.use('/addresses', addressRoute)
 
 export default router

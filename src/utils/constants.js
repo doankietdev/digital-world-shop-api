@@ -32,7 +32,8 @@ export const COLLECTION_NAMES = {
   PRODUCT: 'products',
   PRODUCT_CATEGORY: 'productCategories',
   BLOG: 'blogs',
-  DISCOUNT: 'discounts'
+  DISCOUNT: 'discounts',
+  ADDRESS: 'addresses'
 }
 
 export const MODEL_NAMES = {
@@ -41,5 +42,6 @@ export const MODEL_NAMES = {
   PRODUCT: 'Product',
   PRODUCT_CATEGORY: 'ProductCategory',
   BLOG: 'Blog',
-  DISCOUNT: 'Discount'
+  DISCOUNT: 'Discount',
+  ADDRESS: 'Address'
 }

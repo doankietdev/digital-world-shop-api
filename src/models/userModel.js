@@ -19,7 +19,7 @@ const userSchema = new Schema({
   password: { type: String, required: true },
   role: { type: String, default: ROLES.CUSTOMER, enum: Object.values(ROLES) },
   cart: { type: Array, default: [] },
-  address: [{ type: Schema.Types.ObjectId, ref: 'Address' }],
+  addresses: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.ADDRESS }],
   wishlist: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.PRODUCT }],
   isBlocked: { type: Boolean, default: false },
   passwordChangedAt: { type: Date, default: null },
