@@ -18,7 +18,7 @@ const createNew = asyncHandler(async (req, res, next) => {
   })
 
   try {
-    await correctCondition.validateAsync(req.body, { abortEarly: false })
+    await correctCondition.validateAsync({ ...req.body, images: req?.files }, { abortEarly: false })
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
@@ -52,7 +52,10 @@ const updateProduct = asyncHandler(async (req, res, next) => {
   })
 
   try {
-    await correctCondition.validateAsync({ ...req.params, ...req.body }, { abortEarly: false })
+    await correctCondition.validateAsync(
+      { ...req.params, ...req.body, images: req?.files },
+      { abortEarly: false }
+    )
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
