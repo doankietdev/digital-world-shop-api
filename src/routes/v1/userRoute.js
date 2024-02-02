@@ -20,17 +20,29 @@ router.route('/update-current')
   )
 
 router.route('/set-blocked/:id')
-  .patch(authMiddleware.checkPermission(ROLES.ADMIN), userController.setBlocked)
+  .patch(
+    authMiddleware.checkPermission(ROLES.ADMIN),
+    userValidation.setBlocked,
+    userController.setBlocked
+  )
 
 router.route('/:id')
-  .get(authMiddleware.checkPermission(ROLES.ADMIN), userController.getUser)
+  .get(
+    authMiddleware.checkPermission(ROLES.ADMIN),
+    userValidation.getUser,
+    userController.getUser
+  )
   .patch(
     authMiddleware.checkPermission(ROLES.ADMIN),
     uploadMiddleware.single('image'),
     userValidation.updateUser,
     userController.updateUser
   )
-  .delete(authMiddleware.checkPermission(ROLES.ADMIN), userController.deleteUser)
+  .delete(
+    authMiddleware.checkPermission(ROLES.ADMIN),
+    userValidation.deleteUser,
+    userController.deleteUser
+  )
 
 router.route('/').get(authMiddleware.checkPermission(ROLES.ADMIN), userController.getUsers)
 
