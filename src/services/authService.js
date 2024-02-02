@@ -26,7 +26,7 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
     const { publicKey, privateKey } = generateKeyPairRSA()
     const newUser = await userModel.create({
       firstName, lastName, mobile, email,
-      password, publicKey, privateKey, role: 'user'
+      password, publicKey, privateKey
     })
     return {
       _id: newUser._id,
@@ -61,6 +61,7 @@ const signIn = async ({ email, password }) => {
       _id: foundUser._id,
       firstName: foundUser.firstName,
       lastName: foundUser.lastName,
+      image: foundUser.image,
       email: foundUser.email,
       mobile: foundUser.mobile,
       address: foundUser.address,

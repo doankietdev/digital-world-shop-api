@@ -2,9 +2,18 @@ import { Schema, model } from 'mongoose'
 import { hashPassword } from '~/utils/auth'
 import { ROLES, COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 
+const imageSchema = new Schema({
+  url: { type: String, required: true },
+  id: { type: String, required: true }
+}, {
+  _id: false,
+  versionKey: false
+})
+
 const userSchema = new Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
+  image: { type: imageSchema, default: null },
   mobile: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },

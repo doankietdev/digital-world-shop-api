@@ -10,14 +10,15 @@ const updateCurrentUser = asyncHandler(async (req, res, next) => {
     firstName: Joi.string(),
     lastName: Joi.string(),
     mobile: Joi.string(),
-    password: Joi.string().min(6)
+    password: Joi.string().min(6),
+    image: Joi.object()
   })
 
   try {
-    await correctCondition.validateAsync(req.body, {
-      abortEarly: false,
-      allowUnknown: true
-    })
+    await correctCondition.validateAsync(
+      { ...req.body, image: req.file },
+      { abortEarly: false }
+    )
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
@@ -30,14 +31,15 @@ const updateUser = asyncHandler(async (req, res, next) => {
     lastName: Joi.string(),
     mobile: Joi.string(),
     password: Joi.string().min(6),
-    role: Joi.string().valid(Object.values(ROLES))
+    role: Joi.string().valid(...Object.values(ROLES)),
+    image: Joi.object()
   })
 
   try {
-    await correctCondition.validateAsync(req.body, {
-      abortEarly: false,
-      allowUnknown: true
-    })
+    await correctCondition.validateAsync(
+      { ...req.body, image: req.file },
+      { abortEarly: false }
+    )
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)

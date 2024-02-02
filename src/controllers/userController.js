@@ -24,7 +24,7 @@ const getUsers = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get users successfully',
     metadata: {
-      ...await userService.getAll(req.query)
+      ...await userService.getUsers(req.query)
     }
   }).send(res)
 })
@@ -34,7 +34,7 @@ const updateCurrentUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Update current user successfully',
     metadata: {
-      user: await userService.updateCurrentUser(userId, req.body)
+      user: await userService.updateCurrentUser(userId, req.file, req.body)
     }
   }).send(res)
 })
@@ -43,7 +43,7 @@ const updateUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Update user successfully',
     metadata: {
-      user: await userService.updateUser(req.params.id, req.body)
+      user: await userService.updateUser(req.params.id, req.file, req.body)
     }
   }).send(res)
 })

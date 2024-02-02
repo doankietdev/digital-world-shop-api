@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
+import cloudinaryProvider from '~/providers/cloudinaryProvider'
 import ApiError from '~/utils/ApiError'
 import { parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
@@ -13,6 +14,7 @@ const getUser = async (userId, reqQuery) => {
       _id: foundUser._id,
       firstName: foundUser.firstName,
       lastName: foundUser.lastName,
+      image: foundUser.image,
       email: foundUser.email,
       mobile: foundUser.mobile,
       address: foundUser.address,
@@ -37,6 +39,7 @@ const getCurrentUser = async (userId, reqQuery) => {
       _id: foundUser._id,
       firstName: foundUser.firstName,
       lastName: foundUser.lastName,
+      image: foundUser.image,
       email: foundUser.email,
       mobile: foundUser.mobile,
       address: foundUser.address,
@@ -70,6 +73,7 @@ const getUsers = async (reqQuery) => {
         _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
+        image: user.image,
         email: user.email,
         mobile: user.mobile,
         address: user.address,
@@ -94,23 +98,22 @@ const getUsers = async (reqQuery) => {
   }
 }
 
-const updateCurrentUser = async (userId, {
-  firstName,
-  lastName,
-  mobile,
-  password,
-  address
-}) => {
+const updateCurrentUser = async (userId, reqFile, reqBody) => {
   try {
+    const prevUser = await userModel.findById(userId)
+    if (!prevUser) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
+    let image = undefined
+    if (reqFile) {
+      [image] = await Promise.all([
+        cloudinaryProvider.uploadSingle(reqFile),
+        cloudinaryProvider.deleteSingle(prevUser.image.id)
+      ])
+    }
+
     const user = await userModel.findByIdAndUpdate(
       userId,
-      {
-        firstName,
-        lastName,
-        mobile,
-        password,
-        address
-      },
+      { ...reqBody, image },
       { new: true }
     )
     if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
@@ -118,6 +121,7 @@ const updateCurrentUser = async (userId, {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
+      image: user.image,
       email: user.email,
       mobile: user.mobile,
       address: user.address,
@@ -130,32 +134,31 @@ const updateCurrentUser = async (userId, {
   }
 }
 
-const updateUser = async (userId, {
-  firstName,
-  lastName,
-  mobile,
-  password,
-  address,
-  role
-}) => {
+const updateUser = async (userId, reqFile, reqBody) => {
   try {
+    const prevUser = await userModel.findById(userId)
+    if (!prevUser) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
+    let image = undefined
+    if (reqFile) {
+      [image] = await Promise.all([
+        cloudinaryProvider.uploadSingle(reqFile),
+        cloudinaryProvider.deleteSingle(prevUser.image.id)
+      ])
+    }
+
     const user = await userModel.findByIdAndUpdate(
       userId,
-      {
-        firstName,
-        lastName,
-        mobile,
-        password,
-        address,
-        role
-      },
+      { ...reqBody, image },
       { new: true }
     )
     if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
     return {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
+      image: user.image,
       email: user.email,
       mobile: user.mobile,
       address: user.address,
@@ -176,10 +179,12 @@ const deleteUser = async(userId) => {
   try {
     const user = await userModel.findByIdAndDelete(userId)
     if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    await cloudinaryProvider.deleteSingle(user.image.id)
     return {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
+      image: user.image,
       email: user.email,
       mobile: user.mobile,
       address: user.address,
