@@ -9,7 +9,10 @@ import cloudinaryProvider from '~/providers/cloudinaryProvider'
 
 const createNew = async (reqFiles, reqBody) => {
   try {
-    const images = await cloudinaryProvider.uploadMultiple(reqFiles)
+    let images = []
+    if (reqFiles?.length) {
+      images = await cloudinaryProvider.uploadMultiple(reqFiles)
+    }
     return await productModel.create({
       ...reqBody,
       images,
@@ -141,10 +144,13 @@ const updateProduct = async (id, reqFiles, reqBody) => {
     const foundProduct = await productModel.findById(id)
     if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
 
-    const [images] = await Promise.all([
-      cloudinaryProvider.uploadMultiple(reqFiles),
-      cloudinaryProvider.deleteMultiple(foundProduct.images.map(image => image.id))
-    ])
+    let images = undefined
+    if (reqFiles?.length) {
+      [images] = await Promise.all([
+        cloudinaryProvider.uploadMultiple(reqFiles),
+        cloudinaryProvider.deleteMultiple(foundProduct.images.map(image => image.id))
+      ])
+    }
 
     const product = await productModel.findByIdAndUpdate(
       id,
@@ -154,6 +160,7 @@ const updateProduct = async (id, reqFiles, reqBody) => {
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
   } catch (error) {
+    console.log(error);
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update product failed')
   }
