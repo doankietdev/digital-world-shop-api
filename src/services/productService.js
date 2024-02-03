@@ -3,9 +3,8 @@ import productModel from '~/models/productModel'
 import ApiError from '~/utils/ApiError'
 import { generateSlug, parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
-import { DISCOUNT_APPLY_TYPES, DISCOUNT_TYPES } from '~/utils/constants'
-import discountRepo from '~/repositories/discountRepo'
 import cloudinaryProvider from '~/providers/cloudinaryProvider'
+import productRepo from '~/repositories/productRepo'
 
 const createNew = async (reqFiles, reqBody) => {
   try {
@@ -26,43 +25,7 @@ const createNew = async (reqFiles, reqBody) => {
 const getProduct = async (id, reqQuery) => {
   try {
     const { fields } = parseQueryParams(reqQuery)
-
-    const [product, discounts] = await Promise.all([
-      productModel
-        .findById(id)
-        .populate('category', '-createdAt -updatedAt')
-        .select(fields),
-      discountRepo.findByProductIds([id], {
-        products: 0,
-        currentUsage: 0,
-        maxUsage: 0,
-        isActive: 0,
-        createdAt: 0,
-        updatedAt: 0
-      })
-    ])
-    if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
-
-    const { totalPercentage, totalFixed } = discounts.reduce(
-      (acc, discount) => {
-        if (discount.type === DISCOUNT_TYPES.PERCENTAGE) {
-          acc.totalPercentage += discount.value
-        } else if (discount.type === DISCOUNT_TYPES.FIXED) {
-          acc.totalFixed += discount.value
-        }
-        return acc
-      },
-      { totalPercentage: 0, totalFixed: 0 }
-    )
-
-    const priceApplyDiscount =
-      product.price - totalFixed - (product.price * totalPercentage) / 100
-    return {
-      ...product.toObject(),
-      oldPrice: discounts.length ? product.price : null,
-      price: discounts.length ? priceApplyDiscount : product.price,
-      discounts
-    }
+    return await productRepo.getProductApplyDiscount(id, { fields })
   } catch (error) {
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get product failed')
@@ -82,51 +45,14 @@ const getProducts = async (reqQuery) => {
         .populate('category', '-createdAt -updatedAt'),
       productModel.countDocuments()
     ])
-    const productIds = products.map((product) => product._id)
-    const discounts = await discountRepo.findByProductIds(productIds, {
-      currentUsage: 0,
-      maxUsage: 0,
-      isActive: 0,
-      createdAt: 0,
-      updatedAt: 0
-    })
 
-    const resProducts = products.map((product) => {
-      const separateDiscounts = discounts.filter(
-        (discount) =>
-          discount.products?.find((productId) => productId.equals(product?._id)) ||
-          discount.applyFor === DISCOUNT_APPLY_TYPES.ALL
-      )
-
-      const { totalPercentage, totalFixed } = separateDiscounts.reduce(
-        (acc, discount) => {
-          if (discount.type === DISCOUNT_TYPES.PERCENTAGE) {
-            acc.totalPercentage += discount.value
-          } else if (discount.type === DISCOUNT_TYPES.FIXED) {
-            acc.totalFixed += discount.value
-          }
-          return acc
-        },
-        { totalPercentage: 0, totalFixed: 0 }
-      )
-
-      let priceApplyDiscount =
-        product.price - totalFixed - (product.price * totalPercentage) / 100
-      if (priceApplyDiscount < 0) priceApplyDiscount = 0
-
-      return {
-        ...product.toObject(),
-        oldPrice: separateDiscounts.length ? product.price : null,
-        price: separateDiscounts.length ? priceApplyDiscount : product.price
-        // discounts: separateDiscounts.map(discount => ({ ...discount, products: undefined }))
-      }
-    })
+    const productsApplyDiscount = await productRepo.convertToProductsApplyDiscount(products)
 
     return {
       page,
       totalPages: calculateTotalPages(totalProducts, limit),
       totalProducts,
-      products: resProducts
+      products: productsApplyDiscount
     }
   } catch (error) {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get products failed')
@@ -137,9 +63,9 @@ const updateProduct = async (id, reqFiles, reqBody) => {
   try {
     const updateData = reqBody.title
       ? {
-        ...reqBody,
-        slug: generateSlug(reqBody.title)
-      }
+          ...reqBody,
+          slug: generateSlug(reqBody.title)
+        }
       : { ...reqBody }
     const foundProduct = await productModel.findById(id)
     if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
@@ -148,7 +74,7 @@ const updateProduct = async (id, reqFiles, reqBody) => {
     if (reqFiles?.length) {
       [images] = await Promise.all([
         cloudinaryProvider.uploadMultiple(reqFiles),
-        cloudinaryProvider.deleteMultiple(foundProduct.images.map(image => image.id))
+        cloudinaryProvider.deleteMultiple(foundProduct.images.map((image) => image.id))
       ])
     }
 
@@ -160,7 +86,6 @@ const updateProduct = async (id, reqFiles, reqBody) => {
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
   } catch (error) {
-    console.log(error);
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update product failed')
   }
@@ -170,7 +95,7 @@ const deleteProduct = async (id) => {
   try {
     const product = await productModel.findByIdAndDelete(id)
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
-    await cloudinaryProvider.deleteMultiple(product.images.map(image => image.id))
+    await cloudinaryProvider.deleteMultiple(product.images.map((image) => image.id))
     return product
   } catch (error) {
     if (error.name === 'ApiError') throw error

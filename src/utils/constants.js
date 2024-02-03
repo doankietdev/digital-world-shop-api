@@ -26,6 +26,18 @@ export const DISCOUNT_APPLY_TYPES = {
   SPECIFIC: 'specific'
 }
 
+export const ORDER_STATUSES = {
+  PENDING: 'pending',
+  PROCESSING: 'processing',
+  SHIPPED: 'shipped',
+  DELIVERED: 'delivered'
+}
+
+export const PAYMENT_METHODS = {
+  COD: 'cod',
+  DIGITAL_WALLET: 'digital_wallet'
+}
+
 export const COLLECTION_NAMES = {
   USER: 'users',
   TOKEN: 'keyTokens',
@@ -33,7 +45,8 @@ export const COLLECTION_NAMES = {
   PRODUCT_CATEGORY: 'productCategories',
   BLOG: 'blogs',
   DISCOUNT: 'discounts',
-  ADDRESS: 'addresses'
+  ADDRESS: 'addresses',
+  ORDER: 'orders'
 }
 
 export const MODEL_NAMES = {
@@ -43,5 +56,6 @@ export const MODEL_NAMES = {
   PRODUCT_CATEGORY: 'ProductCategory',
   BLOG: 'Blog',
   DISCOUNT: 'Discount',
-  ADDRESS: 'Address'
+  ADDRESS: 'Address',
+  ORDER: 'Order'
 }
