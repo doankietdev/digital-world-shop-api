@@ -4,6 +4,7 @@ import ApiError from '~/utils/ApiError'
 import { generateSlug, parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
 import productRepo from '~/repositories/productRepo'
+import cloudinaryProvider from '~/providers/cloudinaryProvider'
 
 const createNew = async (reqBody) => {
   try {
@@ -142,11 +143,27 @@ const rating = async (userId, { productId, star, comment }) => {
   }
 }
 
+const addVariant = async (productId, reqFiles, reqBody) => {
+  try {
+    const images = await cloudinaryProvider.uploadMultiple(reqFiles)
+    const variant = { images, ...reqBody }
+    const product = await productModel.findByIdAndUpdate(productId, {
+      '$push': { 'variants': variant }
+    }, { new: true })
+    if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    return product
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    throw ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Add variant failed')
+  }
+}
+
 export default {
   createNew,
   getProduct,
   getProducts,
   updateProduct,
   deleteProduct,
-  rating
+  rating,
+  addVariant
 }

@@ -87,10 +87,28 @@ const rating = asyncHandler(async (req, res, next) => {
   }
 })
 
+const addVariant = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
+    color: Joi.string(),
+    images: Joi.array(),
+    quantity: Joi.number()
+  })
+  try {
+    await correctCondition.validateAsync({ ...req.files.images, ...req.body, ...req.params }, {
+      abortEarly: false
+    })
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
 export default {
   createNew,
   getProduct,
   updateProduct,
   deleteProduct,
-  rating
+  rating,
+  addVariant
 }

@@ -56,11 +56,21 @@ const rating = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const addVariant = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Add variant successfully',
+    metadata: {
+      product: await productService.addVariant(req.params.id, req.files, req.body)
+    }
+  }).send(res)
+})
+
 export default {
   createNew,
   getProduct,
   getProducts,
   updateProduct,
   deleteProduct,
-  rating
+  rating,
+  addVariant
 }

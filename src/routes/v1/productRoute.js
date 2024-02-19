@@ -34,6 +34,14 @@ router.route('/:id')
     productController.deleteProduct
   )
 
+router.route('/:id/add-variant')
+  .patch(
+    authMiddleware.checkPermission(ROLES.ADMIN),
+    uploadMiddleware.array('images'),
+    productValidation.addVariant,
+    productController.addVariant
+  )
+
 router.route('/')
   .post(
     authMiddleware.checkPermission(ROLES.ADMIN),
