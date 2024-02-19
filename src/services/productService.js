@@ -73,7 +73,6 @@ const updateProduct = async (id, reqBody) => {
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
   } catch (error) {
-    console.log(error);
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update product failed')
   }
