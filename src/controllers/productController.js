@@ -60,7 +60,16 @@ const addVariant = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Add variant successfully',
     metadata: {
-      product: await productService.addVariant(req.params.id, req.files, req.body)
+      product: await productService.addVariant(req.params.productId, req.files, req.body)
+    }
+  }).send(res)
+})
+
+const editVariant = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Edit variant successfully',
+    metadata: {
+      product: await productService.editVariant(req.params.productId, req.files, req.body)
     }
   }).send(res)
 })
@@ -72,5 +81,6 @@ export default {
   updateProduct,
   deleteProduct,
   rating,
-  addVariant
+  addVariant,
+  editVariant
 }

@@ -132,7 +132,7 @@ const rating = async (userId, { productId, star, comment }) => {
     return updatedProduct
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Rating failed')
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Rating failed')
   }
 }
 
@@ -147,7 +147,59 @@ const addVariant = async (productId, reqFiles, reqBody) => {
     return product
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Add variant failed')
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Add variant failed')
+  }
+}
+
+const editVariant = async (productId, reqFiles, reqBody) => {
+  try {
+    const { color, quantity, variantId, deletedImageIds } = reqBody || {}
+    const foundProduct = await productModel.findOne({
+      _id: productId,
+      variants: { $elemMatch: { _id: variantId } }
+    })
+    if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product or variant not found')
+
+    let uploadedImages = []
+    if (deletedImageIds?.length) {
+      await cloudinaryProvider.deleteMultiple(deletedImageIds)
+    } else if (reqFiles?.length) {
+      uploadedImages = await cloudinaryProvider.uploadMultiple(reqFiles)
+    }
+
+    // default value at case: no upload images
+    let query = {
+      _id: productId,
+      variants: { $elemMatch: { _id: variantId } }
+    }
+    let updateData = {
+      '$set': { 'variants.$.color': color, 'variants.$.quantity': quantity }
+    }
+    if (uploadedImages.length) {
+      updateData = {
+        ...updateData,
+        '$push': { 'variants.$.images': { $each: uploadedImages } }
+      }
+    }
+
+    const product = await productModel.findOneAndUpdate(query, updateData, { new: true })
+    if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+
+    if (deletedImageIds?.length) {
+      const variant = product.variants.find(variant => variant._id.equals(variantId))
+      if (variant) {
+        variant.images = variant?.images.filter((image) =>
+          !deletedImageIds.includes(image.id)
+        )
+        await product.save()
+      }
+    }
+
+    return product
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    console.log(error);
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Edit variant failed')
   }
 }
 
@@ -158,5 +210,6 @@ export default {
   updateProduct,
   deleteProduct,
   rating,
-  addVariant
+  addVariant,
+  editVariant
 }

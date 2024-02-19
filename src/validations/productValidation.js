@@ -86,7 +86,7 @@ const rating = asyncHandler(async (req, res, next) => {
 
 const addVariant = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
+    productId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
     color: Joi.string(),
     images: Joi.array(),
     quantity: Joi.number()
@@ -101,11 +101,35 @@ const addVariant = asyncHandler(async (req, res, next) => {
   }
 })
 
+const editVariant = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    productId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
+    variantId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
+    color: Joi.string(),
+    images: Joi.array(),
+    quantity: Joi.number(),
+    deletedImageIds: Joi.array().items(Joi.string())
+  })
+  try {
+    await correctCondition.validateAsync({
+      ...req.body,
+      ...req.params,
+      images: req.files
+    }, {
+      abortEarly: false
+    })
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
 export default {
   createNew,
   getProduct,
   updateProduct,
   deleteProduct,
   rating,
-  addVariant
+  addVariant,
+  editVariant
 }

@@ -50,7 +50,6 @@ const review = async (reqBody) => {
       totalPrice: productsApplyDiscount.reduce((acc, product) => acc += product.price, 0)
     }
   } catch (error) {
-    console.log(error)
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get order review failed')
   }
