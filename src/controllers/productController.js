@@ -24,7 +24,7 @@ const getProducts = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get products successfully',
     metadata: {
-      ...await productService.getProducts(req.query)
+      ...(await productService.getProducts(req.query))
     }
   }).send(res)
 })
@@ -74,6 +74,18 @@ const editVariant = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const deleteVariant = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Delete variant successfully',
+    metadata: {
+      product: await productService.deleteVariant(
+        req.params.productId,
+        req.query.variantId
+      )
+    }
+  }).send(res)
+})
+
 export default {
   createNew,
   getProduct,
@@ -82,5 +94,6 @@ export default {
   deleteProduct,
   rating,
   addVariant,
-  editVariant
+  editVariant,
+  deleteVariant
 }

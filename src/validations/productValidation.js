@@ -124,6 +124,24 @@ const editVariant = asyncHandler(async (req, res, next) => {
   }
 })
 
+const deleteVariant = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    productId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
+    variantId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+  })
+  try {
+    await correctCondition.validateAsync({
+      ...req.params,
+      ...req.query
+    }, {
+      abortEarly: false
+    })
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
 export default {
   createNew,
   getProduct,
@@ -131,5 +149,6 @@ export default {
   deleteProduct,
   rating,
   addVariant,
-  editVariant
+  editVariant,
+  deleteVariant
 }

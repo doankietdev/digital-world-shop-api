@@ -198,8 +198,23 @@ const editVariant = async (productId, reqFiles, reqBody) => {
     return product
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    console.log(error);
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Edit variant failed')
+  }
+}
+
+const deleteVariant = async (productId, variantId) => {
+  try {
+    const product = await productModel.findOneAndUpdate({
+      _id: productId,
+      variants: { $elemMatch: { _id: variantId } }
+    }, {
+      '$pull': { 'variants': { _id: variantId } }
+    }, { new: true })
+    if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product or variant not found')
+    return product
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Add variant failed')
   }
 }
 
@@ -211,5 +226,6 @@ export default {
   deleteProduct,
   rating,
   addVariant,
-  editVariant
+  editVariant,
+  deleteVariant
 }

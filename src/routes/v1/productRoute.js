@@ -49,6 +49,13 @@ router.route('/:productId/edit-variant')
     productController.editVariant
   )
 
+router.route('/:productId/delete-variant')
+  .delete(
+    authMiddleware.checkPermission(ROLES.ADMIN),
+    productValidation.deleteVariant,
+    productController.deleteVariant
+  )
+
 router.route('/')
   .post(
     authMiddleware.checkPermission(ROLES.ADMIN),
