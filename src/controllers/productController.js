@@ -6,7 +6,7 @@ const createNew = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Create new product successfully',
     metadata: {
-      product: await productService.createNew(req.files, req.body)
+      product: await productService.createNew(req.body)
     }
   }).send(res)
 })

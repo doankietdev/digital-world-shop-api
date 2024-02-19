@@ -3,22 +3,14 @@ import productModel from '~/models/productModel'
 import ApiError from '~/utils/ApiError'
 import { generateSlug, parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
-import cloudinaryProvider from '~/providers/cloudinaryProvider'
 import productRepo from '~/repositories/productRepo'
 
-const createNew = async (reqFiles, reqBody) => {
+const createNew = async (reqBody) => {
   try {
-    console.log({ reqFiles });
-    console.log({ reqBody });
-    let images = []
-    // if (reqFiles?.length) {
-    //   images = await cloudinaryProvider.uploadMultiple(reqFiles)
-    // }
-    // return await productModel.create({
-    //   ...reqBody,
-    //   slug: generateSlug(reqBody.title)
-    // })
-    return null
+    return await productModel.create({
+      ...reqBody,
+      slug: generateSlug(reqBody.title)
+    })
   } catch (error) {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Create new product failed')
   }
