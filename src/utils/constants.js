@@ -14,8 +14,6 @@ export const ROLES = {
   CUSTOMER: 'customer'
 }
 
-export const PRODUCT_COLORS = ['black', 'grown', 'red']
-
 export const DISCOUNT_TYPES = {
   PERCENTAGE: 'percentage',
   FIXED: 'fixed'

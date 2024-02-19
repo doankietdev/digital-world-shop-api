@@ -11,14 +11,11 @@ const createNew = asyncHandler(async (req, res, next) => {
     description: Joi.string().required(),
     brand: Joi.string().required(),
     price: Joi.number().required(),
-    category: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-    quantity: Joi.number(),
-    images: Joi.array(),
-    color: Joi.string().valid(...PRODUCT_COLORS)
+    category: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
   })
 
   try {
-    await correctCondition.validateAsync({ ...req.body, images: req?.files }, { abortEarly: false })
+    await correctCondition.validateAsync(req.body, { abortEarly: false })
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)

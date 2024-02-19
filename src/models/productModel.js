@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose'
-import { COLLECTION_NAMES, DISCOUNT_TYPES, MODEL_NAMES, PRODUCT_COLORS } from '~/utils/constants'
+import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 
 const productSchema = new Schema({
   title: { type: String, trim: true, required: true },
@@ -10,12 +10,14 @@ const productSchema = new Schema({
   category: {
     type: Schema.Types.ObjectId,
     ref: MODEL_NAMES.PRODUCT_CATEGORY,
-    default: null
+    required: true
   },
-  quantity: { type: Number, default: 0 },
   sold: { type: Number, default: 0 },
-  images: { type: Array, default: [] },
-  color: { type: String, enum: PRODUCT_COLORS, default: null },
+  variants: [{
+    color: { type: String, default: null },
+    images: { type: Array, default: [] },
+    quantity: { type: Number, default: 0 }
+  }],
   ratings: [
     {
       _id: false,
@@ -33,8 +35,13 @@ const productSchema = new Schema({
   versionKey: false,
   timestamps: true,
   collation: { locale: 'en' },
+  toObject: { virtuals: true },
+  toJSON: { virtuals: true },
   collection: COLLECTION_NAMES.PRODUCT
 })
 
+productSchema.virtual('quantity', function() {
+  return this.variants?.reduce((acc, variant) => acc += variant.quantity, 0)
+})
 
 export default model(MODEL_NAMES.PRODUCT, productSchema)

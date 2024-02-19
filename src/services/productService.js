@@ -8,15 +8,17 @@ import productRepo from '~/repositories/productRepo'
 
 const createNew = async (reqFiles, reqBody) => {
   try {
+    console.log({ reqFiles });
+    console.log({ reqBody });
     let images = []
-    if (reqFiles?.length) {
-      images = await cloudinaryProvider.uploadMultiple(reqFiles)
-    }
-    return await productModel.create({
-      ...reqBody,
-      images,
-      slug: generateSlug(reqBody.title)
-    })
+    // if (reqFiles?.length) {
+    //   images = await cloudinaryProvider.uploadMultiple(reqFiles)
+    // }
+    // return await productModel.create({
+    //   ...reqBody,
+    //   slug: generateSlug(reqBody.title)
+    // })
+    return null
   } catch (error) {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Create new product failed')
   }

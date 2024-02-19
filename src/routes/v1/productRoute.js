@@ -37,7 +37,6 @@ router.route('/:id')
 router.route('/')
   .post(
     authMiddleware.checkPermission(ROLES.ADMIN),
-    uploadMiddleware.array('images'),
     productValidation.createNew,
     productController.createNew
   )
