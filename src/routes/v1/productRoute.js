@@ -24,7 +24,6 @@ router.route('/rating')
 router.route('/:id')
   .patch(
     authMiddleware.checkPermission(ROLES.ADMIN),
-    uploadMiddleware.array('images'),
     productValidation.updateProduct,
     productController.updateProduct
   )

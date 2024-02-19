@@ -42,15 +42,12 @@ const updateProduct = asyncHandler(async (req, res, next) => {
     description: Joi.string(),
     brand: Joi.string(),
     price: Joi.number(),
-    category: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-    quantity: Joi.number(),
-    images: Joi.array(),
-    color: Joi.string().valid(...PRODUCT_COLORS)
+    category: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
   })
 
   try {
     await correctCondition.validateAsync(
-      { ...req.params, ...req.body, images: req?.files },
+      { ...req.params, ...req.body },
       { abortEarly: false }
     )
     next()

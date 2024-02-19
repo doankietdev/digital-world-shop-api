@@ -54,33 +54,26 @@ const getProducts = async (reqQuery) => {
   }
 }
 
-const updateProduct = async (id, reqFiles, reqBody) => {
+const updateProduct = async (id, reqBody) => {
   try {
-    const updateData = reqBody.title
+    const updateData = reqBody?.title
       ? {
-          ...reqBody,
-          slug: generateSlug(reqBody.title)
-        }
+        ...reqBody,
+        slug: generateSlug(reqBody.title)
+      }
       : { ...reqBody }
     const foundProduct = await productModel.findById(id)
     if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
 
-    let images = undefined
-    if (reqFiles?.length) {
-      [images] = await Promise.all([
-        cloudinaryProvider.uploadMultiple(reqFiles),
-        cloudinaryProvider.deleteMultiple(foundProduct.images.map((image) => image.id))
-      ])
-    }
-
     const product = await productModel.findByIdAndUpdate(
       id,
-      { ...updateData, images },
+      updateData,
       { new: true }
     )
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
   } catch (error) {
+    console.log(error);
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update product failed')
   }

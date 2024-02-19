@@ -33,7 +33,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Update product successfully',
     metadata: {
-      product: await productService.updateProduct(req.params.id, req.files, req.body)
+      product: await productService.updateProduct(req.params.id, req.body)
     }
   }).send(res)
 })
