@@ -150,9 +150,9 @@ const addVariant = async (productId, reqFiles, reqBody) => {
   }
 }
 
-const editVariant = async (productId, reqFiles, reqBody) => {
+const editVariant = async (productId, variantId, reqFiles, reqBody) => {
   try {
-    const { name, quantity, variantId, deletedImageIds } = reqBody || {}
+    const { name, quantity, deletedImageIds } = reqBody || {}
     const foundProduct = await productModel.findOne({
       _id: productId,
       variants: { $elemMatch: { _id: variantId } }

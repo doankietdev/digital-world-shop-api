@@ -69,7 +69,12 @@ const editVariant = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Edit variant successfully',
     metadata: {
-      product: await productService.editVariant(req.params.productId, req.files, req.body)
+      product: await productService.editVariant(
+        req.params.productId,
+        req.query.variantId,
+        req.files,
+        req.body
+      )
     }
   }).send(res)
 })

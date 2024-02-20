@@ -113,6 +113,7 @@ const editVariant = asyncHandler(async (req, res, next) => {
     await correctCondition.validateAsync({
       ...req.body,
       ...req.params,
+      ...req.query,
       images: req.files
     }, {
       abortEarly: false
