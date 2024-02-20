@@ -34,8 +34,10 @@ const getProductApplyDiscount = async (productId, queryParams = {}) => {
     { totalPercentage: 0, totalFixed: 0 }
   )
 
-  const priceApplyDiscount =
+  let priceApplyDiscount =
     product.price - totalFixed - (product.price * totalPercentage) / 100
+  if (priceApplyDiscount < 0) priceApplyDiscount = 0
+
   return {
     ...product.toObject(),
     oldPrice: discounts.length ? product.price : null,
