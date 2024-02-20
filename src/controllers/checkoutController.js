@@ -20,7 +20,17 @@ const order = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const cancelOrder = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Cancel order successfully',
+    metadata: {
+      order: await checkoutService.cancelOrder(req.user?._id, req.params.orderId)
+    }
+  }).send(res)
+})
+
 export default {
   review,
-  order
+  order,
+  cancelOrder
 }

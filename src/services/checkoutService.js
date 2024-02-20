@@ -3,21 +3,9 @@ import addressModel from '~/models/addressModel'
 import orderModel from '~/models/orderModel'
 import productModel from '~/models/productModel'
 import checkoutRepo from '~/repositories/checkoutRepo'
-import productRepo from '~/repositories/productRepo'
 import ApiError from '~/utils/ApiError'
+import { ORDER_STATUSES } from '~/utils/constants'
 
-/*
-  orderProducts: [
-    {
-      productId,
-      oldPrice,
-      price,
-      quantity,
-      variantId
-      discountCodes: ['code1', 'code2']
-    }
-  ]
-*/
 const review = async (reqBody) => {
   try {
     const { orderProducts } = reqBody || {}
@@ -145,6 +133,7 @@ const order = async (userId, reqBody) => {
     const order = {
       orderBy: userId,
       shippingAddress: shippingAddressId,
+      statusHistory: [{ status: ORDER_STATUSES.PENDING }],
       orderProducts: savedOrderProducts,
       totalPrice: savedOrderProducts.reduce(
         (acc, orderProduct) => (acc += orderProduct.totalPrice),
@@ -163,7 +152,26 @@ const order = async (userId, reqBody) => {
   }
 }
 
+const cancelOrder = async (userId, orderId) => {
+  try {
+    const updatedOrders = await orderModel.findByIdAndUpdate(
+      { _id: orderId },
+      {
+        $set: { status: ORDER_STATUSES.CANCELED },
+        $push: { statusHistory: { status: ORDER_STATUSES.CANCELED } }
+      },
+      { new: true }
+    )
+    if (!updatedOrders) throw new ApiError(StatusCodes.NOT_FOUND, 'Order not found')
+    return updatedOrders
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Cancel order failed')
+  }
+}
+
 export default {
   review,
-  order
+  order,
+  cancelOrder
 }

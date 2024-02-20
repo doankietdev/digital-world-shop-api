@@ -26,7 +26,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
     if (decodedUser.userId !== user?._id.toString()) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
     }
-    req.user = { _id: user._id, role: user.role }
+    req.user = { _id: user._id.toString(), role: user.role }
     req.token = token
     next()
   } catch (error) {

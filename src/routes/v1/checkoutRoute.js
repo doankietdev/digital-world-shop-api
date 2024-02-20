@@ -12,4 +12,7 @@ router.route('/review')
 router.route('/order')
   .post(checkoutController.order)
 
+router.route('/cancel-order/:orderId')
+  .patch(checkoutController.cancelOrder)
+
 export default router
