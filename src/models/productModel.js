@@ -2,7 +2,7 @@ import { Schema, model } from 'mongoose'
 import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 
 const variantSchema = new Schema({
-  color: { type: String, default: null },
+  name: { type: String, default: null },
   images: { type: Array, default: [] },
   quantity: { type: Number, default: 0 }
 }, {

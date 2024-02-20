@@ -152,7 +152,7 @@ const addVariant = async (productId, reqFiles, reqBody) => {
 
 const editVariant = async (productId, reqFiles, reqBody) => {
   try {
-    const { color, quantity, variantId, deletedImageIds } = reqBody || {}
+    const { name, quantity, variantId, deletedImageIds } = reqBody || {}
     const foundProduct = await productModel.findOne({
       _id: productId,
       variants: { $elemMatch: { _id: variantId } }
@@ -172,7 +172,7 @@ const editVariant = async (productId, reqFiles, reqBody) => {
       variants: { $elemMatch: { _id: variantId } }
     }
     let updateData = {
-      '$set': { 'variants.$.color': color, 'variants.$.quantity': quantity }
+      '$set': { 'variants.$.name': name, 'variants.$.quantity': quantity }
     }
     if (uploadedImages.length) {
       updateData = {

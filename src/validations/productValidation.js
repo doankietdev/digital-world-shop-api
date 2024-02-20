@@ -3,7 +3,6 @@ import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
-import { PRODUCT_COLORS } from '~/utils/constants'
 
 const createNew = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
@@ -87,7 +86,7 @@ const rating = asyncHandler(async (req, res, next) => {
 const addVariant = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     productId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
-    color: Joi.string(),
+    name: Joi.string(),
     images: Joi.array(),
     quantity: Joi.number()
   })
@@ -105,7 +104,7 @@ const editVariant = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     productId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
     variantId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
-    color: Joi.string(),
+    name: Joi.string(),
     images: Joi.array(),
     quantity: Joi.number(),
     deletedImageIds: Joi.array().items(Joi.string())
