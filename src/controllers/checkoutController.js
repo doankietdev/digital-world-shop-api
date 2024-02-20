@@ -11,6 +11,16 @@ const review = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const order = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Order successfully',
+    metadata: {
+      ...await checkoutService.order(req.user?._id, req.body)
+    }
+  }).send(res)
+})
+
 export default {
-  review
+  review,
+  order
 }

@@ -1,4 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
+import addressModel from '~/models/addressModel'
+import orderModel from '~/models/orderModel'
 import productModel from '~/models/productModel'
 import checkoutRepo from '~/repositories/checkoutRepo'
 import productRepo from '~/repositories/productRepo'
@@ -88,6 +90,80 @@ const review = async (reqBody) => {
   }
 }
 
+const order = async (userId, reqBody) => {
+  try {
+    const { orderProducts, shippingAddressId } = reqBody || {}
+    const checkedProducts = await checkoutRepo.checkProductsAvailable(orderProducts)
+    const hasOrderProductExceedQuantity = checkedProducts.includes(null)
+    if (hasOrderProductExceedQuantity)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
+
+    const foundProducts = await productModel.find({
+      _id: { $in: orderProducts.map((orderProduct) => orderProduct.productId) }
+    })
+    const productsApplyDiscount = await checkoutRepo.getProductsApplyDiscount(
+      foundProducts
+    )
+
+    let isValidOrder = orderProducts.some((orderProduct) =>
+      productsApplyDiscount.some((productApplyDiscount) => {
+        if (productApplyDiscount.oldPrice !== orderProduct.oldPrice) return false
+        if (productApplyDiscount.price !== orderProduct.price) return false
+        if (
+          !orderProduct.discountCodes?.length ||
+          !productApplyDiscount.discounts?.length
+        )
+          return true
+        const isValidAllDiscount = productApplyDiscount.discounts?.every((discount) =>
+          orderProduct.discountCodes?.includes(discount.code)
+        )
+        if (isValidAllDiscount) return true
+        return false
+      })
+    )
+    if (!addressModel.findById(shippingAddressId)) {
+      isValidOrder = false
+    }
+    if (!isValidOrder) throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
+
+    const savedOrderProducts = productsApplyDiscount.map((productApplyDiscount) => {
+      const correspondOrderProduct = orderProducts.find((orderProduct) =>
+        productApplyDiscount?._id?.equals(orderProduct.productId)
+      )
+      return {
+        productId: productApplyDiscount._id,
+        variantId: productApplyDiscount.variants?.find((variant) =>
+          variant?._id?.equals(correspondOrderProduct.variantId)
+        )?._id,
+        quantity: correspondOrderProduct.quantity,
+        totalPrice: productApplyDiscount.oldPrice * correspondOrderProduct.quantity,
+        totalPriceApplyDiscount:
+          productApplyDiscount.price * correspondOrderProduct.quantity,
+      }
+    })
+
+    const order = {
+      orderBy: userId,
+      shippingAddress: shippingAddressId,
+      orderProducts: savedOrderProducts,
+      totalPrice: savedOrderProducts.reduce(
+        (acc, orderProduct) => (acc += orderProduct.totalPrice),
+        0
+      ),
+      totalPriceApplyDiscount: savedOrderProducts.reduce(
+        (acc, orderProduct) => (acc += orderProduct.totalPriceApplyDiscount),
+        0
+      )
+    }
+
+    return (await orderModel.create(order)).toObject()
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Order failed')
+  }
+}
+
 export default {
-  review
+  review,
+  order
 }
