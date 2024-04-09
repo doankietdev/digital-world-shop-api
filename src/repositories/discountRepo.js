@@ -10,14 +10,20 @@ const createQueryByProductIdsStage = (productIds) => ({
           {
             $and: [
               { applyFor: DISCOUNT_APPLY_TYPES.SPECIFIC },
-              { products: { $in: productIds.map(productId => new Types.ObjectId(productId)) } }
+              {
+                products: {
+                  $in: productIds.map(
+                    (productId) => new Types.ObjectId(productId)
+                  )
+                }
+              }
             ]
           },
           { applyFor: DISCOUNT_APPLY_TYPES.ALL }
         ]
       },
       {
-        expireAt: { $gt: new Date() }
+        expireAt: { $gt: Date.now() }
       },
       {
         isActive: true

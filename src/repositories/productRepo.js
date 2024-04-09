@@ -58,11 +58,13 @@ const convertToProductsApplyDiscount = async (products = []) => {
   })
 
   return products.map((product) => {
-    const separateDiscounts = discounts.filter(
-      (discount) =>
-        discount.products?.find((productId) => productId.equals(product?._id)) ||
-        discount.applyFor === DISCOUNT_APPLY_TYPES.ALL
-    )
+    const separateDiscounts = discounts.filter((discount) => {
+      return (
+        discount.products?.find((productId) => {
+          return productId.equals(product?._id)
+        }) || discount.applyFor === DISCOUNT_APPLY_TYPES.ALL
+      )
+    })
 
     const { totalPercentage, totalFixed } = separateDiscounts.reduce(
       (acc, discount) => {
@@ -76,15 +78,19 @@ const convertToProductsApplyDiscount = async (products = []) => {
       { totalPercentage: 0, totalFixed: 0 }
     )
 
-    let priceApplyDiscount =
+    let priceApplyDiscount = Math.round(
       product.price - totalFixed - (product.price * totalPercentage) / 100
+    )
     if (priceApplyDiscount < 0) priceApplyDiscount = 0
 
     return {
       ...product.toObject(),
       oldPrice: separateDiscounts.length ? product.price : null,
       price: separateDiscounts.length ? priceApplyDiscount : product.price,
-      discounts: separateDiscounts.map(discount => ({ ...discount, products: undefined }))
+      discounts: separateDiscounts.map((discount) => ({
+        ...discount,
+        products: undefined
+      }))
     }
   })
 }

@@ -24,7 +24,10 @@ const getDiscountByCodePublic = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get discount by code successfully',
     metadata: {
-      discount: await discountService.getDiscountByCodePublic(req.params.code, req.query)
+      discount: await discountService.getDiscountByCodePublic(
+        req.params.code,
+        req.query
+      )
     }
   }).send(res)
 })
@@ -33,7 +36,7 @@ const getDiscounts = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get discounts successfully',
     metadata: {
-      ...await discountService.getDiscounts(req.query)
+      ...(await discountService.getDiscounts(req.query))
     }
   }).send(res)
 })
@@ -42,7 +45,7 @@ const getDiscountsPublic = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get discounts successfully',
     metadata: {
-      ...await discountService.getDiscountsPublic(req.query)
+      ...(await discountService.getDiscountsPublic(req.query))
     }
   }).send(res)
 })

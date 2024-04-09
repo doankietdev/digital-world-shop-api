@@ -10,32 +10,38 @@ const createNew = async (reqBody) => {
     return await discountModel.create(reqBody)
   } catch (error) {
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Create new discount failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Create new discount failed'
+    )
   }
 }
 
 const getDiscount = async (id, reqQuery) => {
   try {
     const { fields } = parseQueryParams(reqQuery)
-    const discount = (await discountModel
-      .findById(id)
-      .select(fields)
-      .populate({
-        path: 'products',
-        populate: {
-          path: 'discounts',
-          select: '-createdAt -updatedAt'
-        }
-      })
-      .populate({
-        path: 'products',
-        populate: {
-          path: 'category',
-          select: '-createdAt -updatedAt'
-        }
-      })).toObject()
-    if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
-    discount.products?.forEach(product => delete product?.discounts)
+    const discount = (
+      await discountModel
+        .findById(id)
+        .select(fields)
+        .populate({
+          path: 'products',
+          populate: {
+            path: 'discounts',
+            select: '-createdAt -updatedAt'
+          }
+        })
+        .populate({
+          path: 'products',
+          populate: {
+            path: 'category',
+            select: '-createdAt -updatedAt'
+          }
+        })
+    ).toObject()
+    if (!discount)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
+    discount.products?.forEach((product) => delete product?.discounts)
     return discount
   } catch (error) {
     if (error.name === ApiError.name) throw error
@@ -56,44 +62,46 @@ const getDiscountByCodePublic = async (code, reqQuery) => {
       'applyFor',
       'products'
     ]
-    const discount = (await discountModel
-      .findOne({ code })
-      .select(fields)
-      .populate({
-        path: 'products',
-        populate: {
-          path: 'discounts',
-          select: '-createdAt -updatedAt'
-        }
-      })
-      .populate({
-        path: 'products',
-        populate: {
-          path: 'category',
-          select: '-createdAt -updatedAt'
-        }
-      })).toObject()
+    const discount = (
+      await discountModel
+        .findOne({ code })
+        .select(fields)
+        .populate({
+          path: 'products',
+          select: '_id title slug brand price quantity thumb sold',
+          populate: {
+            path: 'category',
+            select: '-createdAt -updatedAt'
+          }
+        })
+    )?.toObject()
 
-    if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
+    if (!discount)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
 
     const IS_EXPIRED = Date.now() >= new Date(discount.expireAt).getTime()
     if (IS_EXPIRED)
       throw new ApiError(StatusCodes.GONE, 'Discount code has expired')
 
-    discount.products?.forEach(product => delete product?.discounts)
+    discount.products?.forEach((product) => delete product?.discounts)
     return defaultFields.reduce(
       (resDiscount, field) => ({ ...resDiscount, [field]: discount[field] }),
       {}
     )
   } catch (error) {
+    console.log(error)
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get discount by code failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Get discount by code failed'
+    )
   }
 }
 
 const getDiscountsPublic = async (reqQuery) => {
   try {
-    const { query, sort, fields, skip, limit, page } = parseQueryParams(reqQuery)
+    const { query, sort, fields, skip, limit, page } =
+      parseQueryParams(reqQuery)
     const defaultFields = [
       '_id',
       'code',
@@ -118,14 +126,20 @@ const getDiscountsPublic = async (reqQuery) => {
       totalDiscounts,
       discounts: discounts.map((discount) =>
         defaultFields.reduce(
-          (resDiscount, field) => ({ ...resDiscount, [field]: discount[field] }),
+          (resDiscount, field) => ({
+            ...resDiscount,
+            [field]: discount[field]
+          }),
           {}
         )
       )
     }
   } catch (error) {
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get discount by code failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Get discount by code failed'
+    )
   }
 }
 
@@ -140,9 +154,15 @@ const getDiscounts = async (reqQuery) => {
       'expireAt',
       'applyFor'
     ]
-    const { query, sort, fields, skip, limit, page } = parseQueryParams(reqQuery)
+    const { query, sort, fields, skip, limit, page } =
+      parseQueryParams(reqQuery)
     const [discounts, totalDiscounts] = await Promise.all([
-      discountModel.find(query).sort(sort).select(fields).skip(skip).limit(limit),
+      discountModel
+        .find(query)
+        .sort(sort)
+        .select(fields)
+        .skip(skip)
+        .limit(limit),
       discountModel.countDocuments()
     ])
     return {
@@ -151,7 +171,10 @@ const getDiscounts = async (reqQuery) => {
       totalDiscounts,
       discounts: discounts.map((discount) =>
         defaultFields.reduce(
-          (resDiscount, field) => ({ ...resDiscount, [field]: discount[field] }),
+          (resDiscount, field) => ({
+            ...resDiscount,
+            [field]: discount[field]
+          }),
           {}
         )
       )
@@ -167,22 +190,30 @@ const updateDiscount = async (id, reqBody) => {
     const discount = await discountModel.findByIdAndUpdate(id, reqBody, {
       new: true
     })
-    if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
+    if (!discount)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
     return discount
   } catch (error) {
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update discount failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Update discount failed'
+    )
   }
 }
 
 const deleteDiscount = async (id) => {
   try {
     const discount = await discountModel.findByIdAndDelete(id)
-    if (!discount) throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
+    if (!discount)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Discount not found')
     return discount
   } catch (error) {
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update discount failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Update discount failed'
+    )
   }
 }
 
