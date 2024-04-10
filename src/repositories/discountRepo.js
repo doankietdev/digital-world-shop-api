@@ -22,9 +22,9 @@ const createQueryByProductIdsStage = (productIds) => ({
           { applyFor: DISCOUNT_APPLY_TYPES.ALL }
         ]
       },
-      // {
-      //   expireAt: { $gt: Date.now() }
-      // },
+      {
+        expireAt: { $gt: Date.now() }
+      },
       {
         isActive: true
       },
