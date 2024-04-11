@@ -1,9 +1,8 @@
 {
-  "name": "trello-api",
+  "name": "digital-world-shop-api",
   "private": true,
   "version": "1.0.0",
   "author": "Doan Anh Kiet",
-  "description": "Trello Web Service",
   "engines": {
     "node": "18.18.2"
   },
