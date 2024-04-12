@@ -1,11 +1,25 @@
 import { Schema, model } from 'mongoose'
+import uniqueValidator from 'mongoose-unique-validator'
 import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
+import { generateDBErrorMessage } from '~/utils/formatter'
 
 const variantSchema = new Schema(
   {
-    name: { type: String, default: null },
+    name: {
+      type: String,
+      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
+      trim: true,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
     images: { type: Array, default: [] },
-    quantity: { type: Number, default: 0 }
+    quantity: {
+      type: Number,
+      min: [0, generateDBErrorMessage('must be at least 0')],
+      default: 0
+    }
   },
   {
     versionKey: false,
@@ -16,13 +30,29 @@ const variantSchema = new Schema(
 const ratingSchema = new Schema(
   {
     _id: false,
-    star: { type: Number, required: true },
+    star: {
+      type: Number,
+      min: [1, generateDBErrorMessage('Must be at least 1')],
+      max: [5, generateDBErrorMessage('Must be at most 5')],
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
     postedBy: {
       type: Schema.Types.ObjectId,
       ref: MODEL_NAMES.USER,
-      required: true
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
     },
-    comment: { type: String, default: null }
+    comment: {
+      type: String,
+      trim: true,
+      minLength: [1, generateDBErrorMessage('must have a minimum length of 1')],
+      default: null
+    }
   },
   {
     versionKey: false,
@@ -34,17 +64,67 @@ const ratingSchema = new Schema(
 
 const productSchema = new Schema(
   {
-    title: { type: String, trim: true, required: true },
-    slug: { type: String, unique: true, required: true },
-    description: { type: String, required: true },
-    brand: { type: String, required: true },
-    price: { type: Number, required: true },
+    title: {
+      type: String,
+      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
+      trim: true,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    slug: {
+      type: String,
+      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
+      trim: true,
+      unique: true,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    description: {
+      type: String,
+      minLength: [
+        10,
+        generateDBErrorMessage('must have a minimum length of 10')
+      ],
+      trim: true,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    brand: {
+      type: String,
+      trim: true,
+      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    price: {
+      type: Number,
+      min: [0, generateDBErrorMessage('must be at least 0')],
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
     category: {
       type: Schema.Types.ObjectId,
       ref: MODEL_NAMES.PRODUCT_CATEGORY,
-      required: true
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
     },
-    sold: { type: Number, default: 0 },
+    sold: {
+      type: Number,
+      min: [0, generateDBErrorMessage('must be at least 0')],
+      default: 0
+    },
     variants: [variantSchema],
     ratings: [ratingSchema],
     averageRatings: { type: Number, default: 0 }
@@ -62,6 +142,10 @@ const productSchema = new Schema(
 
 productSchema.virtual('quantity').get(function () {
   return this.variants?.reduce((acc, variant) => (acc += variant.quantity), 0)
+})
+
+productSchema.plugin(uniqueValidator, {
+  message: generateDBErrorMessage('already exists')
 })
 
 export default model(MODEL_NAMES.PRODUCT, productSchema)

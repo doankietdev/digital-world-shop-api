@@ -6,18 +6,11 @@ import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 
 const createNew = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    title: Joi.string().required(),
-    description: Joi.string().required(),
-    category: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-    numberViews: Joi.number(),
-    likes: Joi.array().items(
-      Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
-    ),
-    dislikes: Joi.array().items(
-      Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
-    ),
-    image: Joi.string(),
-    author: Joi.string()
+    title: Joi.string().min(2).required(),
+    description: Joi.string().min(10).required(),
+    category: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
   })
 
   try {
@@ -30,7 +23,10 @@ const createNew = asyncHandler(async (req, res, next) => {
 
 const getBlog = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
   })
 
   try {
@@ -43,28 +39,33 @@ const getBlog = asyncHandler(async (req, res, next) => {
 
 const updateBlog = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
     title: Joi.string(),
-    description: Joi.string(),
-    category: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-    image: Joi.string(),
-    author: Joi.string()
+    description: Joi.string()
   })
 
   try {
-    await correctCondition.validateAsync({ ...req.params, ...req.body }, {
-      abortEarly: false
-    })
+    await correctCondition.validateAsync(
+      { ...req.params, ...req.body },
+      {
+        abortEarly: false
+      }
+    )
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
   }
 })
 
-
 const deleteBlog = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
   })
 
   try {
@@ -77,7 +78,10 @@ const deleteBlog = asyncHandler(async (req, res, next) => {
 
 const like = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
   })
 
   try {
@@ -90,7 +94,10 @@ const like = asyncHandler(async (req, res, next) => {
 
 const dislike = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
   })
 
   try {

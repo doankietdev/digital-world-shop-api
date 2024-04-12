@@ -2,19 +2,16 @@ import slugify from 'slugify'
 
 export const parseQueryParams = (reqQuery = {}) => {
   const queryObj = { ...reqQuery }
-  const excludeFields = [
-    '_limit',
-    '_sort',
-    '_page',
-    '_fields'
-  ]
-  excludeFields.forEach(field => delete queryObj[field])
+  const excludeFields = ['_limit', '_sort', '_page', '_fields']
+  excludeFields.forEach((field) => delete queryObj[field])
 
   let queryString = JSON.stringify(queryObj)
-  const query = JSON.parse(queryString.replace(
-    /("gt":|"gte":|"lt":|"lte":)/g,
-    match => `"$${match.slice(1, match.length - 2)}":`
-  ))
+  const query = JSON.parse(
+    queryString.replace(
+      /("gt":|"gte":|"lt":|"lte":)/g,
+      (match) => `"$${match.slice(1, match.length - 2)}":`
+    )
+  )
   if (query.title) query.title = { $regex: query.title, $options: 'i' }
 
   let sort = reqQuery._sort ? reqQuery._sort.split(',').join(' ') : 'createdAt'
@@ -27,5 +24,18 @@ export const parseQueryParams = (reqQuery = {}) => {
 }
 
 export const generateSlug = (string) => {
-  return slugify(`${string}-${Date.now()}`, { lower: true, locale: 'vi', strict: true })
+  return slugify(`${string}-${Date.now()}`, {
+    lower: true,
+    locale: 'vi',
+    strict: true
+  })
+}
+
+export const generateDBErrorMessage = (
+  message,
+  options = { showValue: true }
+) => {
+  const { showValue } = options
+  const value = showValue ? '({VALUE}) ' : ' '
+  return '`{PATH}`' + value + message
 }

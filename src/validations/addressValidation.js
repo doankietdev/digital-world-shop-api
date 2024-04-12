@@ -6,11 +6,11 @@ import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 
 const createNew = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    province: Joi.string().required(),
-    district: Joi.string().required(),
-    ward: Joi.string().required(),
-    street: Joi.string(),
-    apartmentNumber: Joi.string()
+    province: Joi.string().min(2).required(),
+    district: Joi.string().min(2).required(),
+    ward: Joi.string().min(2).required(),
+    street: Joi.string().min(2),
+    apartmentNumber: Joi.string().min(2)
   })
 
   try {
@@ -23,7 +23,10 @@ const createNew = asyncHandler(async (req, res, next) => {
 
 const getAddress = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
   })
 
   try {
@@ -36,12 +39,15 @@ const getAddress = asyncHandler(async (req, res, next) => {
 
 const updateAddressForCurrentUser = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    addressId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
-    province: Joi.string(),
-    district: Joi.string(),
-    ward: Joi.string(),
-    street: Joi.string(),
-    apartmentNumber: Joi.string()
+    addressId: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
+    province: Joi.string().min(2),
+    district: Joi.string().min(2),
+    ward: Joi.string().min(2),
+    street: Joi.string().min(2),
+    apartmentNumber: Joi.string().min(2)
   })
 
   try {
@@ -57,7 +63,10 @@ const updateAddressForCurrentUser = asyncHandler(async (req, res, next) => {
 
 const deleteAddressForCurrentUser = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    addressId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+    addressId: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
   })
 
   try {

@@ -25,8 +25,13 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
 
     const { publicKey, privateKey } = generateKeyPairRSA()
     const newUser = await userModel.create({
-      firstName, lastName, mobile, email,
-      password, publicKey, privateKey
+      firstName,
+      lastName,
+      mobile,
+      email,
+      password,
+      publicKey,
+      privateKey
     })
     return {
       _id: newUser._id,
@@ -47,15 +52,30 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
 const signIn = async ({ email, password }) => {
   try {
     const foundUser = await userModel.findOne({ email })
-    if (!foundUser) throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
-    if (foundUser.isBlocked) throw new ApiError(StatusCodes.FORBIDDEN, 'User is blocked')
+    if (!foundUser)
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
+    if (foundUser.isBlocked)
+      throw new ApiError(StatusCodes.FORBIDDEN, 'User is blocked')
     const isValidPassword = await verifyPassword(password, foundUser.password)
-    if (!isValidPassword) throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
+    if (!isValidPassword)
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
 
     const payload = { userId: foundUser._id, email: foundUser.email }
-    const accessToken = generateToken(payload, foundUser.privateKey, AUTH.ACCESS_TOKEN_EXPIRES)
-    const refreshToken = generateToken(payload, foundUser.privateKey, AUTH.REFRESH_TOKEN_EXPIRES)
-    await tokenModel.create({ userId: foundUser._id, accessToken, refreshToken })
+    const accessToken = generateToken(
+      payload,
+      foundUser.privateKey,
+      AUTH.ACCESS_TOKEN_EXPIRES
+    )
+    const refreshToken = generateToken(
+      payload,
+      foundUser.privateKey,
+      AUTH.REFRESH_TOKEN_EXPIRES
+    )
+    await tokenModel.create({
+      userId: foundUser._id,
+      accessToken,
+      refreshToken
+    })
 
     return {
       _id: foundUser._id,
@@ -122,7 +142,10 @@ const handleRefreshToken = async (userId, refreshToken) => {
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid refresh token')
     }
     if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Handling refresh token failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Handling refresh token failed'
+    )
   }
 }
 
@@ -168,7 +191,10 @@ const forgotPassword = async (email) => {
     return mailResult.accepted[0]
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Handling forgot password failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Handling forgot password failed'
+    )
   }
 }
 
@@ -188,17 +214,17 @@ const resetPassword = async ({ userId, token, password }) => {
     )
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      await userModel.updateOne(
-        { _id: userId },
-        { passwordResetToken: null }
-      )
+      await userModel.updateOne({ _id: userId }, { passwordResetToken: null })
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Expired token')
     }
     if (error.name === 'JsonWebTokenError') {
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid token')
     }
     if (error.name === 'ApiError') throw error
-    throw new ApiError( StatusCodes.INTERNAL_SERVER_ERROR, 'Reset password failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Reset password failed'
+    )
   }
 }
 

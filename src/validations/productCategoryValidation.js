@@ -6,7 +6,7 @@ import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 
 const createNew = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    title: Joi.string().required()
+    title: Joi.string().min(2).required()
   })
 
   try {
@@ -19,7 +19,10 @@ const createNew = asyncHandler(async (req, res, next) => {
 
 const getCategory = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
   })
 
   try {
@@ -32,12 +35,18 @@ const getCategory = asyncHandler(async (req, res, next) => {
 
 const updateCategory = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
-    title: Joi.string()
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
+    title: Joi.string().min(2)
   })
 
   try {
-    await correctCondition.validateAsync({ ...req.params, ...req.body }, { abortEarly: false })
+    await correctCondition.validateAsync(
+      { ...req.params, ...req.body },
+      { abortEarly: false }
+    )
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
@@ -46,7 +55,10 @@ const updateCategory = asyncHandler(async (req, res, next) => {
 
 const deleteCategory = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
   })
 
   try {

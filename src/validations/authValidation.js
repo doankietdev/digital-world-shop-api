@@ -8,7 +8,7 @@ const signUp = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     firstName: Joi.string().required(),
     lastName: Joi.string().required(),
-    mobile: Joi.string().required(),
+    mobile: Joi.string().min(10).max(11).required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required()
   })
@@ -50,7 +50,10 @@ const forgotPassword = asyncHandler(async (req, res, next) => {
 
 const resetPassword = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    userId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required(),
+    userId: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
     token: Joi.string().required(),
     password: Joi.string().min(6).required()
   })
