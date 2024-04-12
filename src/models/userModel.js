@@ -66,13 +66,15 @@ const userSchema = new Schema(
     image: { type: imageSchema, default: null },
     mobile: {
       type: String,
-      minLength: 10,
-      maxLength: 11,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
       ],
-      unique: true
+      unique: true,
+      validate: {
+        validator: (value) => value.length === 10,
+        message: generateDBErrorMessage('must have a length of 10')
+      }
     },
     email: {
       type: String,

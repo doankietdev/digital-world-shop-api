@@ -8,9 +8,17 @@ const signUp = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     firstName: Joi.string().required(),
     lastName: Joi.string().min(2).required(),
-    mobile: Joi.string().min(10).max(11).required(),
+    mobile: Joi.string().length(10).required(),
     email: Joi.string().email().required(),
-    password: Joi.string().min(6).required()
+    password: Joi.string()
+      .min(6)
+      .regex(/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&_.])[a-zA-Z\d@$!%*?&_.]+$/)
+      .messages({
+        'string.min': '`password` must have at least 6 characters',
+        'string.pattern.base':
+          '`password` must contain at least 1 special character from the following list: `@`, `$`, `!`, `%`, `*`, `?`, `&`, `_`, `. `'
+      })
+      .required()
   })
 
   try {
