@@ -31,7 +31,3 @@ export const generateToken = (payload = {}, privateKey, expiresIn) => {
 export const verifyToken = (token, publicKey) => {
   return jwt.verify(token, publicKey)
 }
-
-// export const generatePasswordResetToken = (payload = {}, privateKey) => {
-//   const 
-// }

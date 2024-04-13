@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose'
-import { COLLECTION_NAMES, MODEL_NAMES, ROLES } from '~/utils/constants'
+import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
 
 const blogSchema = new Schema(

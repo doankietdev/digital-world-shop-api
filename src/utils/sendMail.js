@@ -1,6 +1,6 @@
 // https://dev.to/documatic/send-email-in-nodejs-with-nodemailer-using-gmail-account-2gd1
 import nodemailer from 'nodemailer'
-import { EMAIL } from '~/configs/environment';
+import { EMAIL } from '~/configs/environment'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',

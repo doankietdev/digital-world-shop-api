@@ -9,7 +9,9 @@ import { ORDER_STATUSES } from '~/utils/constants'
 const review = async (reqBody) => {
   try {
     const { orderProducts } = reqBody || {}
-    const checkedProducts = await checkoutRepo.checkProductsAvailable(orderProducts)
+    const checkedProducts = await checkoutRepo.checkProductsAvailable(
+      orderProducts
+    )
     const hasOrderProductExceedQuantity = checkedProducts.includes(null)
     if (hasOrderProductExceedQuantity)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
@@ -23,43 +25,48 @@ const review = async (reqBody) => {
 
     const isValidOrder = orderProducts.some((orderProduct) =>
       productsApplyDiscount.some((productApplyDiscount) => {
-        if (productApplyDiscount.oldPrice !== orderProduct.oldPrice) return false
+        if (productApplyDiscount.oldPrice !== orderProduct.oldPrice)
+          return false
         if (productApplyDiscount.price !== orderProduct.price) return false
         if (
           !orderProduct.discountCodes?.length ||
           !productApplyDiscount.discounts?.length
         )
           return true
-        const isValidAllDiscount = productApplyDiscount.discounts?.every((discount) =>
-          orderProduct.discountCodes?.includes(discount.code)
+        const isValidAllDiscount = productApplyDiscount.discounts?.every(
+          (discount) => orderProduct.discountCodes?.includes(discount.code)
         )
         if (isValidAllDiscount) return true
         return false
       })
     )
-    if (!isValidOrder) throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
+    if (!isValidOrder)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
 
-    const responseOrderProducts = productsApplyDiscount.map((productApplyDiscount) => {
-      const correspondOrderProduct = orderProducts.find((orderProduct) =>
-        productApplyDiscount?._id?.equals(orderProduct.productId)
-      )
-      return {
-        product: {
-          ...productApplyDiscount,
-          variants: undefined,
-          variant: {
-            ...productApplyDiscount.variants?.find((variant) =>
-              variant?._id?.equals(correspondOrderProduct.variantId)
-            ),
-            quantity: undefined
-          }
-        },
-        quantity: correspondOrderProduct.quantity,
-        totalPrice: productApplyDiscount.oldPrice * correspondOrderProduct.quantity,
-        totalPriceApplyDiscount:
-          productApplyDiscount.price * correspondOrderProduct.quantity
+    const responseOrderProducts = productsApplyDiscount.map(
+      (productApplyDiscount) => {
+        const correspondOrderProduct = orderProducts.find((orderProduct) =>
+          productApplyDiscount?._id?.equals(orderProduct.productId)
+        )
+        return {
+          product: {
+            ...productApplyDiscount,
+            variants: undefined,
+            variant: {
+              ...productApplyDiscount.variants?.find((variant) =>
+                variant?._id?.equals(correspondOrderProduct.variantId)
+              ),
+              quantity: undefined
+            }
+          },
+          quantity: correspondOrderProduct.quantity,
+          totalPrice:
+            productApplyDiscount.oldPrice * correspondOrderProduct.quantity,
+          totalPriceApplyDiscount:
+            productApplyDiscount.price * correspondOrderProduct.quantity
+        }
       }
-    })
+    )
 
     return {
       orderProducts: responseOrderProducts,
@@ -74,14 +81,19 @@ const review = async (reqBody) => {
     }
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get order review failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Get order review failed'
+    )
   }
 }
 
 const order = async (userId, reqBody) => {
   try {
     const { orderProducts, shippingAddressId } = reqBody || {}
-    const checkedProducts = await checkoutRepo.checkProductsAvailable(orderProducts)
+    const checkedProducts = await checkoutRepo.checkProductsAvailable(
+      orderProducts
+    )
     const hasOrderProductExceedQuantity = checkedProducts.includes(null)
     if (hasOrderProductExceedQuantity)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
@@ -95,15 +107,16 @@ const order = async (userId, reqBody) => {
 
     let isValidOrder = orderProducts.some((orderProduct) =>
       productsApplyDiscount.some((productApplyDiscount) => {
-        if (productApplyDiscount.oldPrice !== orderProduct.oldPrice) return false
+        if (productApplyDiscount.oldPrice !== orderProduct.oldPrice)
+          return false
         if (productApplyDiscount.price !== orderProduct.price) return false
         if (
           !orderProduct.discountCodes?.length ||
           !productApplyDiscount.discounts?.length
         )
           return true
-        const isValidAllDiscount = productApplyDiscount.discounts?.every((discount) =>
-          orderProduct.discountCodes?.includes(discount.code)
+        const isValidAllDiscount = productApplyDiscount.discounts?.every(
+          (discount) => orderProduct.discountCodes?.includes(discount.code)
         )
         if (isValidAllDiscount) return true
         return false
@@ -112,23 +125,27 @@ const order = async (userId, reqBody) => {
     if (!addressModel.findById(shippingAddressId)) {
       isValidOrder = false
     }
-    if (!isValidOrder) throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
+    if (!isValidOrder)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
 
-    const savedOrderProducts = productsApplyDiscount.map((productApplyDiscount) => {
-      const correspondOrderProduct = orderProducts.find((orderProduct) =>
-        productApplyDiscount?._id?.equals(orderProduct.productId)
-      )
-      return {
-        productId: productApplyDiscount._id,
-        variantId: productApplyDiscount.variants?.find((variant) =>
-          variant?._id?.equals(correspondOrderProduct.variantId)
-        )?._id,
-        quantity: correspondOrderProduct.quantity,
-        totalPrice: productApplyDiscount.oldPrice * correspondOrderProduct.quantity,
-        totalPriceApplyDiscount:
-          productApplyDiscount.price * correspondOrderProduct.quantity,
+    const savedOrderProducts = productsApplyDiscount.map(
+      (productApplyDiscount) => {
+        const correspondOrderProduct = orderProducts.find((orderProduct) =>
+          productApplyDiscount?._id?.equals(orderProduct.productId)
+        )
+        return {
+          productId: productApplyDiscount._id,
+          variantId: productApplyDiscount.variants?.find((variant) =>
+            variant?._id?.equals(correspondOrderProduct.variantId)
+          )?._id,
+          quantity: correspondOrderProduct.quantity,
+          totalPrice:
+            productApplyDiscount.oldPrice * correspondOrderProduct.quantity,
+          totalPriceApplyDiscount:
+            productApplyDiscount.price * correspondOrderProduct.quantity
+        }
       }
-    })
+    )
 
     const order = {
       orderBy: userId,
@@ -162,7 +179,8 @@ const cancelOrder = async (userId, orderId) => {
       },
       { new: true }
     )
-    if (!updatedOrders) throw new ApiError(StatusCodes.NOT_FOUND, 'Order not found')
+    if (!updatedOrders)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Order not found')
     return updatedOrders
   } catch (error) {
     if (error.name === 'ApiError') throw error

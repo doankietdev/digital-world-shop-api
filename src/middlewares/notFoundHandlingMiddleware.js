@@ -1,4 +1,4 @@
-import { StatusCodes, ReasonPhrases } from 'http-status-codes'
+import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
 

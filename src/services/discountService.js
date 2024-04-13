@@ -1,4 +1,3 @@
-import { populate } from 'dotenv'
 import { StatusCodes } from 'http-status-codes'
 import discountModel from '~/models/discountModel'
 import ApiError from '~/utils/ApiError'
@@ -89,7 +88,6 @@ const getDiscountByCodePublic = async (code, reqQuery) => {
       {}
     )
   } catch (error) {
-    console.log(error)
     if (error.name === ApiError.name) throw error
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,

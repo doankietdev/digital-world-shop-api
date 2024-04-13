@@ -42,7 +42,7 @@ const updateStatus = async (orderId, reqBody) => {
   }
 }
 
-const deleteOrder = async (orderId, reqBody) => {
+const deleteOrder = async (orderId) => {
   try {
     const deletedOrder = await orderModel.findByIdAndDelete({ _id: orderId })
     if (!deletedOrder) throw new ApiError(StatusCodes.NOT_FOUND, 'Order not found')
