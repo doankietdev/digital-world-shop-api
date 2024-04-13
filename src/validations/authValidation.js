@@ -2,21 +2,31 @@ import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
-import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
+import {
+  OBJECT_ID_RULE,
+  OBJECT_ID_RULE_MESSAGE,
+  PASSWORD_RULE,
+  PASSWORD_RULE_MESSAGE,
+  PASSWORD_RULE_MESSAGES,
+  PHONE_NUMBER_RULE,
+  PHONE_NUMBER_RULE_MESSAGE
+} from '~/utils/validators'
 
 const signUp = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     firstName: Joi.string().required(),
     lastName: Joi.string().min(2).required(),
-    mobile: Joi.string().length(10).required(),
+    mobile: Joi.string()
+      .pattern(PHONE_NUMBER_RULE)
+      .message(PHONE_NUMBER_RULE_MESSAGE('mobile'))
+      .required(),
     email: Joi.string().email().required(),
     password: Joi.string()
       .min(6)
-      .regex(/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&_.])[a-zA-Z\d@$!%*?&_.]+$/)
+      .regex(PASSWORD_RULE)
       .messages({
-        'string.min': '`password` must have at least 6 characters',
-        'string.pattern.base':
-          '`password` must contain at least 1 special character from the following list: `@`, `$`, `!`, `%`, `*`, `?`, `&`, `_`, `. `'
+        'string.min': PASSWORD_RULE_MESSAGES.MIN_LENGTH,
+        'string.pattern.base': PASSWORD_RULE_MESSAGES.SPECIAL_CHAR
       })
       .required()
   })

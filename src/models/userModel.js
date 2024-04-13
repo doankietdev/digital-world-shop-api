@@ -4,6 +4,7 @@ import { Schema, model } from 'mongoose'
 import { hashPassword } from '~/utils/auth'
 import { ROLES, COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
+import { PHONE_NUMBER_RULE } from '~/utils/validators'
 
 const imageSchema = new Schema(
   {
@@ -72,8 +73,10 @@ const userSchema = new Schema(
       ],
       unique: true,
       validate: {
-        validator: (value) => value.length === 10,
-        message: generateDBErrorMessage('must have a length of 10')
+        validator: function (value) {
+          return PHONE_NUMBER_RULE.test(value)
+        },
+        message: generateDBErrorMessage('must be exactly 10 digits')
       }
     },
     email: {
