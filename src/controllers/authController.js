@@ -16,7 +16,7 @@ const signUp = asyncHandler(async (req, res) => {
 })
 
 const signIn = asyncHandler(async (req, res) => {
-  const { refreshToken, ...user } = await authService.signIn(req.body)
+  const { refreshToken, ...data } = await authService.signIn(req.body)
   res.cookie('refreshToken', refreshToken, {
     maxAge: AUTH.REFRESH_TOKEN_EXPIRES,
     httpOnly: true,
@@ -24,9 +24,7 @@ const signIn = asyncHandler(async (req, res) => {
   })
   new SuccessResponse({
     message: 'Sign in successfully',
-    metadata: {
-      user
-    }
+    metadata: data
   }).send(res)
 })
 

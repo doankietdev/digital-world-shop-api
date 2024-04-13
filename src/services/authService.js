@@ -78,13 +78,15 @@ const signIn = async ({ email, password }) => {
     })
 
     return {
-      _id: foundUser._id,
-      firstName: foundUser.firstName,
-      lastName: foundUser.lastName,
-      image: foundUser.image,
-      email: foundUser.email,
-      mobile: foundUser.mobile,
-      address: foundUser.address,
+      user: {
+        _id: foundUser._id,
+        firstName: foundUser.firstName,
+        lastName: foundUser.lastName,
+        image: foundUser.image,
+        email: foundUser.email,
+        mobile: foundUser.mobile,
+        address: foundUser.address
+      },
       cart: foundUser.cart,
       wishlist: foundUser.wishlist,
       accessToken,
