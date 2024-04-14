@@ -1,4 +1,4 @@
-import { StatusCodes } from 'http-status-codes'
+import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
 import tokenModel from '~/models/tokenModel'
 import ApiError from '~/utils/ApiError'
@@ -151,13 +151,15 @@ const handleRefreshToken = async (userId, refreshToken) => {
   }
 }
 
-const signOut = async (token) => {
+const signOut = async (userId, token) => {
   try {
-    await tokenModel.deleteOne({ _id: token?._id })
-    await userModel.updateOne(
-      { _id: token.userId },
-      { $push: { usedRefreshTokens: token.refreshToken } }
-    )
+    await Promise.all([
+      tokenModel.deleteOne({ _id: token._id }),
+      userModel.updateOne(
+        { _id: userId },
+        { $push: { usedRefreshTokens: token.refreshToken } }
+      )
+    ])
   } catch (error) {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Sign out failed')
   }

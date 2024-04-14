@@ -44,7 +44,7 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 })
 
 const signOut = asyncHandler(async (req, res) => {
-  await authService.signOut(req.token)
+  await authService.signOut(req.user._id, req.token)
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: true
