@@ -5,7 +5,7 @@ class ApiError extends Error {
     statusCode = StatusCodes.INTERNAL_SERVER_ERROR,
     message = ReasonPhrases.INTERNAL_SERVER_ERROR
   ) {
-    super(message)
+    super(JSON.stringify(message))
     this.statusCode = statusCode
     this.name = 'ApiError'
 

@@ -16,11 +16,22 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
   try {
     const foundUser = await userModel.findOne({ email })
     if (foundUser) {
-      let errorMessage = '"email" is already in use'
+      let errorMessages = [
+        {
+          field: 'email',
+          message: 'is already in use'
+        }
+      ]
       if (foundUser.mobile === mobile) {
-        errorMessage = `${errorMessage}. "mobile" are already in use`
+        errorMessages = [
+          ...errorMessages,
+          {
+            field: 'mobile',
+            message: 'is already in use'
+          }
+        ]
       }
-      throw new ApiError(StatusCodes.CONFLICT, errorMessage)
+      throw new ApiError(StatusCodes.CONFLICT, errorMessages)
     }
 
     const { publicKey, privateKey } = generateKeyPairRSA()
