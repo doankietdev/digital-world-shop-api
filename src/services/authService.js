@@ -1,16 +1,17 @@
-import { ReasonPhrases, StatusCodes } from 'http-status-codes'
+import { StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
 import tokenModel from '~/models/tokenModel'
+import emailVerificationTokenModel from '~/models/emailVerificationTokenModel'
 import ApiError from '~/utils/ApiError'
 import {
   verifyPassword,
   generateKeyPairRSA,
   generateToken,
   verifyToken,
-  hashPassword
+  generateBase64Token
 } from '~/utils/auth'
-import { APP, AUTH } from '~/configs/environment'
-import sendMail from '~/utils/sendMail'
+import { AUTH, CLIENT } from '~/configs/environment'
+import { sendMailWithHTML } from '~/utils/sendMail'
 
 const signUp = async ({ firstName, lastName, mobile, email, password }) => {
   try {
@@ -44,19 +45,69 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
       publicKey,
       privateKey
     })
+
+    const token = generateBase64Token()
+    const newEmailVerificationToken = await emailVerificationTokenModel.create({
+      userId: newUser._id,
+      token: token
+    })
+
+    await sendMailWithHTML({
+      email,
+      subject: 'Please confirm your email',
+      pathToView: 'verify-email.ejs',
+      data: {
+        url: `${CLIENT.URL}/auth/verify-email/${newUser._id}/${newEmailVerificationToken.token}/`
+      }
+    })
+
     return {
       _id: newUser._id,
       firstName: newUser.firstName,
       lastName: newUser.lastName,
-      email: newUser.email,
       mobile: newUser.mobile,
-      address: newUser.address,
-      cart: newUser.cart,
-      wishlist: newUser.wishlist
+      email: newUser.email
     }
   } catch (error) {
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.BAD_REQUEST, error.message)
+  }
+}
+
+const verifyEmail = async ({ userId, token }) => {
+  try {
+    const foundEmailVerificationToken = await emailVerificationTokenModel.findOne({
+      userId,
+      token
+    })
+    if (!foundEmailVerificationToken)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Verify email failed')
+
+    const expireAt = new Date(foundEmailVerificationToken.expireAt).getTime()
+    const now = Date.now()
+    const isExpired = now > expireAt
+
+    if (isExpired) {
+      await emailVerificationTokenModel.deleteOne({
+        _id: foundEmailVerificationToken._id
+      })
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Verify email failed')
+    }
+
+    const updatedUser = await userModel.findOneAndUpdate(
+      {
+        _id: userId
+      },
+      { verified: true }
+    )
+    if (!updatedUser)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Verify email failed')
+    await emailVerificationTokenModel.deleteOne({
+      _id: foundEmailVerificationToken._id
+    })
+  } catch (error) {
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
   }
 }
 
@@ -176,78 +227,10 @@ const signOut = async (userId, token) => {
   }
 }
 
-const forgotPassword = async (email) => {
-  try {
-    if (!email) throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing email')
-    const foundUser = await userModel.findOne({ email })
-    if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
-
-    const passwordResetToken = generateToken(
-      {
-        userId: foundUser._id,
-        email: foundUser.email
-      },
-      foundUser.privateKey,
-      AUTH.PASSWORD_RESET_TOKEN_EXPIRES
-    )
-    await userModel.findOneAndUpdate(
-      { _id: foundUser?._id },
-      { passwordResetToken }
-    )
-
-    const html = `
-      Please click on the link below to change your password
-      <a href="${APP.PROTOCOL}://${APP.HOST}:${APP.PORT}/api/v1/auth/reset-password/${foundUser._id}/${passwordResetToken}">Click here</a>
-    `
-    const mailResult = await sendMail(email, {
-      subject: 'Forgot password',
-      html
-    })
-    return mailResult.accepted[0]
-  } catch (error) {
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Handling forgot password failed'
-    )
-  }
-}
-
-const resetPassword = async ({ userId, token, password }) => {
-  try {
-    const foundUser = await userModel.findById(userId)
-    if (!foundUser)
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Reset password failed')
-    if (foundUser.passwordResetToken !== token) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Reset password failed')
-    }
-
-    verifyToken(token, foundUser.publicKey)
-    await userModel.updateOne(
-      { _id: foundUser?._id },
-      { password: await hashPassword(password), passwordChangedAt: Date.now() }
-    )
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      await userModel.updateOne({ _id: userId }, { passwordResetToken: null })
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Expired token')
-    }
-    if (error.name === 'JsonWebTokenError') {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid token')
-    }
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Reset password failed'
-    )
-  }
-}
-
 export default {
   signUp,
   signIn,
+  verifyEmail,
   signOut,
-  handleRefreshToken,
-  forgotPassword,
-  resetPassword
+  handleRefreshToken
 }

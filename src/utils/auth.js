@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt'
 import forge from 'node-forge'
 import jwt from 'jsonwebtoken'
+import CryptoJS from 'crypto-js'
 
 const { rsa, publicKeyToPem, privateKeyToPem } = forge.pki
 
@@ -14,7 +15,11 @@ export const verifyPassword = async (password, passwordHash) => {
 }
 
 export const generateKeyPairRSA = () => {
-  const keyPair = rsa.generateKeyPair({ bits: 4096, workers: 2, algorithm: 'RS256' })
+  const keyPair = rsa.generateKeyPair({
+    bits: 4096,
+    workers: 2,
+    algorithm: 'RS256'
+  })
   return {
     publicKey: publicKeyToPem(keyPair.publicKey),
     privateKey: privateKeyToPem(keyPair.privateKey)
@@ -30,4 +35,10 @@ export const generateToken = (payload = {}, privateKey, expiresIn) => {
 
 export const verifyToken = (token, publicKey) => {
   return jwt.verify(token, publicKey)
+}
+
+export const generateBase64Token = () => {
+  const randomBytes = CryptoJS.lib.WordArray.random(32)
+  const randomHex = randomBytes.toString(CryptoJS.enc.Hex)
+  return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Hex.parse(randomHex))
 }

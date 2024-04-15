@@ -1,6 +1,7 @@
 // https://dev.to/documatic/send-email-in-nodejs-with-nodemailer-using-gmail-account-2gd1
 import nodemailer from 'nodemailer'
-import { EMAIL } from '~/configs/environment'
+import ejs from 'ejs'
+import { EMAIL, APP } from '~/configs/environment'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -24,13 +25,30 @@ const transporter = nodemailer.createTransport({
 const sendMail = async (email, content = {}) => {
   const { subject, text, html } = content || {}
   const info = await transporter.sendMail({
-    from: '"Digital Shop" <no-reply@gmail.com>',
+    from: {
+      name: APP.BRAND_NAME,
+      address: 'confirm@digitalworld.com'
+    },
     to: email,
     subject: subject,
     text: text,
     html: html
   })
   return info
+}
+
+export const sendMailWithHTML = async ({
+  email = '',
+  subject = '',
+  pathToView = '',
+  data = {}
+}) => {
+  const html = await ejs.renderFile(
+    `${__dirname}/../views/${pathToView}`,
+    data,
+    { async: true }
+  )
+  return await sendMail(email, { subject, html })
 }
 
 export default sendMail

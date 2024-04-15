@@ -104,8 +104,10 @@ const userSchema = new Schema(
     addresses: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.ADDRESS }],
     wishlist: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.PRODUCT }],
     isBlocked: { type: Boolean, default: false },
-    passwordChangedAt: { type: Date, default: null },
-    passwordResetToken: { type: String, default: null },
+    verified: {
+      type: Boolean,
+      default: false
+    },
     publicKey: {
       type: String,
       required: [

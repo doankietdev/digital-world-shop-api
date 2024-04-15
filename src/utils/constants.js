@@ -45,7 +45,8 @@ export const COLLECTION_NAMES = {
   BLOG: 'blogs',
   DISCOUNT: 'discounts',
   ADDRESS: 'addresses',
-  ORDER: 'orders'
+  ORDER: 'orders',
+  EMAIL_VERIFICATION_TOKEN: 'email_verification_tokens'
 }
 
 export const MODEL_NAMES = {
@@ -56,5 +57,6 @@ export const MODEL_NAMES = {
   BLOG: 'Blog',
   DISCOUNT: 'Discount',
   ADDRESS: 'Address',
-  ORDER: 'Order'
+  ORDER: 'Order',
+  EMAIL_VERIFICATION_TOKEN: 'EmailVerificationToken'
 }
