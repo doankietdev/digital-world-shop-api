@@ -121,12 +121,12 @@ const signIn = async ({ email, password }) => {
   try {
     const foundUser = await userModel.findOne({ email })
     if (!foundUser)
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Incorrect email or password')
     if (foundUser.isBlocked)
       throw new ApiError(StatusCodes.FORBIDDEN, 'User is blocked')
     const isValidPassword = await verifyPassword(password, foundUser.password)
     if (!isValidPassword)
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Incorrect email or password')
 
     if (!foundUser.verified) {
       const foundEmailVerificationToken =
