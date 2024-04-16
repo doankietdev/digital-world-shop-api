@@ -42,3 +42,9 @@ export const generateBase64Token = () => {
   const randomHex = randomBytes.toString(CryptoJS.enc.Hex)
   return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Hex.parse(randomHex))
 }
+
+export const checkEmailVerificationTokenExpired = (expireAt) => {
+  const msExpireAt = new Date(expireAt).getTime()
+  const msNow = Date.now()
+  return msNow > msExpireAt
+}

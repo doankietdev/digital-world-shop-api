@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
-import tokenModel from '~/models/tokenModel'
+import authenticationTokenModel from '~/models/authenticationTokenModel'
 import emailVerificationTokenModel from '~/models/emailVerificationTokenModel'
 import ApiError from '~/utils/ApiError'
 import {
@@ -8,10 +8,27 @@ import {
   generateKeyPairRSA,
   generateToken,
   verifyToken,
-  generateBase64Token
+  generateBase64Token,
+  checkEmailVerificationTokenExpired
 } from '~/utils/auth'
 import { AUTH, CLIENT } from '~/configs/environment'
 import { sendMailWithHTML } from '~/utils/sendMail'
+
+const createTokenAndSendEmailToVerify = async (userId, email) => {
+  const token = generateBase64Token()
+  const newEmailVerificationToken = await emailVerificationTokenModel.create({
+    userId,
+    token: token
+  })
+  await sendMailWithHTML({
+    email,
+    subject: 'Please confirm your email',
+    pathToView: 'verify-email.ejs',
+    data: {
+      url: `${CLIENT.URL}/auth/verify-email/${userId}/${newEmailVerificationToken.token}/`
+    }
+  })
+}
 
 const signUp = async ({ firstName, lastName, mobile, email, password }) => {
   try {
@@ -46,20 +63,7 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
       privateKey
     })
 
-    const token = generateBase64Token()
-    const newEmailVerificationToken = await emailVerificationTokenModel.create({
-      userId: newUser._id,
-      token: token
-    })
-
-    await sendMailWithHTML({
-      email,
-      subject: 'Please confirm your email',
-      pathToView: 'verify-email.ejs',
-      data: {
-        url: `${CLIENT.URL}/auth/verify-email/${newUser._id}/${newEmailVerificationToken.token}/`
-      }
-    })
+    await createTokenAndSendEmailToVerify(newUser._id, email)
 
     return {
       _id: newUser._id,
@@ -76,18 +80,17 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
 
 const verifyEmail = async ({ userId, token }) => {
   try {
-    const foundEmailVerificationToken = await emailVerificationTokenModel.findOne({
-      userId,
-      token
-    })
+    const foundEmailVerificationToken =
+      await emailVerificationTokenModel.findOne({
+        userId,
+        token
+      })
     if (!foundEmailVerificationToken)
       throw new ApiError(StatusCodes.NOT_FOUND, 'Verify email failed')
 
-    const expireAt = new Date(foundEmailVerificationToken.expireAt).getTime()
-    const now = Date.now()
-    const isExpired = now > expireAt
-
-    if (isExpired) {
+    if (
+      checkEmailVerificationTokenExpired(foundEmailVerificationToken.expireAt)
+    ) {
       await emailVerificationTokenModel.deleteOne({
         _id: foundEmailVerificationToken._id
       })
@@ -107,7 +110,10 @@ const verifyEmail = async ({ userId, token }) => {
     })
   } catch (error) {
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Something went wrong'
+    )
   }
 }
 
@@ -122,6 +128,33 @@ const signIn = async ({ email, password }) => {
     if (!isValidPassword)
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials')
 
+    if (!foundUser.verified) {
+      const foundEmailVerificationToken =
+        await emailVerificationTokenModel.findOne({
+          userId: foundUser._id
+        })
+      if (foundEmailVerificationToken) {
+        if (
+          !checkEmailVerificationTokenExpired(
+            foundEmailVerificationToken.expireAt
+          )
+        ) {
+          throw new ApiError(
+            StatusCodes.UNAUTHORIZED,
+            `An email has been sent to ${foundUser.email}. Please check your email again to verify this email.`
+          )
+        }
+        await emailVerificationTokenModel.deleteOne({
+          _id: foundEmailVerificationToken._id
+        })
+      }
+      await createTokenAndSendEmailToVerify(foundUser._id, foundUser.email)
+      throw new ApiError(
+        StatusCodes.UNAUTHORIZED,
+        `An email has been sent to ${foundUser.email}. Please check your email again to verify this email.`
+      )
+    }
+
     const payload = { userId: foundUser._id, email: foundUser.email }
     const accessToken = generateToken(
       payload,
@@ -133,7 +166,7 @@ const signIn = async ({ email, password }) => {
       foundUser.privateKey,
       AUTH.REFRESH_TOKEN_EXPIRES
     )
-    await tokenModel.create({
+    await authenticationTokenModel.create({
       userId: foundUser._id,
       accessToken,
       refreshToken
@@ -168,10 +201,10 @@ const handleRefreshToken = async (userId, refreshToken) => {
     if (!foundUser)
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Refresh token failed')
     if (foundUser.usedRefreshTokens.includes(refreshToken)) {
-      await tokenModel.deleteMany({ userId: foundUser?._id })
+      await authenticationTokenModel.deleteMany({ userId: foundUser?._id })
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Refresh token failed')
     }
-    const token = await tokenModel.findOne({ userId, refreshToken })
+    const token = await authenticationTokenModel.findOne({ userId, refreshToken })
     if (!token)
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Refresh token failed')
 
@@ -189,17 +222,17 @@ const handleRefreshToken = async (userId, refreshToken) => {
       AUTH.REFRESH_TOKEN_EXPIRES
     )
 
-    await tokenModel.create({
+    await authenticationTokenModel.create({
       userId: foundUser?._id,
       accessToken: newAccessToken,
       refreshToken: newRefreshToken
     })
-    await tokenModel.deleteOne({ userId: foundUser?._id, refreshToken })
+    await authenticationTokenModel.deleteOne({ userId: foundUser?._id, refreshToken })
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken }
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      await tokenModel.deleteOne({ userId, refreshToken })
+      await authenticationTokenModel.deleteOne({ userId, refreshToken })
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Expired refresh token')
     }
     if (error.name === 'JsonWebTokenError') {
@@ -216,7 +249,7 @@ const handleRefreshToken = async (userId, refreshToken) => {
 const signOut = async (userId, token) => {
   try {
     await Promise.all([
-      tokenModel.deleteOne({ _id: token._id }),
+      authenticationTokenModel.deleteOne({ _id: token._id }),
       userModel.updateOne(
         { _id: userId },
         { $push: { usedRefreshTokens: token.refreshToken } }

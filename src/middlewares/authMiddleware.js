@@ -1,6 +1,6 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import { verifyToken } from '~/utils/auth'
-import tokenModel from '~/models/tokenModel'
+import authenticationTokenModel from '~/models/authenticationTokenModel'
 import userModel from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
@@ -19,7 +19,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
     const user = await userModel.findById(userId)
     if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
-    const token = await tokenModel.findOne({ userId: user?._id, accessToken })
+    const token = await authenticationTokenModel.findOne({ userId: user?._id, accessToken })
     if (!token) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
     const decodedUser = verifyToken(accessToken, user.publicKey)

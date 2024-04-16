@@ -39,7 +39,7 @@ export const PAYMENT_METHODS = {
 
 export const COLLECTION_NAMES = {
   USER: 'users',
-  TOKEN: 'keyTokens',
+  AUTHENTICATION_TOKEN: 'authentication_tokens',
   PRODUCT: 'products',
   PRODUCT_CATEGORY: 'categories',
   BLOG: 'blogs',
@@ -51,7 +51,7 @@ export const COLLECTION_NAMES = {
 
 export const MODEL_NAMES = {
   USER: 'User',
-  TOKEN: 'KeyToken',
+  AUTHENTICATION_TOKEN: 'AuthenticationToken',
   PRODUCT: 'Product',
   PRODUCT_CATEGORY: 'Category',
   BLOG: 'Blog',

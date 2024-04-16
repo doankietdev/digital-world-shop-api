@@ -30,8 +30,8 @@ const tokenSchema = new Schema(
   {
     versionKey: false,
     timestamps: true,
-    collection: COLLECTION_NAMES.TOKEN
+    collection: COLLECTION_NAMES.AUTHENTICATION_TOKEN
   }
 )
 
-export default model(MODEL_NAMES.TOKEN, tokenSchema)
+export default model(MODEL_NAMES.AUTHENTICATION_TOKEN, tokenSchema)

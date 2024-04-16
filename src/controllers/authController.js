@@ -9,7 +9,7 @@ const signUp = asyncHandler(async (req, res) => {
   const user = await authService.signUp(req.body)
   new SuccessResponse({
     statusCode: StatusCodes.CREATED,
-    message: `An email has been sent to ${user.email}. Please check your email to verify this email`,
+    message: `An email has been sent to ${user.email}. Please check your email to verify this email.`,
     metadata: {
       user
     }
