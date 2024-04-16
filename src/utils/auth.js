@@ -40,7 +40,11 @@ export const verifyToken = (token, publicKey) => {
 export const generateBase64Token = () => {
   const randomBytes = CryptoJS.lib.WordArray.random(32)
   const randomHex = randomBytes.toString(CryptoJS.enc.Hex)
-  return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Hex.parse(randomHex))
+  const base64String = CryptoJS.enc.Base64.stringify(
+    CryptoJS.enc.Hex.parse(randomHex)
+  )
+  const modifiedBase64 = base64String.replace(/\//g, '_').replace(/\\/g, '-')
+  return modifiedBase64
 }
 
 export const checkEmailVerificationTokenExpired = (expireAt) => {

@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.route('/sign-up').post(authValidation.signUp, authController.signUp)
 
-router.route('/verify-email/:userId/:token').get(authController.verifyEmail)
+router.route('/verify-email').post(authController.verifyEmail)
 
 router.route('/sign-in').post(authValidation.signIn, authController.signIn)
 
