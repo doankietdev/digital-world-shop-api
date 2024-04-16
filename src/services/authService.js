@@ -148,7 +148,7 @@ const signIn = async ({ email, password }) => {
         ) {
           throw new ApiError(
             StatusCodes.UNAUTHORIZED,
-            `An email has been sent to ${foundUser.email}. Please check your email again to verify this email.`
+            `An email has been sent to <<${foundUser.email}>>. Please check your email again to verify this email.`
           )
         }
         await emailVerificationTokenModel.deleteOne({
@@ -158,7 +158,7 @@ const signIn = async ({ email, password }) => {
       await createTokenAndSendEmailToVerify(foundUser._id, foundUser.email)
       throw new ApiError(
         StatusCodes.UNAUTHORIZED,
-        `An email has been sent to ${foundUser.email}. Please check your email again to verify this email.`
+        `An email has been sent to <<${foundUser.email}>>. Please check your email to verify this email.`
       )
     }
 
