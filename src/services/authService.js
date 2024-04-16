@@ -32,23 +32,30 @@ const createTokenAndSendEmailToVerify = async (userId, email) => {
 
 const signUp = async ({ firstName, lastName, mobile, email, password }) => {
   try {
-    const foundUser = await userModel.findOne({ email })
-    if (foundUser) {
-      let errorMessages = [
+    let errorMessages = []
+    const [foundUserByEmail, foundUserByMobile] = await Promise.all([
+      userModel.findOne({ email }),
+      userModel.findOne({ mobile })
+    ])
+    if (foundUserByEmail) {
+      errorMessages = [
+        ...errorMessages,
         {
           field: 'email',
           message: 'is already in use'
         }
       ]
-      if (foundUser.mobile === mobile) {
-        errorMessages = [
-          ...errorMessages,
-          {
-            field: 'mobile',
-            message: 'is already in use'
-          }
-        ]
-      }
+    }
+    if (foundUserByMobile) {
+      errorMessages = [
+        ...errorMessages,
+        {
+          field: 'mobile',
+          message: 'is already in use'
+        }
+      ]
+    }
+    if (errorMessages.length) {
       throw new ApiError(StatusCodes.CONFLICT, errorMessages)
     }
 
@@ -73,8 +80,8 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
       email: newUser.email
     }
   } catch (error) {
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.BAD_REQUEST, error.message)
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
   }
 }
 
