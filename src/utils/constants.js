@@ -46,7 +46,9 @@ export const COLLECTION_NAMES = {
   DISCOUNT: 'discounts',
   ADDRESS: 'addresses',
   ORDER: 'orders',
-  EMAIL_VERIFICATION_TOKEN: 'email_verification_tokens'
+  EMAIL_VERIFICATION_TOKEN: 'email_verification_tokens',
+  PASSWORD_RESET_OTP: 'password_reset_otps',
+  PASSWORD_HISTORY: 'password_history'
 }
 
 export const MODEL_NAMES = {
@@ -58,5 +60,7 @@ export const MODEL_NAMES = {
   DISCOUNT: 'Discount',
   ADDRESS: 'Address',
   ORDER: 'Order',
-  EMAIL_VERIFICATION_TOKEN: 'EmailVerificationToken'
+  EMAIL_VERIFICATION_TOKEN: 'EmailVerificationToken',
+  PASSWORD_RESET_OTP: 'PasswordResetOTP',
+  PASSWORD_HISTORY: 'PasswordHistory'
 }

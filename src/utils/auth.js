@@ -5,13 +5,16 @@ import CryptoJS from 'crypto-js'
 
 const { rsa, publicKeyToPem, privateKeyToPem } = forge.pki
 
-export const hashPassword = async (password) => {
+export const hash = async (string) => {
   const salt = bcrypt.genSaltSync(10)
-  return await bcrypt.hash(password, salt)
+  return {
+    hashed: await bcrypt.hash(string, salt),
+    salt
+  }
 }
 
-export const verifyPassword = async (password, passwordHash) => {
-  return await bcrypt.compare(password, passwordHash)
+export const verifyHashed = async (string, hashedString) => {
+  return await bcrypt.compare(string, hashedString)
 }
 
 export const generateKeyPairRSA = () => {
@@ -50,5 +53,11 @@ export const generateBase64Token = () => {
 export const checkEmailVerificationTokenExpired = (expireAt) => {
   const msExpireAt = new Date(expireAt).getTime()
   const msNow = Date.now()
-  return msNow > msExpireAt
+  return msNow >= msExpireAt
+}
+
+export const checkPasswordResetOTPExpired = (expireAt) => {
+  const msExpireAt = new Date(expireAt).getTime()
+  const msNow = Date.now()
+  return msNow >= msExpireAt
 }

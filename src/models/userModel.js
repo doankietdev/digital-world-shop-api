@@ -1,8 +1,7 @@
-import { isEmail } from 'validator'
-import uniqueValidator from 'mongoose-unique-validator'
 import { Schema, model } from 'mongoose'
-import { hashPassword } from '~/utils/auth'
-import { ROLES, COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
+import uniqueValidator from 'mongoose-unique-validator'
+import { isEmail } from 'validator'
+import { COLLECTION_NAMES, MODEL_NAMES, ROLES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
 import { PHONE_NUMBER_RULE } from '~/utils/validators'
 
@@ -10,6 +9,7 @@ const imageSchema = new Schema(
   {
     url: {
       type: String,
+      trim: true,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
@@ -17,6 +17,7 @@ const imageSchema = new Schema(
     },
     id: {
       type: String,
+      trim: true,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
@@ -55,9 +56,10 @@ const productInCartSchema = new Schema(
 
 const userSchema = new Schema(
   {
-    firstName: { type: String, required: true },
+    firstName: { type: String, trim: true, required: true },
     lastName: {
       type: String,
+      trim: true,
       minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
       required: [
         true,
@@ -67,6 +69,7 @@ const userSchema = new Schema(
     image: { type: imageSchema, default: null },
     mobile: {
       type: String,
+      trim: true,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
@@ -81,12 +84,14 @@ const userSchema = new Schema(
     },
     email: {
       type: String,
+      trim: true,
       validate: [isEmail, generateDBErrorMessage('is a invalid email')],
       required: true,
       unique: true
     },
     password: {
       type: String,
+      trim: true,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
@@ -94,6 +99,7 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
+      trim: true,
       default: ROLES.CUSTOMER,
       enum: {
         values: Object.values(ROLES),
@@ -132,12 +138,12 @@ const userSchema = new Schema(
   }
 )
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    next()
-  }
-  this.password = await hashPassword(this.password)
-})
+// userSchema.pre('save', async function (next) {
+//   if (!this.isModified('password')) {
+//     next()
+//   }
+//   this.password = await hash(this.password)
+// })
 
 userSchema.plugin(uniqueValidator, {
   message: generateDBErrorMessage('already exists')

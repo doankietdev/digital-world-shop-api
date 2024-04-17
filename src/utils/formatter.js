@@ -39,3 +39,16 @@ export const generateDBErrorMessage = (
   const value = showValue ? '({VALUE}) ' : ' '
   return '`{PATH}`' + value + message
 }
+
+export const formatPlaceHolderUrl = (originalUrl, data = {}) => {
+  const placeholderRegex = /:(\w+)/g
+  const placeholderNames = Object.keys(data)
+
+  return originalUrl.replace(placeholderRegex, (match, placeholderName) => {
+    if (placeholderNames.includes(placeholderName)) {
+      return data[placeholderName]
+    } else {
+      return match
+    }
+  })
+}

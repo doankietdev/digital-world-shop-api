@@ -1,8 +1,8 @@
 import { StatusCodes } from 'http-status-codes'
+import { AUTH } from '~/configs/environment'
+import authService from '~/services/authService'
 import SuccessResponse from '~/utils/SuccessResponse'
 import asyncHandler from '~/utils/asyncHandler'
-import authService from '~/services/authService'
-import { AUTH } from '~/configs/environment'
 import { HEADER_KEYS } from '~/utils/constants'
 
 const signUp = asyncHandler(async (req, res) => {
@@ -33,6 +33,29 @@ const signIn = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Sign in successfully',
     metadata: data
+  }).send(res)
+})
+
+const forgotPassword = asyncHandler(async (req, res) => {
+  const result = await authService.forgotPassword(req.body)
+  new SuccessResponse({
+    message: `An email has been sent to <<${result.email}>>. Please check your email to enter OTP`,
+    metadata: { ...result }
+  }).send(res)
+})
+
+const getPasswordForgotInfo = asyncHandler(async (req, res) => {
+  const result = await authService.getPasswordForgotInfo(req.params)
+  new SuccessResponse({
+    message: `An email has been sent to <<${result.email}>>. Please check your email again to enter OTP`,
+    metadata: { ...result }
+  }).send(res)
+})
+
+const resetPassword = asyncHandler(async (req, res) => {
+  await authService.resetPassword(req.body)
+  new SuccessResponse({
+    message: 'Reset password successfully'
   }).send(res)
 })
 
@@ -69,6 +92,9 @@ export default {
   signUp,
   verifyEmail,
   signIn,
+  forgotPassword,
+  getPasswordForgotInfo,
+  resetPassword,
   handleRefreshToken,
   signOut
 }
