@@ -37,23 +37,88 @@ const signIn = asyncHandler(async (req, res) => {
 })
 
 const forgotPassword = asyncHandler(async (req, res) => {
-  const result = await authService.forgotPassword(req.body)
+  const { userId, email } = await authService.forgotPassword(req.body)
+
+  res.cookie('userId', userId, {
+    maxAge: AUTH.PASSWORD_RESET_OTP_TIME,
+    httpOnly: true,
+    secure: true
+  })
+  res.cookie('email', email, {
+    maxAge: AUTH.PASSWORD_RESET_OTP_TIME,
+    httpOnly: true,
+    secure: true
+  })
+
   new SuccessResponse({
-    message: `An email has been sent to <<${result.email}>>. Please check your email to enter OTP`,
-    metadata: { ...result }
+    message: `An email has been sent to <<${email}>>. Please check your email to enter OTP`
   }).send(res)
 })
 
-const getPasswordForgotInfo = asyncHandler(async (req, res) => {
-  const result = await authService.getPasswordForgotInfo(req.params)
+const verifyPasswordResetOtp = asyncHandler(async (req, res) => {
+  const { userId, email } = req.cookies
+
+  const { token } = await authService.verifyPasswordResetOtp({
+    ...req.body,
+    userId,
+    email
+  })
+
+  res.cookie('passwordResetToken', token, {
+    maxAge: AUTH.PASSWORD_RESET_OTP_TIME,
+    httpOnly: true,
+    secure: true
+  })
+
   new SuccessResponse({
-    message: `An email has been sent to <<${result.email}>>. Please check your email again to enter OTP`,
-    metadata: { ...result }
+    message: 'Valid OTP'
+  }).send(res)
+})
+
+const resendPasswordResetOtp = asyncHandler(async (req, res) => {
+  const { userId, email } = await authService.forgotPassword({
+    email: req.cookies.email
+  })
+
+  res.cookie('userId', userId, {
+    maxAge: AUTH.PASSWORD_RESET_OTP_TIME,
+    httpOnly: true,
+    secure: true
+  })
+  res.cookie('email', email, {
+    maxAge: AUTH.PASSWORD_RESET_OTP_TIME,
+    httpOnly: true,
+    secure: true
+  })
+
+  new SuccessResponse({
+    message: `An email has been sent to <<${email}>>. Please check your email to enter OTP`
   }).send(res)
 })
 
 const resetPassword = asyncHandler(async (req, res) => {
-  await authService.resetPassword(req.body)
+  const { userId, email, passwordResetToken } = req.cookies
+
+  await authService.resetPassword({
+    ...req.body,
+    userId,
+    email,
+    token: passwordResetToken
+  })
+
+  res.clearCookie('userId', {
+    httpOnly: true,
+    secure: true
+  })
+  res.clearCookie('email', {
+    httpOnly: true,
+    secure: true
+  })
+  res.clearCookie('passwordResetToken', {
+    httpOnly: true,
+    secure: true
+  })
+
   new SuccessResponse({
     message: 'Reset password successfully'
   }).send(res)
@@ -93,8 +158,9 @@ export default {
   verifyEmail,
   signIn,
   forgotPassword,
-  getPasswordForgotInfo,
+  verifyPasswordResetOtp,
   resetPassword,
+  resendPasswordResetOtp,
   handleRefreshToken,
   signOut
 }

@@ -11,15 +11,28 @@ router.route('/verify-email').post(authController.verifyEmail)
 
 router.route('/sign-in').post(authValidation.signIn, authController.signIn)
 
-router.route('/forgot-password').post(authController.forgotPassword)
+router.route('/refresh-token').get(authController.handleRefreshToken)
 
 router
-  .route('/get-password-forgot-info/:userId/:token')
-  .get(authController.getPasswordForgotInfo)
+  .route('/forgot-password')
+  .post(authValidation.forgotPassword, authController.forgotPassword)
 
-router.route('/reset-password').post(authController.resetPassword)
+router
+  .route('/verify-password-reset-otp')
+  .post(
+    authValidation.verifyPasswordResetOtp,
+    authController.verifyPasswordResetOtp
+  )
 
-router.route('/refresh-token').get(authController.handleRefreshToken)
+router
+  .route('/resend-password-reset-otp')
+  .post(
+    authController.resendPasswordResetOtp
+  )
+
+router
+  .route('/reset-password')
+  .post(authValidation.resetPassword, authController.resetPassword)
 
 router.use(authMiddleware.authenticate)
 

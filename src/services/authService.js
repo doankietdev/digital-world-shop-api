@@ -3,9 +3,9 @@ import { TOTP } from 'totp-generator'
 import { AUTH, CLIENT } from '~/configs/environment'
 import authenticationTokenModel from '~/models/authenticationTokenModel'
 import emailVerificationTokenModel from '~/models/emailVerificationTokenModel'
+import passwordHistoryModel from '~/models/passwordHistoryModel'
 import passwordResetOtpModel from '~/models/passwordResetOtpModel'
 import userModel from '~/models/userModel'
-import passwordHistoryModel from '~/models/passwordHistoryModel'
 import ApiError from '~/utils/ApiError'
 import {
   checkEmailVerificationTokenExpired,
@@ -234,18 +234,10 @@ const forgotPassword = async ({ email }) => {
       algorithm: 'SHA3-512',
       timestamp: Date.now() + AUTH.PASSWORD_RESET_OTP_TIME
     })
-    const token = generateToken(
-      {
-        userId,
-        email: foundUser.email
-      },
-      foundUser.privateKey,
-      AUTH.PASSWORD_RESET_OTP_TIME
-    )
+
     const newPasswordResetOtp = await passwordResetOtpModel.create({
       userId,
-      otp: (await hash(otp)).hashed,
-      token
+      otp: (await hash(otp)).hashed
     })
 
     await sendMailWithHTML({
@@ -258,7 +250,7 @@ const forgotPassword = async ({ email }) => {
           CLIENT.URL +
           formatPlaceHolderUrl(CLIENT.CLIENT_OTP_FORM_PATH, {
             userId,
-            token
+            email
           }),
         firstName: foundUser.firstName
       }
@@ -267,57 +259,9 @@ const forgotPassword = async ({ email }) => {
     return {
       userId,
       email,
-      token,
       expireAt: newPasswordResetOtp.expireAt
     }
   } catch (error) {
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Something went wrong'
-    )
-  }
-}
-
-const getPasswordForgotInfo = async ({ userId, token }) => {
-  try {
-    const [foundUser, foundPasswordResetOtp] = await Promise.all([
-      userModel.findOne({
-        _id: userId
-      }),
-      passwordResetOtpModel.findOne({
-        userId,
-        token
-      })
-    ])
-    if (!foundUser || !foundPasswordResetOtp)
-      throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)
-
-    const decodedUser = verifyToken(token, foundUser.publicKey)
-    if (
-      !foundUser._id.equals(decodedUser.userId) ||
-      decodedUser.email !== foundUser.email
-    ) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST)
-    }
-
-    const { expireAt } = foundPasswordResetOtp
-
-    if (checkPasswordResetOTPExpired(expireAt))
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Expired OTP')
-
-    return {
-      userId,
-      email: foundUser.email,
-      token,
-      expireAt
-    }
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)
-    }
-    if (error.name === 'JsonWebTokenError') {
-      throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)
-    }
     if (error.name === ApiError.name) throw error
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
@@ -326,7 +270,51 @@ const getPasswordForgotInfo = async ({ userId, token }) => {
   }
 }
 
-const resetPassword = async ({ userId, email, otp, token, newPassword }) => {
+const verifyPasswordResetOtp = async ({ userId, email, otp }) => {
+  try {
+    const [foundUser, foundPasswordResetOtp] = await Promise.all([
+      userModel.findOne({
+        _id: userId,
+        email
+      }),
+      passwordResetOtpModel.findOne({
+        userId
+      })
+    ])
+    if (!foundUser || !foundPasswordResetOtp)
+      throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)
+
+    const { otp: hashedOtp, expireAt } = foundPasswordResetOtp
+    if (checkPasswordResetOTPExpired(expireAt))
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Expired OTP')
+
+    const isValid = await verifyHashed(otp, hashedOtp)
+    if (!isValid) throw new ApiError(StatusCodes.BAD_REQUEST, 'Incorrect OTP')
+
+    await passwordResetOtpModel.deleteOne({
+      _id: foundPasswordResetOtp._id
+    })
+
+    const token = generateToken(
+      {
+        userId,
+        email: foundUser.email
+      },
+      foundUser.privateKey,
+      AUTH.PASSWORD_RESET_OTP_TIME
+    )
+
+    return { token }
+  } catch (error) {
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Something went wrong'
+    )
+  }
+}
+
+const resetPassword = async ({ userId, email, token, newPassword }) => {
   try {
     const foundUser = await userModel.findOne({
       _id: userId,
@@ -342,20 +330,6 @@ const resetPassword = async ({ userId, email, otp, token, newPassword }) => {
     ) {
       throw new ApiError(StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST)
     }
-
-    const foundPasswordResetOtp = await passwordResetOtpModel.findOne({
-      userId,
-      token
-    })
-    if (!foundPasswordResetOtp)
-      throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)
-
-    if (checkPasswordResetOTPExpired(foundPasswordResetOtp.expireAt))
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Expired OTP')
-
-    const isValid = await verifyHashed(otp, foundPasswordResetOtp.otp)
-    if (!isValid) throw new ApiError(StatusCodes.BAD_REQUEST, 'Incorrect OTP')
-
 
     // check new password same old passwords
     const passwordHistory = await passwordHistoryModel.find({
@@ -377,11 +351,6 @@ const resetPassword = async ({ userId, email, otp, token, newPassword }) => {
         `New password must not be the same as old password for ${numberDays} days`
       )
     }
-
-    // delete current OTP
-    await passwordResetOtpModel.deleteOne({
-      _id: foundPasswordResetOtp._id
-    })
 
     // push current password to history
     await passwordHistoryModel.create({
@@ -492,7 +461,7 @@ export default {
   signIn,
   verifyEmail,
   forgotPassword,
-  getPasswordForgotInfo,
+  verifyPasswordResetOtp,
   resetPassword,
   signOut,
   handleRefreshToken

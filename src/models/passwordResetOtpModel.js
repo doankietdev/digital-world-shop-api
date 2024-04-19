@@ -22,14 +22,6 @@ const passwordResetOtpSchema = new Schema(
         generateDBErrorMessage('is required', { showValue: false })
       ]
     },
-    token: {
-      type: String,
-      trim: true,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
     expireAt: {
       type: Date,
       default: function () {

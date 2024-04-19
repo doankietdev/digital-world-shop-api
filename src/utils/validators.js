@@ -11,3 +11,7 @@ export const PASSWORD_RULE_MESSAGES = {
     '`password` must contain at least 1 special character from the following list: `@`, `$`, `!`, `%`, `*`, `?`, `&`, `_`, `. `',
   MIN_LENGTH: '`password` must have at least 6 characters'
 }
+
+export const OTP_RULE = /^[0-9]{6}$/
+export const OTP_RULE_MESSAGE = (field) =>
+  '`' + field + '` must be 6 digits'
