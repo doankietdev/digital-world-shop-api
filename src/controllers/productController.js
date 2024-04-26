@@ -20,6 +20,15 @@ const getProduct = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const getProductBySlug = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Get product successfully',
+    metadata: {
+      product: await productService.getProductBySlug(req.params.slug, req.query)
+    }
+  }).send(res)
+})
+
 const getProducts = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get products successfully',
@@ -94,6 +103,7 @@ const deleteVariant = asyncHandler(async (req, res) => {
 export default {
   createNew,
   getProduct,
+  getProductBySlug,
   getProducts,
   updateProduct,
   deleteProduct,

@@ -3,7 +3,7 @@ import uniqueValidator from 'mongoose-unique-validator'
 import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
 
-const productCategorySchema = new Schema(
+const categorySchema = new Schema(
   {
     title: {
       type: String,
@@ -31,14 +31,14 @@ const productCategorySchema = new Schema(
   }
 )
 
-productCategorySchema.virtual('products', {
+categorySchema.virtual('products', {
   ref: MODEL_NAMES.PRODUCT,
   localField: '_id',
   foreignField: 'category'
 })
 
-productCategorySchema.plugin(uniqueValidator, {
+categorySchema.plugin(uniqueValidator, {
   message: generateDBErrorMessage('already exists')
 })
 
-export default model(MODEL_NAMES.PRODUCT_CATEGORY, productCategorySchema)
+export default model(MODEL_NAMES.CATEGORY, categorySchema)

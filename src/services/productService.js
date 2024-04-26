@@ -13,7 +13,10 @@ const createNew = async (reqBody) => {
       slug: generateSlug(reqBody.title)
     })
   } catch (error) {
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Create new product failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Create new product failed'
+    )
   }
 }
 
@@ -27,9 +30,25 @@ const getProduct = async (id, reqQuery) => {
   }
 }
 
+const getProductBySlug = async (slug, reqQuery) => {
+  try {
+    const { fields } = parseQueryParams(reqQuery)
+    const foundProduct = await productModel.findOne({
+      slug
+    })
+    if (!foundProduct)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    return await productRepo.getProductApplyDiscount(foundProduct._id, { fields })
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get product failed')
+  }
+}
+
 const getProducts = async (reqQuery) => {
   try {
-    const { query, sort, fields, skip, limit, page } = parseQueryParams(reqQuery)
+    const { query, sort, fields, skip, limit, page } =
+      parseQueryParams(reqQuery)
     const [products, totalProducts] = await Promise.all([
       productModel
         .find(query)
@@ -41,7 +60,8 @@ const getProducts = async (reqQuery) => {
       productModel.countDocuments()
     ])
 
-    const productsApplyDiscount = await productRepo.convertToProductsApplyDiscount(products)
+    const productsApplyDiscount =
+      await productRepo.convertToProductsApplyDiscount(products)
 
     return {
       page,
@@ -58,23 +78,25 @@ const updateProduct = async (id, reqBody) => {
   try {
     const updateData = reqBody?.title
       ? {
-        ...reqBody,
-        slug: generateSlug(reqBody.title)
-      }
+          ...reqBody,
+          slug: generateSlug(reqBody.title)
+        }
       : { ...reqBody }
     const foundProduct = await productModel.findById(id)
-    if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    if (!foundProduct)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
 
-    const product = await productModel.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    )
+    const product = await productModel.findByIdAndUpdate(id, updateData, {
+      new: true
+    })
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update product failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Update product failed'
+    )
   }
 }
 
@@ -82,18 +104,24 @@ const deleteProduct = async (id) => {
   try {
     const product = await productModel.findByIdAndDelete(id)
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
-    await cloudinaryProvider.deleteMultiple(product.images.map((image) => image.id))
+    await cloudinaryProvider.deleteMultiple(
+      product.images.map((image) => image.id)
+    )
     return product
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update product failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Update product failed'
+    )
   }
 }
 
 const rating = async (userId, { productId, star, comment }) => {
   try {
     const foundProduct = await productModel.findById(productId)
-    if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    if (!foundProduct)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
 
     let isRated = false
     const sumStar =
@@ -106,14 +134,20 @@ const rating = async (userId, { productId, star, comment }) => {
       }, 0) + star
 
     const numberRatings = foundProduct.ratings?.length
-    let averageRatings = isRated ? sumStar / numberRatings : sumStar / numberRatings + 1
+    let averageRatings = isRated
+      ? sumStar / numberRatings
+      : sumStar / numberRatings + 1
 
     let updatedProduct = null
     if (isRated) {
       updatedProduct = await productModel.findOneAndUpdate(
         { _id: productId, ratings: { $elemMatch: { postedBy: userId } } },
         {
-          $set: { 'ratings.$.star': star, 'ratings.$.comment': comment, averageRatings }
+          $set: {
+            'ratings.$.star': star,
+            'ratings.$.comment': comment,
+            averageRatings
+          }
         },
         { new: true }
       )
@@ -127,7 +161,8 @@ const rating = async (userId, { productId, star, comment }) => {
         { new: true }
       )
     }
-    if (!updatedProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    if (!updatedProduct)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return updatedProduct
   } catch (error) {
     if (error.name === 'ApiError') throw error
@@ -139,9 +174,13 @@ const addVariant = async (productId, reqFiles, reqBody) => {
   try {
     const images = await cloudinaryProvider.uploadMultiple(reqFiles)
     const variant = { images, ...reqBody }
-    const product = await productModel.findByIdAndUpdate(productId, {
-      '$push': { 'variants': variant }
-    }, { new: true })
+    const product = await productModel.findByIdAndUpdate(
+      productId,
+      {
+        $push: { variants: variant }
+      },
+      { new: true }
+    )
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return product
   } catch (error) {
@@ -157,7 +196,8 @@ const editVariant = async (productId, variantId, reqFiles, reqBody) => {
       _id: productId,
       variants: { $elemMatch: { _id: variantId } }
     })
-    if (!foundProduct) throw new ApiError(StatusCodes.NOT_FOUND, 'Product or variant not found')
+    if (!foundProduct)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product or variant not found')
 
     let uploadedImages = []
     if (deletedImageIds?.length) {
@@ -172,23 +212,27 @@ const editVariant = async (productId, variantId, reqFiles, reqBody) => {
       variants: { $elemMatch: { _id: variantId } }
     }
     let updateData = {
-      '$set': { 'variants.$.name': name, 'variants.$.quantity': quantity }
+      $set: { 'variants.$.name': name, 'variants.$.quantity': quantity }
     }
     if (uploadedImages.length) {
       updateData = {
         ...updateData,
-        '$push': { 'variants.$.images': { $each: uploadedImages } }
+        $push: { 'variants.$.images': { $each: uploadedImages } }
       }
     }
 
-    const product = await productModel.findOneAndUpdate(query, updateData, { new: true })
+    const product = await productModel.findOneAndUpdate(query, updateData, {
+      new: true
+    })
     if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
 
     if (deletedImageIds?.length) {
-      const variant = product.variants.find(variant => variant._id.equals(variantId))
+      const variant = product.variants.find((variant) =>
+        variant._id.equals(variantId)
+      )
       if (variant) {
-        variant.images = variant?.images.filter((image) =>
-          !deletedImageIds.includes(image.id)
+        variant.images = variant?.images.filter(
+          (image) => !deletedImageIds.includes(image.id)
         )
         await product.save()
       }
@@ -203,13 +247,18 @@ const editVariant = async (productId, variantId, reqFiles, reqBody) => {
 
 const deleteVariant = async (productId, variantId) => {
   try {
-    const product = await productModel.findOneAndUpdate({
-      _id: productId,
-      variants: { $elemMatch: { _id: variantId } }
-    }, {
-      '$pull': { 'variants': { _id: variantId } }
-    }, { new: true })
-    if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product or variant not found')
+    const product = await productModel.findOneAndUpdate(
+      {
+        _id: productId,
+        variants: { $elemMatch: { _id: variantId } }
+      },
+      {
+        $pull: { variants: { _id: variantId } }
+      },
+      { new: true }
+    )
+    if (!product)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product or variant not found')
     return product
   } catch (error) {
     if (error.name === 'ApiError') throw error
@@ -220,6 +269,7 @@ const deleteVariant = async (productId, variantId) => {
 export default {
   createNew,
   getProduct,
+  getProductBySlug,
   getProducts,
   updateProduct,
   deleteProduct,

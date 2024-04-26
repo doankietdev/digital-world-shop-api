@@ -114,7 +114,7 @@ const productSchema = new Schema(
     },
     category: {
       type: Schema.Types.ObjectId,
-      ref: MODEL_NAMES.PRODUCT_CATEGORY,
+      ref: MODEL_NAMES.CATEGORY,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
