@@ -56,7 +56,8 @@ const getProducts = async (reqQuery) => {
         .select(fields)
         .skip(skip)
         .limit(limit)
-        .populate('category', '-createdAt -updatedAt'),
+        .populate('category', '-createdAt -updatedAt')
+        .populate('brand', '-description -createdAt -updatedAt'),
       productModel.countDocuments()
     ])
 

@@ -10,6 +10,7 @@ const getProductApplyDiscount = async (productId, queryParams = {}) => {
     productModel
       .findById(productId)
       .populate('category', '-createdAt -updatedAt')
+      .populate('brand', '-description -createdAt -updatedAt')
       .select(fields),
     discountRepo.findByProductIds([productId], {
       products: 0,

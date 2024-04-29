@@ -1,5 +1,5 @@
-import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
+import Joi from 'joi'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
@@ -8,8 +8,11 @@ const createNew = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     title: Joi.string().min(2).required(),
     description: Joi.string().min(10).required(),
-    brand: Joi.string().min(2).required(),
     price: Joi.number().min(0).required(),
+    brand: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
     category: Joi.string()
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE)
@@ -48,8 +51,8 @@ const updateProduct = asyncHandler(async (req, res, next) => {
       .required(),
     title: Joi.string().min(2),
     description: Joi.string().min(10),
-    brand: Joi.string().min(2),
     price: Joi.number().min(0),
+    brand: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
     category: Joi.string()
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE)
