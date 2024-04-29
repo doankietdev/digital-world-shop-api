@@ -96,9 +96,8 @@ const productSchema = new Schema(
       ]
     },
     brand: {
-      type: String,
-      trim: true,
-      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
+      type: Schema.Types.ObjectId,
+      ref: MODEL_NAMES.BRAND,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
@@ -125,7 +124,15 @@ const productSchema = new Schema(
       min: [0, generateDBErrorMessage('must be at least 0')],
       default: 0
     },
+    thumb: {
+      type: String,
+      default: ''
+    },
     variants: [variantSchema],
+    specs: {
+      type: Array,
+      default: []
+    },
     ratings: [ratingSchema],
     averageRatings: { type: Number, default: 0 }
   },
@@ -139,6 +146,8 @@ const productSchema = new Schema(
     collection: COLLECTION_NAMES.PRODUCT
   }
 )
+
+productSchema.index({ 'specs.k': 1, 'specs.v': 1 })
 
 productSchema.virtual('quantity').get(function () {
   return this.variants?.reduce((acc, variant) => (acc += variant.quantity), 0)

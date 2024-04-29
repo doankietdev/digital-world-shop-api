@@ -40,6 +40,7 @@ export const PAYMENT_METHODS = {
 export const COLLECTION_NAMES = {
   USER: 'users',
   AUTHENTICATION_TOKEN: 'authentication_tokens',
+  BRAND: 'brands',
   PRODUCT: 'products',
   CATEGORY: 'categories',
   DISCOUNT: 'discounts',
@@ -53,6 +54,7 @@ export const COLLECTION_NAMES = {
 export const MODEL_NAMES = {
   USER: 'User',
   AUTHENTICATION_TOKEN: 'AuthenticationToken',
+  BRAND: 'Brand',
   PRODUCT: 'Product',
   CATEGORY: 'Category',
   DISCOUNT: 'Discount',

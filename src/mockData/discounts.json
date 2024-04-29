@@ -1,0 +1,172 @@
+[
+  {
+    "_id": "662e8603e8b2795b70d6ebac",
+    "code": "Zi6GA+iyeVtw1uut",
+    "name": 1,
+    "type": "fixed",
+    "value": 304837,
+    "maxUsage": 26,
+    "currentUsage": 24,
+    "expireAt": 1714363514312,
+    "applyFor": "specific",
+    "products": [
+      "662e81c4c6c76bd5d7e05a98",
+      "662e81c3c6c76bd5d7e05a87",
+      "662e81c4c6c76bd5d7e05a9a",
+      "662e81c2c6c76bd5d7e05a80",
+      "662e81c2c6c76bd5d7e05a80"
+    ],
+    "isActive": true
+  },
+  {
+    "_id": "662e8603e8b2795b70d6ebae",
+    "code": "Zi6GA+iyeVtw1uuv",
+    "name": 1,
+    "type": "fixed",
+    "value": 637387,
+    "maxUsage": 54,
+    "currentUsage": 37,
+    "expireAt": 1714394614632,
+    "applyFor": "specific",
+    "products": [],
+    "isActive": true
+  },
+  {
+    "_id": "662e8603e8b2795b70d6ebb0",
+    "code": "Zi6GA+iyeVtw1uux",
+    "name": 0,
+    "type": "fixed",
+    "value": 790832,
+    "maxUsage": 50,
+    "currentUsage": 84,
+    "expireAt": 1714354501322,
+    "applyFor": "all",
+    "products": [],
+    "isActive": true
+  },
+  {
+    "_id": "662e8603e8b2795b70d6ebb2",
+    "code": "Zi6GA+iyeVtw1uuz",
+    "name": 1,
+    "type": "percentage",
+    "value": 37,
+    "maxUsage": 44,
+    "currentUsage": 22,
+    "expireAt": 1714385481840,
+    "applyFor": "all",
+    "products": [],
+    "isActive": true
+  },
+  {
+    "_id": "662e8603e8b2795b70d6ebb4",
+    "code": "Zi6GA+iyeVtw1uu1",
+    "name": 2,
+    "type": "fixed",
+    "value": 990849,
+    "maxUsage": 58,
+    "currentUsage": 97,
+    "expireAt": 1714354334768,
+    "applyFor": "specific",
+    "products": [
+      "662e81c1c6c76bd5d7e05a73",
+      "662e81c1c6c76bd5d7e05a76",
+      "662e81c5c6c76bd5d7e05aa5",
+      "662e81c1c6c76bd5d7e05a71",
+      "662e81bec6c76bd5d7e05a67",
+      "662e81c3c6c76bd5d7e05a90",
+      "662e81c3c6c76bd5d7e05a86",
+      "662e81c2c6c76bd5d7e05a82",
+      "662e81c5c6c76bd5d7e05a9d"
+    ],
+    "isActive": true
+  },
+  {
+    "_id": "662e8603e8b2795b70d6ebb6",
+    "code": "Zi6GA+iyeVtw1uu3",
+    "name": 0,
+    "type": "percentage",
+    "value": 28,
+    "maxUsage": 12,
+    "currentUsage": 53,
+    "expireAt": 1714373644325,
+    "applyFor": "specific",
+    "products": [
+      "662e81bfc6c76bd5d7e05a6c",
+      "662e81c1c6c76bd5d7e05a71",
+      "662e81c1c6c76bd5d7e05a77",
+      "662e81c2c6c76bd5d7e05a81",
+      "662e81c3c6c76bd5d7e05a86",
+      "662e81bec6c76bd5d7e05a67",
+      "662e81c3c6c76bd5d7e05a8a"
+    ],
+    "isActive": true
+  },
+  {
+    "_id": "662e8603e8b2795b70d6ebb8",
+    "code": "Zi6GA+iyeVtw1uu5",
+    "name": 0,
+    "type": "fixed",
+    "value": 906980,
+    "maxUsage": 31,
+    "currentUsage": 73,
+    "expireAt": 1714366962274,
+    "applyFor": "all",
+    "products": [],
+    "isActive": true
+  },
+  {
+    "_id": "662e8603e8b2795b70d6ebba",
+    "code": "Zi6GA+iyeVtw1uu7",
+    "name": 2,
+    "type": "percentage",
+    "value": 21,
+    "maxUsage": 64,
+    "currentUsage": 40,
+    "expireAt": 1714382284276,
+    "applyFor": "specific",
+    "products": [
+      "662e81c3c6c76bd5d7e05a8a",
+      "662e81c2c6c76bd5d7e05a81",
+      "662e81c4c6c76bd5d7e05a95",
+      "662e81bfc6c76bd5d7e05a69"
+    ],
+    "isActive": true
+  },
+  {
+    "_id": "662e8603e8b2795b70d6ebbc",
+    "code": "Zi6GA+iyeVtw1uu9",
+    "name": 2,
+    "type": "fixed",
+    "value": 255511,
+    "maxUsage": 62,
+    "currentUsage": 95,
+    "expireAt": 1714351939596,
+    "applyFor": "specific",
+    "products": [
+      "662e81c5c6c76bd5d7e05aa1",
+      "662e81c1c6c76bd5d7e05a79",
+      "662e81c1c6c76bd5d7e05a76"
+    ],
+    "isActive": true
+  },
+  {
+    "_id": "662e8603e8b2795b70d6ebbe",
+    "code": "Zi6GA+iyeVtw1uu/",
+    "name": 1,
+    "type": "fixed",
+    "value": 581781,
+    "maxUsage": 34,
+    "currentUsage": 64,
+    "expireAt": 1714335290082,
+    "applyFor": "specific",
+    "products": [
+      "662e81c1c6c76bd5d7e05a7c",
+      "662e81b8c6c76bd5d7e05a64",
+      "662e81bcc6c76bd5d7e05a65",
+      "662e81c1c6c76bd5d7e05a6d",
+      "662e81c1c6c76bd5d7e05a79",
+      "662e81bec6c76bd5d7e05a67"
+    ],
+    "isActive": true
+  }
+]

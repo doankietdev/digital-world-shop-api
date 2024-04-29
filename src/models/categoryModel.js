@@ -10,14 +10,20 @@ const categorySchema = new Schema(
       trim: true,
       minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
       unique: true,
-      required: true
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
     },
     slug: {
       type: String,
       trim: true,
       unique: true,
       minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
-      required: true
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
     }
   },
   {

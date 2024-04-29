@@ -1,0 +1,58 @@
+[
+  {
+    "title": "Smartphone",
+    "slug": "smartphone-1714323881679",
+    "createdAt": "2024-04-28T17:04:41.679Z",
+    "updatedAt": "2024-04-28T17:04:41.679Z",
+    "_id": "662e81a9c6c76bd5d7e05a5c"
+  },
+  {
+    "title": "Tablet",
+    "slug": "tablet-1714323881679",
+    "createdAt": "2024-04-28T17:04:41.679Z",
+    "updatedAt": "2024-04-28T17:04:41.679Z",
+    "_id": "662e81a9c6c76bd5d7e05a5d"
+  },
+  {
+    "title": "Laptop",
+    "slug": "laptop-1714323881679",
+    "createdAt": "2024-04-28T17:04:41.679Z",
+    "updatedAt": "2024-04-28T17:04:41.680Z",
+    "_id": "662e81a9c6c76bd5d7e05a5e"
+  },
+  {
+    "title": "Camera",
+    "slug": "camera-1714323881680",
+    "createdAt": "2024-04-28T17:04:41.680Z",
+    "updatedAt": "2024-04-28T17:04:41.680Z",
+    "_id": "662e81a9c6c76bd5d7e05a5f"
+  },
+  {
+    "title": "Printer",
+    "slug": "printer-1714323881680",
+    "createdAt": "2024-04-28T17:04:41.680Z",
+    "updatedAt": "2024-04-28T17:04:41.680Z",
+    "_id": "662e81a9c6c76bd5d7e05a60"
+  },
+  {
+    "title": "Speaker",
+    "slug": "speaker-1714323881680",
+    "createdAt": "2024-04-28T17:04:41.680Z",
+    "updatedAt": "2024-04-28T17:04:41.680Z",
+    "_id": "662e81a9c6c76bd5d7e05a61"
+  },
+  {
+    "title": "Accessories",
+    "slug": "accessories-1714323881680",
+    "createdAt": "2024-04-28T17:04:41.680Z",
+    "updatedAt": "2024-04-28T17:04:41.680Z",
+    "_id": "662e81a9c6c76bd5d7e05a62"
+  },
+  {
+    "title": "Television",
+    "slug": "television-1714323881680",
+    "createdAt": "2024-04-28T17:04:41.680Z",
+    "updatedAt": "2024-04-28T17:04:41.680Z",
+    "_id": "662e81a9c6c76bd5d7e05a63"
+  }
+]
