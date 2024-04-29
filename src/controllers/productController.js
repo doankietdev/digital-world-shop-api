@@ -6,7 +6,7 @@ const createNew = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Create new product successfully',
     metadata: {
-      product: await productService.createNew(req.body)
+      product: await productService.createNew(req.body, req.file)
     }
   }).send(res)
 })
@@ -43,6 +43,24 @@ const updateProduct = asyncHandler(async (req, res) => {
     message: 'Update product successfully',
     metadata: {
       product: await productService.updateProduct(req.params.id, req.body)
+    }
+  }).send(res)
+})
+
+const uploadThumb = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Upload thumbnail of product successfully',
+    metadata: {
+      thumb: await productService.uploadThumb(req.params.id, req.file)
+    }
+  }).send(res)
+})
+
+const deleteThumb = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Delete thumbnail of product successfully',
+    metadata: {
+      thumb: await productService.deleteThumb(req.params.id, req.file)
     }
   }).send(res)
 })
@@ -106,6 +124,8 @@ export default {
   getProductBySlug,
   getProducts,
   updateProduct,
+  uploadThumb,
+  deleteThumb,
   deleteProduct,
   rating,
   addVariant,

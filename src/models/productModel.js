@@ -3,64 +3,7 @@ import uniqueValidator from 'mongoose-unique-validator'
 import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
 
-const variantSchema = new Schema(
-  {
-    name: {
-      type: String,
-      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
-      trim: true,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    images: { type: Array, default: [] },
-    quantity: {
-      type: Number,
-      min: [0, generateDBErrorMessage('must be at least 0')],
-      default: 0
-    }
-  },
-  {
-    versionKey: false,
-    collation: { locale: 'en' }
-  }
-)
-
-const ratingSchema = new Schema(
-  {
-    _id: false,
-    star: {
-      type: Number,
-      min: [1, generateDBErrorMessage('Must be at least 1')],
-      max: [5, generateDBErrorMessage('Must be at most 5')],
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    postedBy: {
-      type: Schema.Types.ObjectId,
-      ref: MODEL_NAMES.USER,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    comment: {
-      type: String,
-      trim: true,
-      minLength: [1, generateDBErrorMessage('must have a minimum length of 1')],
-      default: null
-    }
-  },
-  {
-    versionKey: false,
-    timestamps: true,
-    collation: { locale: 'en' },
-    _id: false
-  }
-)
+// Schema.Types.Subdocument.set('_id', false)
 
 const productSchema = new Schema(
   {
@@ -125,15 +68,103 @@ const productSchema = new Schema(
       default: 0
     },
     thumb: {
-      type: String,
-      default: ''
+      type: {
+        url: {
+          type: String,
+          trim: true,
+          minLength: [
+            3,
+            generateDBErrorMessage('must have a minimum length of 3')
+          ],
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        },
+        id: {
+          type: String,
+          trim: true,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        }
+      },
+      default: null,
+      _id: false
     },
-    variants: [variantSchema],
+    variants: [
+      new Schema(
+        {
+          name: {
+            type: String,
+            minLength: [
+              2,
+              generateDBErrorMessage('must have a minimum length of 2')
+            ],
+            trim: true,
+            required: [
+              true,
+              generateDBErrorMessage('is required', { showValue: false })
+            ]
+          },
+          images: { type: Array, default: [] },
+          quantity: {
+            type: Number,
+            min: [0, generateDBErrorMessage('must be at least 0')],
+            default: 0
+          }
+        },
+        {
+          versionKey: false,
+          timestamps: true,
+          collation: { locale: 'en' }
+        }
+      )
+    ],
     specs: {
       type: Array,
       default: []
     },
-    ratings: [ratingSchema],
+    ratings: [
+      new Schema(
+        {
+          _id: false,
+          star: {
+            type: Number,
+            min: [1, generateDBErrorMessage('Must be at least 1')],
+            max: [5, generateDBErrorMessage('Must be at most 5')],
+            required: [
+              true,
+              generateDBErrorMessage('is required', { showValue: false })
+            ]
+          },
+          postedBy: {
+            type: Schema.Types.ObjectId,
+            ref: MODEL_NAMES.USER,
+            required: [
+              true,
+              generateDBErrorMessage('is required', { showValue: false })
+            ]
+          },
+          comment: {
+            type: String,
+            trim: true,
+            minLength: [
+              1,
+              generateDBErrorMessage('must have a minimum length of 1')
+            ],
+            default: null
+          }
+        },
+        {
+          versionKey: false,
+          timestamps: true,
+          collation: { locale: 'en' },
+          _id: false
+        }
+      )
+    ],
     averageRatings: { type: Number, default: 0 }
   },
   {

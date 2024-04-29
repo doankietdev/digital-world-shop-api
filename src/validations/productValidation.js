@@ -16,11 +16,15 @@ const createNew = asyncHandler(async (req, res, next) => {
     category: Joi.string()
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE)
-      .required()
+      .required(),
+    thumb: Joi.object()
   })
 
   try {
-    await correctCondition.validateAsync(req.body, { abortEarly: false })
+    await correctCondition.validateAsync(
+      { ...req.body, thumb: req.file },
+      { abortEarly: false }
+    )
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
@@ -63,6 +67,42 @@ const updateProduct = asyncHandler(async (req, res, next) => {
       { ...req.params, ...req.body },
       { abortEarly: false }
     )
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
+const uploadThumb = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
+    thumb: Joi.object().required()
+  })
+
+  try {
+    await correctCondition.validateAsync(
+      { ...req.params, thumb: req.file },
+      { abortEarly: false }
+    )
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
+const deleteThumb = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    id: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
+  })
+
+  try {
+    await correctCondition.validateAsync(req.params)
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
@@ -190,6 +230,8 @@ export default {
   createNew,
   getProduct,
   updateProduct,
+  uploadThumb,
+  deleteThumb,
   deleteProduct,
   rating,
   addVariant,

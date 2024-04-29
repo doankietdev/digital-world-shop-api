@@ -6,11 +6,16 @@ import { calculateTotalPages } from '~/utils/util'
 import productRepo from '~/repositories/productRepo'
 import cloudinaryProvider from '~/providers/cloudinaryProvider'
 
-const createNew = async (reqBody) => {
+const createNew = async (reqBody, reqFile) => {
   try {
+    let thumb = null
+    if (reqFile) {
+      thumb = await cloudinaryProvider.uploadSingle(reqFile)
+    }
     return await productModel.create({
       ...reqBody,
-      slug: generateSlug(reqBody.title)
+      slug: generateSlug(reqBody.title),
+      thumb
     })
   } catch (error) {
     throw new ApiError(
@@ -38,7 +43,9 @@ const getProductBySlug = async (slug, reqQuery) => {
     })
     if (!foundProduct)
       throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
-    return await productRepo.getProductApplyDiscount(foundProduct._id, { fields })
+    return await productRepo.getProductApplyDiscount(foundProduct._id, {
+      fields
+    })
   } catch (error) {
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get product failed')
@@ -97,6 +104,66 @@ const updateProduct = async (id, reqBody) => {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
       'Update product failed'
+    )
+  }
+}
+
+const uploadThumb = async (id, reqFile) => {
+  try {
+    const foundProduct = await productModel.findById(id)
+    if (!foundProduct)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+
+    if (foundProduct.thumb) {
+      await cloudinaryProvider.deleteSingle(foundProduct.thumb?.id)
+    }
+
+    const thumb = await cloudinaryProvider.uploadSingle(reqFile)
+
+    const { acknowledged } = await productModel.updateOne(
+      {
+        _id: id
+      },
+      {
+        thumb
+      }
+    )
+    if (!acknowledged) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    return thumb
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Upload thumbnail of product failed'
+    )
+  }
+}
+
+const deleteThumb = async (id) => {
+  try {
+    const foundProduct = await productModel.findById(id)
+    if (!foundProduct)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+
+    if (foundProduct.thumb) {
+      await cloudinaryProvider.deleteSingle(foundProduct.thumb?.id)
+    }
+
+    const { acknowledged } = await productModel.updateOne(
+      {
+        _id: id
+      },
+      {
+        thumb: null
+      }
+    )
+    if (!acknowledged)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Upload thumbnail of product failed'
     )
   }
 }
@@ -273,6 +340,8 @@ export default {
   getProductBySlug,
   getProducts,
   updateProduct,
+  uploadThumb,
+  deleteThumb,
   deleteProduct,
   rating,
   addVariant,

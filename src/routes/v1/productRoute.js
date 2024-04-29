@@ -11,17 +11,32 @@ router
   .route('/:id')
   .get(productValidation.getProduct, productController.getProduct)
 
-router
-  .route('/get-by-slug/:slug')
-  .get(productController.getProductBySlug)
+router.route('/get-by-slug/:slug').get(productController.getProductBySlug)
 
 router.route('/').get(productController.getProducts)
 
-router.use(authMiddleware.authenticate)
+// router.use(authMiddleware.authenticate)
 
 router
   .route('/rating')
   .patch(productValidation.rating, productController.rating)
+
+router
+  .route('/:id/upload-thumb')
+  .patch(
+    authMiddleware.checkPermission(ROLES.ADMIN),
+    uploadMiddleware.single('thumb'),
+    productValidation.uploadThumb,
+    productController.uploadThumb
+  )
+
+router
+  .route('/:id/delete-thumb')
+  .patch(
+    authMiddleware.checkPermission(ROLES.ADMIN),
+    productValidation.deleteThumb,
+    productController.deleteThumb
+  )
 
 router
   .route('/:id')
@@ -62,12 +77,11 @@ router
     productController.deleteVariant
   )
 
-router
-  .route('/')
-  .post(
-    authMiddleware.checkPermission(ROLES.ADMIN),
-    productValidation.createNew,
-    productController.createNew
-  )
+router.route('/').post(
+  // authMiddleware.checkPermission(ROLES.ADMIN),
+  uploadMiddleware.single('thumb'),
+  productValidation.createNew,
+  productController.createNew
+)
 
 export default router
