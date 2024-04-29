@@ -20,11 +20,20 @@ const getCategory = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const getCategoryBySlug = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Get category successfully',
+    metadata: {
+      category: await categoryService.getCategoryBySlug(req.params.slug, req.query)
+    }
+  }).send(res)
+})
+
 const getCategories = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get categories successfully',
     metadata: {
-      ...await categoryService.getCategories(req.query)
+      ...(await categoryService.getCategories(req.query))
     }
   }).send(res)
 })
@@ -50,6 +59,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
 export default {
   createNew,
   getCategory,
+  getCategoryBySlug,
   getCategories,
   updateCategory,
   deleteCategory

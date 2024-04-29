@@ -6,15 +6,20 @@ import { ROLES } from '~/utils/constants'
 
 const router = express.Router()
 
-router.route('/:id')
+router
+  .route('/get-by-slug/:slug')
+  .get(categoryController.getCategoryBySlug)
+
+router
+  .route('/:id')
   .get(categoryValidation.getCategory, categoryController.getCategory)
 
-router.route('/')
-  .get(categoryController.getCategories)
+router.route('/').get(categoryController.getCategories)
 
 router.use(authMiddleware.authenticate)
 
-router.route('/:id')
+router
+  .route('/:id')
   .patch(
     authMiddleware.checkPermission(ROLES.ADMIN),
     categoryValidation.updateCategory,
@@ -26,7 +31,8 @@ router.route('/:id')
     categoryController.deleteCategory
   )
 
-router.route('/')
+router
+  .route('/')
   .post(
     authMiddleware.checkPermission(ROLES.ADMIN),
     categoryValidation.createNew,

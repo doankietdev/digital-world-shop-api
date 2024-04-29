@@ -9,25 +9,49 @@ const createNew = async (reqBody) => {
     return await categoryModel.create(reqBody)
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Create category failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Create category failed'
+    )
   }
 }
 
 const getCategory = async (id, reqQuery) => {
   try {
     const { fields } = parseQueryParams(reqQuery)
-    const category = await categoryModel.findById(id).select(fields)
-    if (!category) throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found')
+    const category = await categoryModel
+      .findById(id)
+      .select(fields)
+    if (!category)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found')
     return category
   } catch (error) {
-    if (error.name === 'ApiError') throw error
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get category failed')
+  }
+}
+
+const getCategoryBySlug = async (slug, reqQuery) => {
+  try {
+    const { fields } = parseQueryParams(reqQuery)
+    const category = await categoryModel
+      .findOne({
+        slug
+      })
+      .select(fields)
+    if (!category)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found')
+    return category
+  } catch (error) {
+    if (error.name === ApiError.name) throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get category failed')
   }
 }
 
 const getCategories = async (reqQuery) => {
   try {
-    const { query, sort, fields, skip, limit, page } = parseQueryParams(reqQuery)
+    const { query, sort, fields, skip, limit, page } =
+      parseQueryParams(reqQuery)
     const [categories, totalCategories] = await Promise.all([
       categoryModel
         .find(query)
@@ -44,39 +68,49 @@ const getCategories = async (reqQuery) => {
       categories
     }
   } catch (error) {
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get categories failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Get categories failed'
+    )
   }
 }
 
 const updateCategory = async (id, reqBody) => {
   try {
-    const category = await categoryModel.findByIdAndUpdate(
-      id,
-      reqBody,
-      { new: true }
-    )
-    if (!category) throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found')
+    const category = await categoryModel.findByIdAndUpdate(id, reqBody, {
+      new: true
+    })
+    if (!category)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found')
     return category
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update category failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Update category failed'
+    )
   }
 }
 
 const deleteCategory = async (id) => {
   try {
     const category = await categoryModel.findByIdAndDelete(id)
-    if (!category) throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found')
+    if (!category)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found')
     return category
   } catch (error) {
     if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update category failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Update category failed'
+    )
   }
 }
 
 export default {
   createNew,
   getCategory,
+  getCategoryBySlug,
   getCategories,
   updateCategory,
   deleteCategory
