@@ -14,6 +14,16 @@ const brandModel = new Schema(
         generateDBErrorMessage('is required', { showValue: false })
       ]
     },
+    slug: {
+      type: String,
+      trim: true,
+      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
+      unique: true,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
     description: {
       type: String,
       trim: true,
