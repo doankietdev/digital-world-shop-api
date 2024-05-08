@@ -65,7 +65,7 @@ const getProducts = async (reqQuery) => {
         .limit(limit)
         .populate('category', '-createdAt -updatedAt')
         .populate('brand', '-description -createdAt -updatedAt'),
-      productModel.countDocuments()
+      productModel.find(query).countDocuments()
     ])
 
     const productsApplyDiscount =
@@ -73,8 +73,9 @@ const getProducts = async (reqQuery) => {
 
     return {
       page,
+      limit,
       totalPages: calculateTotalPages(totalProducts, limit),
-      totalProducts,
+      totalProducts: products.length ? totalProducts : 0,
       products: productsApplyDiscount
     }
   } catch (error) {
