@@ -5,55 +5,6 @@ import { COLLECTION_NAMES, MODEL_NAMES, ROLES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
 import { PHONE_NUMBER_RULE } from '~/utils/validators'
 
-const imageSchema = new Schema(
-  {
-    url: {
-      type: String,
-      trim: true,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    id: {
-      type: String,
-      trim: true,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    }
-  },
-  {
-    _id: false,
-    versionKey: false
-  }
-)
-
-const productInCartSchema = new Schema(
-  {
-    product: {
-      type: Schema.Types.ObjectId,
-      ref: MODEL_NAMES.PRODUCT,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    quantity: {
-      type: Number,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    }
-  },
-  {
-    _id: false,
-    versionKey: false
-  }
-)
-
 const userSchema = new Schema(
   {
     firstName: { type: String, trim: true, required: true },
@@ -66,7 +17,28 @@ const userSchema = new Schema(
         generateDBErrorMessage('is required', { showValue: false })
       ]
     },
-    image: { type: imageSchema, default: null },
+    image: {
+      type: {
+        url: {
+          type: String,
+          trim: true,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        },
+        id: {
+          type: String,
+          trim: true,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        }
+      },
+      default: null,
+      _id: false
+    },
     mobile: {
       type: String,
       trim: true,
@@ -106,7 +78,6 @@ const userSchema = new Schema(
         message: generateDBErrorMessage('is invalid')
       }
     },
-    cart: [productInCartSchema],
     addresses: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.ADDRESS }],
     wishlist: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.PRODUCT }],
     isBlocked: { type: Boolean, default: false },

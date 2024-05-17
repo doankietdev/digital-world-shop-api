@@ -26,21 +26,6 @@ router.route('/set-blocked/:id')
     userController.setBlocked
   )
 
-router.route('/add-product-to-cart')
-  .patch(
-    userController.addProductToCart
-  )
-
-router.route('/reduce-product-from-cart')
-  .patch(
-    userController.reduceProductFromCart
-  )
-
-router.route('/delete-product-from-cart')
-  .patch(
-    userController.deleteProductFromCart
-  )
-
 router.route('/:id')
   .get(
     authMiddleware.checkPermission(ROLES.ADMIN),
