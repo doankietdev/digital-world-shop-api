@@ -24,6 +24,13 @@ const cartSchema = new Schema(
             generateDBErrorMessage('is required', { showValue: false })
           ]
         },
+        variantId: {
+          type: Schema.Types.ObjectId,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        },
         quantity: {
           type: Number,
           min: [1, generateDBErrorMessage('must be at least 0')],

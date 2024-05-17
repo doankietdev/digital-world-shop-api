@@ -3,46 +3,33 @@ import SuccessResponse from '~/utils/SuccessResponse'
 import asyncHandler from '~/utils/asyncHandler'
 
 const addToCart = asyncHandler(async (req, res) => {
-  const { productId, quantity } = req.body
-
   new SuccessResponse({
     message: 'Add product to cart successfully',
     metadata: {
       cart: await cartService.addToCart({
         userId: req.user?._id,
-        product: {
-          productId,
-          quantity
-        }
+        product: req.body
       })
     }
   }).send(res)
 })
 
 const updateProductToCart = asyncHandler(async (req, res) => {
-  const { productId, quantity, oldQuantity } = req.body
-
   new SuccessResponse({
     message: 'Update product to cart successfully',
     metadata: {
       cart: await cartService.updateProductToCart({
         userId: req.user?._id,
-        product: {
-          productId,
-          quantity,
-          oldQuantity
-        }
+        product: req.body
       })
     }
   }).send(res)
 })
 
 const deleteFromCart = asyncHandler(async (req, res) => {
-  const { productId } = req.body
-
   await cartService.deleteFromCart({
     userId: req.user?._id,
-    productId
+    ...req.body
   })
   new SuccessResponse({
     message: 'Delete product from cart successfully'

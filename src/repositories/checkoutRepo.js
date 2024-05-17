@@ -5,21 +5,21 @@ import { getObjectByFields } from '~/utils/util'
 
 /**
  * @param {{
- *  productId: String,
- *  quantity: Number
- *  variantId: String
- * }[]} orderProducts
+ *  productId: string,
+ *  variantId: string
+ *  quantity: number
+ * }[]} products
  */
-const checkProductsAvailable = async (orderProducts) => {
+const checkProductsAvailable = async (products) => {
   return await Promise.all(
-    orderProducts.map(async (orderProduct) => {
-      const foundProduct = await productModel.findById(orderProduct.productId)
+    products.map(async (product) => {
+      const foundProduct = await productModel.findById(product.productId)
       if (!foundProduct) return null
       const variant = foundProduct.variants.find((variant) =>
-        variant._id.equals(orderProduct.variantId)
+        variant._id.toString() === product.variantId
       )
       if (!variant) return null
-      const isExceedQuantity = orderProduct.quantity > variant.quantity
+      const isExceedQuantity = product.quantity > variant.quantity
       if (isExceedQuantity) return null
       return {
         productId: foundProduct._id,

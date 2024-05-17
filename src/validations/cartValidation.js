@@ -10,6 +10,10 @@ const addToCart = asyncHandler(async (req, res, next) => {
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE)
       .required(),
+    variantId: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
     quantity: Joi.number().min(1).required()
   })
 
@@ -24,6 +28,10 @@ const addToCart = asyncHandler(async (req, res, next) => {
 const updateProductToCart = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     productId: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
+    variantId: Joi.string()
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE)
       .required(),
@@ -42,6 +50,10 @@ const updateProductToCart = asyncHandler(async (req, res, next) => {
 const deleteFromCart = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     productId: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
+    variantId: Joi.string()
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE)
       .required()
