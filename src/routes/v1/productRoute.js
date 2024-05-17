@@ -15,7 +15,7 @@ router.route('/get-by-slug/:slug').get(productController.getProductBySlug)
 
 router.route('/').get(productController.getProducts)
 
-// router.use(authMiddleware.authenticate)
+router.use(authMiddleware.authenticate)
 
 router
   .route('/rating')

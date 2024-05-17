@@ -1,10 +1,10 @@
 import { StatusCodes } from 'http-status-codes'
 import productModel from '~/models/productModel'
+import cloudinaryProvider from '~/providers/cloudinaryProvider'
+import productRepo from '~/repositories/productRepo'
 import ApiError from '~/utils/ApiError'
 import { generateSlug, parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
-import productRepo from '~/repositories/productRepo'
-import cloudinaryProvider from '~/providers/cloudinaryProvider'
 
 const createNew = async (reqBody, reqFile) => {
   try {
@@ -56,16 +56,26 @@ const getProducts = async (reqQuery) => {
   try {
     const { query, sort, fields, skip, limit, page } =
       parseQueryParams(reqQuery)
+
+    const productQuery = {
+      ...query,
+      $and: query?.specs?.map(spec => ({
+        'specs.k': spec.k,
+        'specs.v': { $in: spec?.v?.map(vItem => parseInt(vItem)) }
+      })) ?? [{}]
+    }
+    delete productQuery.specs
+
     const [products, totalProducts] = await Promise.all([
       productModel
-        .find(query)
+        .find(productQuery)
         .sort(sort)
         .select(fields)
         .skip(skip)
         .limit(limit)
         .populate('category', '-createdAt -updatedAt')
         .populate('brand', '-description -createdAt -updatedAt'),
-      productModel.find(query).countDocuments()
+      productModel.find(productQuery).countDocuments()
     ])
 
     const productsApplyDiscount =
@@ -79,6 +89,7 @@ const getProducts = async (reqQuery) => {
       products: productsApplyDiscount
     }
   } catch (error) {
+    console.log(error)
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get products failed')
   }
 }
@@ -129,7 +140,8 @@ const uploadThumb = async (id, reqFile) => {
         thumb
       }
     )
-    if (!acknowledged) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    if (!acknowledged)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
     return thumb
   } catch (error) {
     if (error.name === 'ApiError') throw error
