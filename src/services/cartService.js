@@ -1,21 +1,28 @@
 import { StatusCodes } from 'http-status-codes'
 import cartModel from '~/models/cartModel'
 import productModel from '~/models/productModel'
+import checkoutRepo from '~/repositories/checkoutRepo'
 import ApiError from '~/utils/ApiError'
 
 /**
- * @param {object} data
- * @param {string} data.userId
- * @param {object} data.product
- * @param {string} data.product.productId
- * @param {string} data.product.quantity
+ * @param {{
+ *   userId: string,
+ *   product: {
+ *     productId: string,
+ *     variantId: string,
+ *     quantity: number
+ *   }
+ * }}
  * @returns {object}
  */
 const createNewCart = async ({ userId, product }) => {
   try {
     return await cartModel.findOneAndUpdate(
       { userId },
-      { $addToSet: { products: product }, $set: { countProducts: product ? 1: 0 } },
+      {
+        $addToSet: { products: product },
+        $set: { countProducts: product ? 1 : 0 }
+      },
       { upsert: true, new: true }
     )
   } catch (error) {
@@ -27,18 +34,25 @@ const createNewCart = async ({ userId, product }) => {
 }
 
 /**
- * @param {object} data
- * @param {string} data.userId
- * @param {object} data.product
- * @param {string} data.product.productId
- * @param {string} data.product.quantity
+ * @param {{
+ *   userId: string,
+ *   product: {
+ *     productId: string,
+ *     variantId: string,
+ *     quantity: number
+ *   }
+ * }}
  * @returns {object}
  */
 const updateProductQuantity = async ({ userId, product }) => {
   try {
-    const { productId, quantity } = product
+    const { productId, variantId, quantity } = product
     return await cartModel.findOneAndUpdate(
-      { userId, 'products.productId': productId },
+      {
+        userId,
+        'products.productId': productId,
+        'products.variantId': variantId
+      },
       { $inc: { 'products.$.quantity': quantity } },
       { new: true }
     )
@@ -51,24 +65,26 @@ const updateProductQuantity = async ({ userId, product }) => {
 }
 
 /**
- * @param {object} data
- * @param {string} data.userId
- * @param {object} data.product
- * @param {string} data.product.productId
- * @param {number} data.product.quantity
+ * @param {{
+ *   userId: string,
+ *   product: {
+ *     productId: string,
+ *     variantId: string,
+ *     quantity: number
+ *   }
+ * }}
  * @returns {object}
  */
 const addToCart = async ({ userId, product }) => {
   try {
     const { productId } = product || {}
 
-    const [foundProduct, foundCart] = await Promise.all([
-      await productModel.findById(productId).lean(),
-      await cartModel.findOne({ userId })
-    ])
-    if (!foundProduct)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    const checkedProducts = await checkoutRepo.checkProductsAvailable([product])
+    const hasOrderProductExceedQuantity = checkedProducts.includes(null)
+    if (hasOrderProductExceedQuantity)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Product not available')
 
+    const foundCart = await cartModel.findOne({ userId })
     if (!foundCart) {
       return await createNewCart({
         userId,
@@ -87,6 +103,16 @@ const addToCart = async ({ userId, product }) => {
     )
 
     if (foundCartProduct) {
+      const checkedProducts = await checkoutRepo.checkProductsAvailable([
+        {
+          ...product,
+          quantity: product.quantity + foundCartProduct.quantity
+        }
+      ])
+      const hasOrderProductExceedQuantity = checkedProducts.includes(null)
+      if (hasOrderProductExceedQuantity)
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Product not available')
+
       return await updateProductQuantity({ userId, product })
     }
 
@@ -107,51 +133,69 @@ const addToCart = async ({ userId, product }) => {
 }
 
 /**
- * @param {object} data
- * @param {string} data.userId
- * @param {object} data.product
- * @param {string} data.product.productId
- * @param {number} data.product.quantity
- * @param {number} data.product.oldQuantity
+ * @param {{
+ *   userId: string,
+ *   product: {
+ *     productId: string,
+ *     variantId: string,
+ *     quantity: number,
+ *     oldQuantity: number
+ *   }
+ * }}
  * @returns {object}
  */
 const updateProductToCart = async ({ userId, product }) => {
   try {
-    const { productId, quantity, oldQuantity } = product || {}
-    const [foundProduct, foundCart] = await Promise.all([
-      await productModel.findById(productId).lean(),
-      await cartModel.findOne({ userId })
-    ])
+    const { productId, variantId, quantity, oldQuantity } = product || {}
 
-    if (!foundProduct)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    if (quantity === 0) {
+      return await deleteFromCart({ userId, productId, variantId })
+    }
 
+    const foundCart = await cartModel.findOne({ userId })
     if (!foundCart) {
+      const checkedProducts = await checkoutRepo.checkProductsAvailable([
+        product
+      ])
+      const hasOrderProductExceedQuantity = checkedProducts.includes(null)
+      if (hasOrderProductExceedQuantity)
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Product not available')
+
       return await createNewCart({
         userId,
         product: {
           productId,
+          variantId,
           quantity
         }
       })
     }
 
     const cartProduct = foundCart.products.find(
-      (product) => product.productId.toString() === productId
+      (product) =>
+        product.productId.toString() === productId &&
+        product.variantId.toString() === variantId
     )
     if (!cartProduct)
       throw new ApiError(StatusCodes.NOT_FOUND, 'No products found in cart')
     if (cartProduct.quantity !== oldQuantity)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid "oldQuantity"')
 
-    if (quantity === 0) {
-      return deleteFromCart({ userId, productId })
-    }
+    const checkedProducts = await checkoutRepo.checkProductsAvailable([
+      {
+        ...product,
+        quantity: quantity - oldQuantity + cartProduct.quantity
+      }
+    ])
+    const hasOrderProductExceedQuantity = checkedProducts.includes(null)
+    if (hasOrderProductExceedQuantity)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Product not available')
 
     return await updateProductQuantity({
       userId,
       product: {
         productId,
+        variantId,
         quantity: quantity - oldQuantity
       }
     })
@@ -164,11 +208,14 @@ const updateProductToCart = async ({ userId, product }) => {
   }
 }
 
-const deleteFromCart = async ({ userId, productId }) => {
+const deleteFromCart = async ({ userId, productId, variantId }) => {
   try {
     const { acknowledged } = await cartModel.updateOne(
       { userId },
-      { $pull: { products: { productId } }, $inc: { countProducts: -1 } }
+      {
+        $pull: { products: { productId, variantId } },
+        $inc: { countProducts: -1 }
+      }
     )
     if (!acknowledged)
       throw new ApiError(StatusCodes.NOT_FOUND, 'No products found in cart')
