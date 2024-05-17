@@ -66,33 +66,6 @@ const setBlocked = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
-const addProductToCart = asyncHandler(async (req, res) => {
-  new SuccessResponse({
-    message: 'Add product to cart successfully',
-    metadata: {
-      cart: await userService.addProductToCart(req.user?._id, req.body)
-    }
-  }).send(res)
-})
-
-const reduceProductFromCart = asyncHandler(async (req, res) => {
-  new SuccessResponse({
-    message: 'Reduce product from cart successfully',
-    metadata: {
-      cart: await userService.reduceProductFromCart(req.user?._id, req.body)
-    }
-  }).send(res)
-})
-
-const deleteProductFromCart = asyncHandler(async (req, res) => {
-  new SuccessResponse({
-    message: 'Delete product from cart successfully',
-    metadata: {
-      cart: await userService.deleteProductFromCart(req.user?._id, req.body)
-    }
-  }).send(res)
-})
-
 export default {
   getUser,
   getCurrentUser,
@@ -100,8 +73,5 @@ export default {
   updateCurrentUser,
   updateUser,
   deleteUser,
-  setBlocked,
-  addProductToCart,
-  reduceProductFromCart,
-  deleteProductFromCart
+  setBlocked
 }

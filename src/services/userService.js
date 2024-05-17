@@ -225,91 +225,6 @@ const setBlocked = async(userId, blocked) => {
   }
 }
 
-const addProductToCart = async (userId, reqBody) => {
-  try {
-    const foundUser = await userModel.findById(userId)
-    if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
-    const isExist = foundUser.cart.some(
-      productInCart => productInCart.product?.equals(reqBody.productId)
-    )
-
-    let user = null
-    if (isExist) {
-      user = await userModel.findOneAndUpdate(
-        { _id: userId, 'cart.product': reqBody.productId },
-        { $inc: { 'cart.$.quantity': reqBody.quantity } },
-        { new: true }
-      )
-    } else {
-      user = await userModel.findByIdAndUpdate(
-        userId,
-        { $push: { cart: { product: reqBody.productId, quantity: reqBody.quantity } } },
-        { new: true }
-      )
-    }
-
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
-    return user.cart
-  } catch (error) {
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Add product to cart failed')
-  }
-}
-
-const reduceProductFromCart = async (userId, reqBody) => {
-  try {
-    const { productId, quantity } = reqBody || {}
-    const foundUser = await userModel.findOne({
-      _id: userId,
-      'cart.product': productId
-    })
-    if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'No product found in cart')
-
-    const productToReduce = foundUser.cart?.find(
-      productInCart => productInCart?.product.equals(productId)
-    )
-    const restQuantity = productToReduce.quantity - quantity
-
-    if (restQuantity < 0)
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Exceeded allowed quantity')
-
-    let user = null
-    if (restQuantity === 0) {
-      user = await userModel.findByIdAndUpdate(
-        userId,
-        { $pull: { cart: { product: productId } } },
-        { new: true }
-      )
-    } else {
-      user = await userModel.findOneAndUpdate(
-        { _id: userId, 'cart.product': reqBody.productId },
-        { $inc: { 'cart.$.quantity': -reqBody.quantity } },
-        { new: true }
-      )
-    }
-    return user.cart
-  } catch (error) {
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Add product to cart failed')
-  }
-}
-
-const deleteProductFromCart = async (userId, reqBody) => {
-  try {
-    const { productId } = reqBody || {}
-    const user = await userModel.findOneAndUpdate(
-      { _id: userId, 'cart.product': productId },
-      { $pull: { cart: { product: productId } } },
-      { new: true }
-    )
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'No product found in cart')
-    return user.cart
-  } catch (error) {
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Delete product from cart failed')
-  }
-}
-
 export default {
   getUser,
   getCurrentUser,
@@ -317,8 +232,5 @@ export default {
   updateCurrentUser,
   updateUser,
   deleteUser,
-  setBlocked,
-  addProductToCart,
-  reduceProductFromCart,
-  deleteProductFromCart
+  setBlocked
 }

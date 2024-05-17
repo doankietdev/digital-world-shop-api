@@ -19,6 +19,7 @@ import {
 } from '~/utils/auth'
 import { formatPlaceHolderUrl } from '~/utils/formatter'
 import { sendMailWithHTML } from '~/utils/sendMail'
+import cartService from './cartService'
 
 const createTokenAndSendEmailToVerify = async (userId, email) => {
   const token = generateBase64Token()
@@ -79,6 +80,8 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
     })
 
     await createTokenAndSendEmailToVerify(newUser._id, email)
+
+    await cartService.createNewCart({ userId: newUser._id })
 
     return {
       _id: newUser._id,

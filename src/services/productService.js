@@ -89,8 +89,7 @@ const getProducts = async (reqQuery) => {
       products: productsApplyDiscount
     }
   } catch (error) {
-    console.log(error)
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get products failed')
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
   }
 }
 
@@ -98,9 +97,9 @@ const updateProduct = async (id, reqBody) => {
   try {
     const updateData = reqBody?.title
       ? {
-          ...reqBody,
-          slug: generateSlug(reqBody.title)
-        }
+        ...reqBody,
+        slug: generateSlug(reqBody.title)
+      }
       : { ...reqBody }
     const foundProduct = await productModel.findById(id)
     if (!foundProduct)
