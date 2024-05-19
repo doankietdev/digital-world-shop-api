@@ -1,6 +1,5 @@
 import { StatusCodes } from 'http-status-codes'
 import cartModel from '~/models/cartModel'
-import productModel from '~/models/productModel'
 import checkoutRepo from '~/repositories/checkoutRepo'
 import ApiError from '~/utils/ApiError'
 
@@ -77,7 +76,7 @@ const updateProductQuantity = async ({ userId, product }) => {
  */
 const addToCart = async ({ userId, product }) => {
   try {
-    const { productId } = product || {}
+    const { productId, variantId } = product || {}
 
     const checkedProducts = await checkoutRepo.checkProductsAvailable([product])
     const hasOrderProductExceedQuantity = checkedProducts.includes(null)
@@ -99,7 +98,7 @@ const addToCart = async ({ userId, product }) => {
     }
 
     const foundCartProduct = foundCart.products.find(
-      (product) => product.productId.toString() === productId
+      (product) => product.productId.toString() === productId && product.variantId.toString() === variantId
     )
 
     if (foundCartProduct) {
