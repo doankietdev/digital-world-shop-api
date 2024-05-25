@@ -121,13 +121,15 @@ const addToCart = async ({ userId, product }) => {
       return await updateProductQuantity({ userId, product })
     }
 
-    return await cartModel
-      .findOneAndUpdate(
-        { userId },
-        { $addToSet: { products: product }, $inc: { countProducts: 1 } },
-        { new: true }
-      )
-      .lean()
+    const updatedCart = await cartModel.findOneAndUpdate(
+      { userId },
+      { $addToSet: { products: product }, $inc: { countProducts: 1 } },
+      { new: true }
+    )
+    if (!updatedCart) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Add product to cart failed')
+    }
+    return await getCart({ userId })
   } catch (error) {
     if (error.name === ApiError.name) throw error
     throw new ApiError(
@@ -196,7 +198,7 @@ const updateProductToCart = async ({ userId, product }) => {
     if (hasOrderProductExceedQuantity)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Product not available')
 
-    return await updateProductQuantity({
+    const updatedCart = await updateProductQuantity({
       userId,
       product: {
         productId,
@@ -204,6 +206,10 @@ const updateProductToCart = async ({ userId, product }) => {
         quantity: quantity - oldQuantity
       }
     })
+    if (!updatedCart) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Update quantity failed')
+    }
+    return await getCart({ userId })
   } catch (error) {
     if (error.name === 'ApiError') throw error
     throw new ApiError(
@@ -215,15 +221,15 @@ const updateProductToCart = async ({ userId, product }) => {
 
 /**
  * @param {{
-*   userId: string,
-*   product: {
-*     productId: string,
-*     oldVariantId: string,
-*     variantId: string,
-*   }
-* }}
-* @returns {object}
-*/
+ *   userId: string,
+ *   product: {
+ *     productId: string,
+ *     oldVariantId: string,
+ *     variantId: string,
+ *   }
+ * }}
+ * @returns {object}
+ */
 const updateVariantToCart = async ({ userId, product }) => {
   try {
     const { productId, oldVariantId, variantId } = product || {}
@@ -240,6 +246,28 @@ const updateVariantToCart = async ({ userId, product }) => {
     )
     if (!cartProduct)
       throw new ApiError(StatusCodes.NOT_FOUND, 'No products found in cart')
+
+    const existedNewCartProduct = foundCart.products.find(
+      (product) =>
+        product.productId.toString() === productId &&
+        product.variantId.toString() === variantId
+    )
+    if (existedNewCartProduct) {
+      const updatedCart = await updateProductToCart({
+        userId,
+        product: {
+          productId,
+          variantId,
+          quantity: cartProduct.quantity + existedNewCartProduct.quantity,
+          oldQuantity: existedNewCartProduct.quantity
+        }
+      })
+      if (!updatedCart) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Update variant failed')
+      }
+      await deleteFromCart({ userId, productId, variantId: oldVariantId })
+      return await getCart({ userId })
+    }
 
     const checkedProducts = await checkoutRepo.checkProductsAvailable([
       {
@@ -276,7 +304,11 @@ const updateVariantToCart = async ({ userId, product }) => {
 const deleteFromCart = async ({ userId, productId, variantId }) => {
   try {
     const { acknowledged } = await cartModel.updateOne(
-      { userId },
+      {
+        userId,
+        'products.productId': productId,
+        'products.variantId': variantId
+      },
       {
         $pull: { products: { productId, variantId } },
         $inc: { countProducts: -1 }
@@ -284,6 +316,7 @@ const deleteFromCart = async ({ userId, productId, variantId }) => {
     )
     if (!acknowledged)
       throw new ApiError(StatusCodes.NOT_FOUND, 'No products found in cart')
+    return await getCart({ userId })
   } catch (error) {
     if (error.name === ApiError.name) throw error
     throw new ApiError(
@@ -299,7 +332,9 @@ const getCart = async ({ userId }) => {
     if (!cart) throw new ApiError(StatusCodes.NOT_FOUND, 'Cart not found')
 
     for (const cartProduct of cart.products) {
-      cartProduct.product = await productService.getProduct(cartProduct.productId)
+      cartProduct.product = await productService.getProduct(
+        cartProduct.productId
+      )
       delete cartProduct.productId
     }
 
