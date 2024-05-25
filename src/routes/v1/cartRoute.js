@@ -16,6 +16,10 @@ router
   .post(cartValidation.updateProductToCart, cartController.updateProductToCart)
 
 router
+  .route('/update-variant')
+  .post(cartValidation.updateVariantToCart, cartController.updateVariantToCart)
+
+router
   .route('/delete-product')
   .post(cartValidation.deleteFromCart, cartController.deleteFromCart)
 

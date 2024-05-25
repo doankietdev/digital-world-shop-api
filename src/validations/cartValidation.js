@@ -47,6 +47,30 @@ const updateProductToCart = asyncHandler(async (req, res, next) => {
   }
 })
 
+const updateVariantToCart = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    productId: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
+    oldVariantId: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required(),
+    variantId: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
+  })
+
+  try {
+    await correctCondition.validateAsync(req.body, { abortEarly: false })
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
 const deleteFromCart = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     productId: Joi.string()
@@ -70,5 +94,6 @@ const deleteFromCart = asyncHandler(async (req, res, next) => {
 export default {
   addToCart,
   updateProductToCart,
+  updateVariantToCart,
   deleteFromCart
 }

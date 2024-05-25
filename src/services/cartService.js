@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes'
 import cartModel from '~/models/cartModel'
 import checkoutRepo from '~/repositories/checkoutRepo'
 import ApiError from '~/utils/ApiError'
+import productService from './productService'
 
 /**
  * @param {{
@@ -98,7 +99,9 @@ const addToCart = async ({ userId, product }) => {
     }
 
     const foundCartProduct = foundCart.products.find(
-      (product) => product.productId.toString() === productId && product.variantId.toString() === variantId
+      (product) =>
+        product.productId.toString() === productId &&
+        product.variantId.toString() === variantId
     )
 
     if (foundCartProduct) {
@@ -110,7 +113,10 @@ const addToCart = async ({ userId, product }) => {
       ])
       const hasOrderProductExceedQuantity = checkedProducts.includes(null)
       if (hasOrderProductExceedQuantity)
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Product not available')
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          'The quantity you selected has reached the maximum capacity for this product'
+        )
 
       return await updateProductQuantity({ userId, product })
     }
@@ -207,6 +213,66 @@ const updateProductToCart = async ({ userId, product }) => {
   }
 }
 
+/**
+ * @param {{
+*   userId: string,
+*   product: {
+*     productId: string,
+*     oldVariantId: string,
+*     variantId: string,
+*   }
+* }}
+* @returns {object}
+*/
+const updateVariantToCart = async ({ userId, product }) => {
+  try {
+    const { productId, oldVariantId, variantId } = product || {}
+
+    const foundCart = await cartModel.findOne({ userId })
+    if (!foundCart) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Cart not found')
+    }
+
+    const cartProduct = foundCart.products.find(
+      (product) =>
+        product.productId.toString() === productId &&
+        product.variantId.toString() === oldVariantId
+    )
+    if (!cartProduct)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'No products found in cart')
+
+    const checkedProducts = await checkoutRepo.checkProductsAvailable([
+      {
+        ...product,
+        quantity: cartProduct.quantity
+      }
+    ])
+    const hasOrderProductExceedQuantity = checkedProducts.includes(null)
+    if (hasOrderProductExceedQuantity)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Product not available')
+
+    const updatedCart = await cartModel.findOneAndUpdate(
+      {
+        userId,
+        'products.productId': productId,
+        'products.variantId': oldVariantId
+      },
+      { $set: { 'products.$.variantId': variantId } }
+    )
+    if (!updatedCart) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Update variant failed')
+    }
+
+    return await getCart({ userId })
+  } catch (error) {
+    if (error.name === 'ApiError') throw error
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Add product to cart failed'
+    )
+  }
+}
+
 const deleteFromCart = async ({ userId, productId, variantId }) => {
   try {
     const { acknowledged } = await cartModel.updateOne(
@@ -231,6 +297,12 @@ const getCart = async ({ userId }) => {
   try {
     const cart = await cartModel.findOne({ userId }).lean()
     if (!cart) throw new ApiError(StatusCodes.NOT_FOUND, 'Cart not found')
+
+    for (const cartProduct of cart.products) {
+      cartProduct.product = await productService.getProduct(cartProduct.productId)
+      delete cartProduct.productId
+    }
+
     return cart
   } catch (error) {
     if (error.name === ApiError.name) throw error
@@ -245,6 +317,7 @@ export default {
   createNewCart,
   addToCart,
   updateProductToCart,
+  updateVariantToCart,
   deleteFromCart,
   getCart
 }
