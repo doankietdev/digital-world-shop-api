@@ -97,7 +97,7 @@ const addToCart = async ({ userId, product }) => {
       foundCart.products = [product]
       foundCart.countProducts = 1
       await foundCart.save()
-      return await getCart()
+      return await getCart({ userId })
     }
 
     const foundCartProduct = foundCart.products.find(
@@ -296,7 +296,6 @@ const updateVariantToCart = async ({ userId, product }) => {
     if (!updatedCart) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Update variant failed')
     }
-
     return await getCart({ userId })
   } catch (error) {
     if (error.name === 'ApiError') throw error

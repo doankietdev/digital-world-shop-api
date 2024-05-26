@@ -39,12 +39,14 @@ const updateVariantToCart = asyncHandler(async (req, res) => {
 })
 
 const deleteFromCart = asyncHandler(async (req, res) => {
-  await cartService.deleteFromCart({
-    userId: req.user?._id,
-    ...req.body
-  })
   new SuccessResponse({
-    message: 'Delete product from cart successfully'
+    message: 'Delete product from cart successfully',
+    metadata: {
+      cart: await cartService.deleteFromCart({
+        userId: req.user?._id,
+        ...req.body
+      })
+    }
   }).send(res)
 })
 
