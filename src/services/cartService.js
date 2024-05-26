@@ -86,16 +86,18 @@ const addToCart = async ({ userId, product }) => {
 
     const foundCart = await cartModel.findOne({ userId })
     if (!foundCart) {
-      return await createNewCart({
+      await createNewCart({
         userId,
         product
       })
+      return await getCart()
     }
 
     if (!foundCart.products.length) {
       foundCart.products = [product]
       foundCart.countProducts = 1
-      return await foundCart.save()
+      await foundCart.save()
+      return await getCart()
     }
 
     const foundCartProduct = foundCart.products.find(
@@ -118,7 +120,11 @@ const addToCart = async ({ userId, product }) => {
           'The quantity you selected has reached the maximum capacity for this product'
         )
 
-      return await updateProductQuantity({ userId, product })
+      const updatedCart = await updateProductQuantity({ userId, product })
+      if (!updatedCart) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Add product to cart failed')
+      }
+      return await getCart({ userId })
     }
 
     const updatedCart = await cartModel.findOneAndUpdate(
