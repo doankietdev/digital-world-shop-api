@@ -13,14 +13,14 @@ router
 
 router
   .route('/update-product-quantity')
-  .post(cartValidation.updateProductToCart, cartController.updateProductToCart)
+  .post(cartValidation.updateProductQuantityToCart, cartController.updateProductQuantityToCart)
 
 router
   .route('/update-variant')
   .post(cartValidation.updateVariantToCart, cartController.updateVariantToCart)
 
 router
-  .route('/delete-product')
+  .route('/delete-products')
   .post(cartValidation.deleteFromCart, cartController.deleteFromCart)
 
 router.route('/get-user-cart').get(cartController.getUserCart)

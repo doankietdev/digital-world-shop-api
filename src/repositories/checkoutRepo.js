@@ -15,8 +15,8 @@ const checkProductsAvailable = async (products) => {
     products.map(async (product) => {
       const foundProduct = await productModel.findById(product.productId)
       if (!foundProduct) return null
-      const variant = foundProduct.variants.find((variant) =>
-        variant._id.toString() === product.variantId
+      const variant = foundProduct.variants.find(
+        (variant) => variant._id.toString() === product.variantId
       )
       if (!variant) return null
       const isExceedQuantity = product.quantity > variant.quantity
@@ -45,8 +45,9 @@ const getProductsApplyDiscount = async (products = []) => {
   return products.map((product) => {
     const separateDiscounts = discounts.filter(
       (discount) =>
-        discount.products?.find((productId) => productId.equals(product?._id)) ||
-        discount.applyFor === DISCOUNT_APPLY_TYPES.ALL
+        discount.products?.find((productId) =>
+          productId.equals(product?._id)
+        ) || discount.applyFor === DISCOUNT_APPLY_TYPES.ALL
     )
 
     const { totalPercentage, totalFixed } = separateDiscounts.reduce(
@@ -60,20 +61,14 @@ const getProductsApplyDiscount = async (products = []) => {
       },
       { totalPercentage: 0, totalFixed: 0 }
     )
-
-    let priceApplyDiscount =
+    let priceApplyDiscount = Math.round(
       product.price - totalFixed - (product.price * totalPercentage) / 100
+    )
     if (priceApplyDiscount < 0) priceApplyDiscount = 0
 
-    const fields = [
-      '_id',
-      'title',
-      'slug',
-      'brand',
-      'variants'
-    ]
+    const fields = ['_id', 'title', 'slug', 'brand', 'variants']
     return {
-      ...getObjectByFields(product.toObject(), fields),
+      ...getObjectByFields(product, fields),
       oldPrice: separateDiscounts.length ? product.price : null,
       price: separateDiscounts.length ? priceApplyDiscount : product.price,
       discounts: separateDiscounts.map((discount) => ({

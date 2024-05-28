@@ -25,7 +25,7 @@ const addToCart = asyncHandler(async (req, res, next) => {
   }
 })
 
-const updateProductToCart = asyncHandler(async (req, res, next) => {
+const updateProductQuantityToCart = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     productId: Joi.string()
       .pattern(OBJECT_ID_RULE)
@@ -73,14 +73,18 @@ const updateVariantToCart = asyncHandler(async (req, res, next) => {
 
 const deleteFromCart = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    productId: Joi.string()
-      .pattern(OBJECT_ID_RULE)
-      .message(OBJECT_ID_RULE_MESSAGE)
-      .required(),
-    variantId: Joi.string()
-      .pattern(OBJECT_ID_RULE)
-      .message(OBJECT_ID_RULE_MESSAGE)
-      .required()
+    products: Joi.array().items(
+      Joi.object({
+        productId: Joi.string()
+          .pattern(OBJECT_ID_RULE)
+          .message(OBJECT_ID_RULE_MESSAGE)
+          .required(),
+        variantId: Joi.string()
+          .pattern(OBJECT_ID_RULE)
+          .message(OBJECT_ID_RULE_MESSAGE)
+          .required()
+      })
+    )
   })
 
   try {
@@ -93,7 +97,7 @@ const deleteFromCart = asyncHandler(async (req, res, next) => {
 
 export default {
   addToCart,
-  updateProductToCart,
+  updateProductQuantityToCart,
   updateVariantToCart,
   deleteFromCart
 }

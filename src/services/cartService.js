@@ -3,6 +3,7 @@ import cartModel from '~/models/cartModel'
 import checkoutRepo from '~/repositories/checkoutRepo'
 import ApiError from '~/utils/ApiError'
 import productService from './productService'
+import mongoose from 'mongoose'
 
 /**
  * @param {{
@@ -122,7 +123,10 @@ const addToCart = async ({ userId, product }) => {
 
       const updatedCart = await updateProductQuantity({ userId, product })
       if (!updatedCart) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Add product to cart failed')
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          'Add product to cart failed'
+        )
       }
       return await getCart({ userId })
     }
@@ -157,12 +161,15 @@ const addToCart = async ({ userId, product }) => {
  * }}
  * @returns {object}
  */
-const updateProductToCart = async ({ userId, product }) => {
+const updateProductQuantityToCart = async ({ userId, product }) => {
   try {
     const { productId, variantId, quantity, oldQuantity } = product || {}
 
     if (quantity === 0) {
-      return await deleteFromCart({ userId, productId, variantId })
+      return await deleteFromCart({
+        userId,
+        products: [{ productId, variantId }]
+      })
     }
 
     const foundCart = await cartModel.findOne({ userId })
@@ -259,7 +266,7 @@ const updateVariantToCart = async ({ userId, product }) => {
         product.variantId.toString() === variantId
     )
     if (existedNewCartProduct) {
-      const updatedCart = await updateProductToCart({
+      const updatedCart = await updateProductQuantityToCart({
         userId,
         product: {
           productId,
@@ -271,7 +278,10 @@ const updateVariantToCart = async ({ userId, product }) => {
       if (!updatedCart) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Update variant failed')
       }
-      await deleteFromCart({ userId, productId, variantId: oldVariantId })
+      await deleteFromCart({
+        userId,
+        products: [{ productId, variantId: oldVariantId }]
+      })
       return await getCart({ userId })
     }
 
@@ -306,23 +316,41 @@ const updateVariantToCart = async ({ userId, product }) => {
   }
 }
 
-const deleteFromCart = async ({ userId, productId, variantId }) => {
+/**
+ * @param {{
+ *   products: [{
+ *      productId: string,
+ *      variantId: string
+ *    }]
+ * }}
+ * @returns {Promise<object>}
+ */
+const deleteFromCart = async ({ userId, products }) => {
+  const session = await mongoose.startSession()
+  session.startTransaction()
+
   try {
-    const { acknowledged } = await cartModel.updateOne(
-      {
-        userId,
-        'products.productId': productId,
-        'products.variantId': variantId
-      },
-      {
-        $pull: { products: { productId, variantId } },
-        $inc: { countProducts: -1 }
+    const updateOperations = products.map(({ productId, variantId }) => ({
+      updateOne: {
+        filter: {
+          userId,
+          'products.productId': productId,
+          'products.variantId': variantId
+        },
+        update: {
+          $pull: { products: { productId, variantId } },
+          $inc: { countProducts: -1 }
+        }
       }
-    )
-    if (!acknowledged)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'No products found in cart')
+    }))
+
+    await cartModel.bulkWrite(updateOperations, { session })
+    await session.commitTransaction()
+    session.endSession()
     return await getCart({ userId })
   } catch (error) {
+    await session.abortTransaction()
+    session.endSession()
     if (error.name === ApiError.name) throw error
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
@@ -356,7 +384,7 @@ const getCart = async ({ userId }) => {
 export default {
   createNewCart,
   addToCart,
-  updateProductToCart,
+  updateProductQuantityToCart,
   updateVariantToCart,
   deleteFromCart,
   getCart

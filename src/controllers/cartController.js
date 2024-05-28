@@ -14,11 +14,11 @@ const addToCart = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
-const updateProductToCart = asyncHandler(async (req, res) => {
+const updateProductQuantityToCart = asyncHandler(async (req, res) => {
   new SuccessResponse({
-    message: 'Update product to cart successfully',
+    message: 'Update product quantity to cart successfully',
     metadata: {
-      cart: await cartService.updateProductToCart({
+      cart: await cartService.updateProductQuantityToCart({
         userId: req.user?._id,
         product: req.body
       })
@@ -40,7 +40,7 @@ const updateVariantToCart = asyncHandler(async (req, res) => {
 
 const deleteFromCart = asyncHandler(async (req, res) => {
   new SuccessResponse({
-    message: 'Delete product from cart successfully',
+    message: 'Delete products from cart successfully',
     metadata: {
       cart: await cartService.deleteFromCart({
         userId: req.user?._id,
@@ -61,7 +61,7 @@ const getUserCart = asyncHandler(async (req, res) => {
 
 export default {
   addToCart,
-  updateProductToCart,
+  updateProductQuantityToCart,
   updateVariantToCart,
   deleteFromCart,
   getUserCart

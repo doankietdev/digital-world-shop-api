@@ -16,57 +16,59 @@ const review = async (reqBody) => {
     if (hasOrderProductExceedQuantity)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
 
-    const foundProducts = await productModel.find({
-      _id: { $in: orderProducts.map((orderProduct) => orderProduct.productId) }
-    })
+    const foundProducts = await productModel
+      .find({
+        _id: {
+          $in: orderProducts.map((orderProduct) => orderProduct.productId)
+        }
+      })
+      .lean()
     const productsApplyDiscount = await checkoutRepo.getProductsApplyDiscount(
       foundProducts
     )
 
-    const isValidOrder = orderProducts.some((orderProduct) =>
+    const isValidOrder = orderProducts.some((orderProduct) => {
       productsApplyDiscount.some((productApplyDiscount) => {
         if (productApplyDiscount.oldPrice !== orderProduct.oldPrice)
           return false
-        if (productApplyDiscount.price !== orderProduct.price) return false
-        if (
-          !orderProduct.discountCodes?.length ||
-          !productApplyDiscount.discounts?.length
-        )
-          return true
-        const isValidAllDiscount = productApplyDiscount.discounts?.every(
-          (discount) => orderProduct.discountCodes?.includes(discount.code)
-        )
-        if (isValidAllDiscount) return true
-        return false
+        if (productApplyDiscount.price !== orderProduct.price) {
+          return false
+        }
+        return true
       })
-    )
+      const product = productsApplyDiscount.find((product) =>
+        product._id.equals(orderProduct.productId)
+      )
+      if (!product) return false
+      if (product.oldPrice !== orderProduct.oldPrice) return false
+      if (product.price !== orderProduct.price) return false
+      return true
+    })
     if (!isValidOrder)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
 
-    const responseOrderProducts = productsApplyDiscount.map(
-      (productApplyDiscount) => {
-        const correspondOrderProduct = orderProducts.find((orderProduct) =>
-          productApplyDiscount?._id?.equals(orderProduct.productId)
-        )
-        return {
-          product: {
-            ...productApplyDiscount,
-            variants: undefined,
-            variant: {
-              ...productApplyDiscount.variants?.find((variant) =>
-                variant?._id?.equals(correspondOrderProduct.variantId)
-              ),
-              quantity: undefined
-            }
-          },
-          quantity: correspondOrderProduct.quantity,
-          totalPrice:
-            productApplyDiscount.oldPrice * correspondOrderProduct.quantity,
-          totalPriceApplyDiscount:
-            productApplyDiscount.price * correspondOrderProduct.quantity
-        }
+    const responseOrderProducts = orderProducts.map((orderProduct) => {
+      const productApplyDiscount = productsApplyDiscount.find(
+        (productApplyDiscount) =>
+          productApplyDiscount._id.equals(orderProduct.productId)
+      )
+      return {
+        product: {
+          ...productApplyDiscount,
+          variants: undefined,
+          variant: {
+            ...productApplyDiscount.variants?.find(
+              (variant) => variant?._id === orderProduct.variantId
+            ),
+            quantity: undefined
+          }
+        },
+        quantity: orderProduct.quantity,
+        totalPrice: productApplyDiscount.oldPrice * orderProduct.quantity,
+        totalPriceApplyDiscount:
+          productApplyDiscount.price * orderProduct.quantity
       }
-    )
+    })
 
     return {
       orderProducts: responseOrderProducts,
