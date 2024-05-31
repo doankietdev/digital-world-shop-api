@@ -6,7 +6,7 @@ import { cloneDeep } from 'lodash'
  * @returns {number}
  */
 export const calculateTotalPages = (totalElements, limitPerPage) => {
-  return Math.ceil(totalElements / limitPerPage)
+  return Math.abs(Math.ceil(totalElements / limitPerPage)) || 1
 }
 
 export const getObjectByFields = (obj, fields = []) => {
