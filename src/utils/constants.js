@@ -49,7 +49,10 @@ export const COLLECTION_NAMES = {
   ORDER: 'orders',
   EMAIL_VERIFICATION_TOKEN: 'email_verification_tokens',
   PASSWORD_RESET_OTP: 'password_reset_otps',
-  PASSWORD_HISTORY: 'password_history'
+  PASSWORD_HISTORY: 'password_history',
+  PROVINCE: 'provinces',
+  DISTRICT: 'districts',
+  WARD: 'wards'
 }
 
 export const MODEL_NAMES = {
@@ -64,5 +67,8 @@ export const MODEL_NAMES = {
   ORDER: 'Order',
   EMAIL_VERIFICATION_TOKEN: 'EmailVerificationToken',
   PASSWORD_RESET_OTP: 'PasswordResetOTP',
-  PASSWORD_HISTORY: 'PasswordHistory'
+  PASSWORD_HISTORY: 'PasswordHistory',
+  PROVINCE: 'Province',
+  DISTRICT: 'District',
+  WARD: 'Ward'
 }

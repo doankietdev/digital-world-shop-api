@@ -10,6 +10,7 @@ import { DEV_ENV } from './utils/constants'
 import { BUILD_MODE } from './configs/environment'
 import { corsOptions } from './configs/cors'
 import { route } from './routes'
+import fetchLocationToDBJob from './cronJobs/dataCollection/fetchLocationToDBJob'
 
 const app = express()
 
@@ -25,5 +26,7 @@ route(app)
 
 app.use(notFoundHandlingMiddleware)
 app.use(errorHandlingMiddleware)
+
+fetchLocationToDBJob.start()
 
 export default app

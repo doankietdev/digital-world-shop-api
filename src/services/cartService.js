@@ -346,11 +346,11 @@ const deleteFromCart = async ({ userId, products }) => {
 
     await cartModel.bulkWrite(updateOperations, { session })
     await session.commitTransaction()
-    session.endSession()
+    await session.endSession()
     return await getCart({ userId })
   } catch (error) {
     await session.abortTransaction()
-    session.endSession()
+    await session.endSession()
     if (error.name === ApiError.name) throw error
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,

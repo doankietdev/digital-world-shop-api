@@ -18,9 +18,16 @@ export const parseQueryParams = (reqQuery = {}) => {
   const fields = reqQuery._fields && reqQuery._fields.split(',').join(' ')
   const page = reqQuery._page * 1 || 1
   const limit = reqQuery._limit * 1 || 100
-  const skip = (page - 1) * limit
+  const skip = reqQuery._limit === -1 ? 0 : (page - 1) * limit
 
-  return { query, sort, fields, skip, limit, page }
+  return {
+    query,
+    sort,
+    fields,
+    skip,
+    limit,
+    page
+  }
 }
 
 export const generateSlug = (string) => {

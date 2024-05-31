@@ -2,40 +2,47 @@ import { Schema, model } from 'mongoose'
 import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
 
-const brandSchema = new Schema(
+const districtSchema = new Schema(
   {
+    _id: {
+      type: Number,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    provinceId: {
+      type: Number,
+      ref: MODEL_NAMES.PROVINCE,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    code: {
+      type: String,
+      trim: true,
+      unique: true,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
     name: {
       type: String,
       trim: true,
-      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
-      unique: true,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
       ]
-    },
-    slug: {
-      type: String,
-      trim: true,
-      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
-      unique: true,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    description: {
-      type: String,
-      trim: true,
-      default: ''
     }
   },
   {
     versionKey: false,
     timestamps: true,
     collation: { locale: 'en' },
-    collection: COLLECTION_NAMES.BRAND
+    collection: COLLECTION_NAMES.DISTRICT
   }
 )
 
-export default model(MODEL_NAMES.BRAND, brandSchema)
+export default model(MODEL_NAMES.DISTRICT, districtSchema)

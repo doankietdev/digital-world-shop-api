@@ -9,6 +9,7 @@ import discountRoute from './discountRoute'
 import addressRoute from './addressRoute'
 import checkoutRoute from './checkoutRoute'
 import orderRoute from './orderRoute'
+import locationRoute from './locationRoute'
 
 const router = express.Router()
 
@@ -22,5 +23,6 @@ router.use('/discounts', discountRoute)
 router.use('/addresses', addressRoute)
 router.use('/checkout', checkoutRoute)
 router.use('/orders', orderRoute)
+router.use('/locations', locationRoute)
 
 export default router
