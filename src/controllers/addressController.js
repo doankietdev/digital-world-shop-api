@@ -11,11 +11,11 @@ const createNew = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
-const getAddress = asyncHandler(async (req, res) => {
+const getUserAddress = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get address successfully',
     metadata: {
-      address: await addressService.getAddress(req.params.id, req.query)
+      address: await addressService.getUserAddresses({ userId: req.user._id })
     }
   }).send(res)
 })
@@ -24,11 +24,11 @@ const updateAddressForCurrentUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Update address successfully',
     metadata: {
-      address: await addressService.updateAddressForCurrentUser(
-        req.params?.addressId,
-        req.user?._id,
-        req.body
-      )
+      addresses: await addressService.updateAddressForCurrentUser({
+        userId: req.user?._id,
+        addressId: req.params?.addressId,
+        reqBody: req.body
+      })
     }
   }).send(res)
 })
@@ -47,7 +47,7 @@ const deleteAddressForCurrentUser = asyncHandler(async (req, res) => {
 
 export default {
   createNew,
-  getAddress,
+  getUserAddress,
   updateAddressForCurrentUser,
   deleteAddressForCurrentUser
 }

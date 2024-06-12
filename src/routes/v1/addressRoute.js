@@ -8,28 +8,21 @@ const router = express.Router()
 
 router.use(authMiddleware.authenticate)
 
-router.route('/update-for-current-user/:addressId')
+router
+  .route('/update-for-current-user/:addressId')
   .patch(
     addressValidation.updateAddressForCurrentUser,
     addressController.updateAddressForCurrentUser
   )
-router.route('/delete-for-current-user/:addressId')
+router
+  .route('/delete-for-current-user/:addressId')
   .delete(
     addressValidation.deleteAddressForCurrentUser,
     addressController.deleteAddressForCurrentUser
   )
 
-router.route('/:id')
-  .get(
-    authMiddleware.checkPermission(ROLES.ADMIN),
-    addressValidation.getAddress,
-    addressController.getAddress
-  )
+router.route('/get-user-address').get(addressController.getUserAddress)
 
-router.route('/')
-  .post(
-    addressValidation.createNew,
-    addressController.createNew
-  )
+router.route('/').post(addressValidation.createNew, addressController.createNew)
 
 export default router

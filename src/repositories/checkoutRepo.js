@@ -66,7 +66,7 @@ const getProductsApplyDiscount = async (products = []) => {
     )
     if (priceApplyDiscount < 0) priceApplyDiscount = 0
 
-    const fields = ['_id', 'title', 'slug', 'brand', 'variants']
+    const fields = ['_id', 'title', 'slug', 'thumb', 'brand', 'variants']
     return {
       ...getObjectByFields(product, fields),
       oldPrice: separateDiscounts.length ? product.price : null,

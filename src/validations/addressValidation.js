@@ -6,31 +6,14 @@ import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 
 const createNew = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    province: Joi.string().min(2).required(),
-    district: Joi.string().min(2).required(),
-    ward: Joi.string().min(2).required(),
-    street: Joi.string().min(2),
-    apartmentNumber: Joi.string().min(2)
+    provinceId: Joi.number().required(),
+    districtId: Joi.number().required(),
+    wardId: Joi.number().required(),
+    streetAddress: Joi.string().min(2).required()
   })
 
   try {
     await correctCondition.validateAsync(req.body, { abortEarly: false })
-    next()
-  } catch (error) {
-    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
-  }
-})
-
-const getAddress = asyncHandler(async (req, res, next) => {
-  const correctCondition = Joi.object({
-    id: Joi.string()
-      .pattern(OBJECT_ID_RULE)
-      .message(OBJECT_ID_RULE_MESSAGE)
-      .required()
-  })
-
-  try {
-    await correctCondition.validateAsync(req.params)
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
@@ -43,11 +26,10 @@ const updateAddressForCurrentUser = asyncHandler(async (req, res, next) => {
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE)
       .required(),
-    province: Joi.string().min(2),
-    district: Joi.string().min(2),
-    ward: Joi.string().min(2),
-    street: Joi.string().min(2),
-    apartmentNumber: Joi.string().min(2)
+    provinceId: Joi.number(),
+    districtId: Joi.number(),
+    wardId: Joi.number(),
+    streetAddress: Joi.string().min(2)
   })
 
   try {
@@ -79,7 +61,6 @@ const deleteAddressForCurrentUser = asyncHandler(async (req, res, next) => {
 
 export default {
   createNew,
-  getAddress,
   updateAddressForCurrentUser,
   deleteAddressForCurrentUser
 }

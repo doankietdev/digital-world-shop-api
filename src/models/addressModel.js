@@ -1,10 +1,35 @@
 import { Schema, model } from 'mongoose'
 import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
+import orderModel from './orderModel'
 
-const blogSchema = new Schema(
+const addressSchema = new Schema(
   {
-    province: {
+    provinceId: {
+      type: Number,
+      ref: MODEL_NAMES.PROVINCE,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    districtId: {
+      type: Number,
+      ref: MODEL_NAMES.DISCOUNT,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    wardId: {
+      type: Number,
+      ref: MODEL_NAMES.WARD,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    streetAddress: {
       type: String,
       trim: true,
       minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
@@ -12,41 +37,17 @@ const blogSchema = new Schema(
         true,
         generateDBErrorMessage('is required', { showValue: false })
       ]
-    },
-    district: {
-      type: String,
-      trim: true,
-      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    ward: {
-      type: String,
-      trim: true,
-      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    street: {
-      type: String,
-      trim: true,
-      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
-      default: null
-    },
-    apartmentNumber: {
-      type: String,
-      trim: true,
-      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
-      default: null
     },
     userId: {
       type: Schema.Types.ObjectId,
       ref: MODEL_NAMES.USER,
-      default: null
+      validate: {
+        validator: async function (value) {
+          const foundUser = await orderModel.findOne({ userId: value })
+          return !foundUser
+        },
+        message: generateDBErrorMessage('is required', { showValue: false })
+      }
     }
   },
   {
@@ -57,4 +58,4 @@ const blogSchema = new Schema(
   }
 )
 
-export default model(MODEL_NAMES.ADDRESS, blogSchema)
+export default model(MODEL_NAMES.ADDRESS, addressSchema)

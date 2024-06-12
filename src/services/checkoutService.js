@@ -58,7 +58,7 @@ const review = async (reqBody) => {
           variants: undefined,
           variant: {
             ...productApplyDiscount.variants?.find(
-              (variant) => variant?._id === orderProduct.variantId
+              (variant) => variant?._id.toString() === orderProduct.variantId
             ),
             quantity: undefined
           }
