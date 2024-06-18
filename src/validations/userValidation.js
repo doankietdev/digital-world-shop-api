@@ -21,6 +21,19 @@ const getUser = asyncHandler(async (req, res, next) => {
   }
 })
 
+const setDefaultAddress = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    addressId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).required()
+  })
+
+  try {
+    await correctCondition.validateAsync({ ...req.body })
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
 const updateCurrentUser = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     firstName: Joi.string(),
@@ -97,6 +110,7 @@ const deleteUser = asyncHandler(async (req, res, next) => {
 
 export default {
   getUser,
+  setDefaultAddress,
   updateCurrentUser,
   updateUser,
   setBlocked,

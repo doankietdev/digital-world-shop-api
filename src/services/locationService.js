@@ -1,225 +1,189 @@
 /* eslint-disable no-console */
 import axios from 'axios'
 import { StatusCodes } from 'http-status-codes'
-import mongoose from 'mongoose'
-import config from '~/configs/config.json'
-import districtModel from '~/models/districtModel'
-import provinceModel from '~/models/provinceModel'
-import wardModel from '~/models/wardModel'
+import { PARTNERS } from '~/configs/environment'
 import ApiError from '~/utils/ApiError'
-import { parseQueryParams } from '~/utils/formatter'
-import { calculateTotalPages } from '~/utils/util'
+import { PARTNER_APIS } from '~/utils/constants'
 
-const fetchProvincesToDB = async () => {
-  const { viettelPost } = config.partners
-  const session = await mongoose.startSession()
-  session.startTransaction()
-
+const getProvinces = async () => {
   try {
-    await provinceModel.deleteMany()
     const response = await axios({
-      baseURL: viettelPost.apiRoot,
-      url: viettelPost.services.getProvinces.api,
-      method: viettelPost.services.getProvinces.method,
-      params: {
-        provinceId: -1
-      }
+      baseURL: PARTNER_APIS.GHN.API_ROOT,
+      url: PARTNER_APIS.GHN.APIS.GET_PROVINCES,
+      headers: {
+        token: PARTNERS.GHN.TOKEN
+      },
+      method: 'GET'
     })
+
     if (response.status === StatusCodes.OK && response.data?.data) {
-      const insertOperations = response.data?.data.map((province) => ({
-        insertOne: {
-          document: {
-            _id: province.PROVINCE_ID,
-            code: province.PROVINCE_CODE,
-            name: province.PROVINCE_NAME
-          }
-        }
-      }))
-      await provinceModel.bulkWrite(insertOperations, { session })
-      await session.commitTransaction()
-      await session.endSession()
+      return response.data?.data
+        .map((province) => ({
+          id: province.ProvinceID,
+          code: province.Code,
+          name: province.ProvinceName,
+          nameExtension: province.NameExtension
+        }))
+        .sort((province1, province2) =>
+          province1.name
+            .toLocaleLowerCase()
+            .localeCompare(province2.name.toLocaleLowerCase())
+        )
     }
+    throw new Error('Fetch API error')
   } catch (error) {
-    await session.abortTransaction()
-    await session.endSession()
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Something went wrong'
+    )
+  }
+}
+
+const getDistricts = async (provinceId) => {
+  try {
+    const response = await axios({
+      baseURL: PARTNER_APIS.GHN.API_ROOT,
+      url: PARTNER_APIS.GHN.APIS.GET_DISTRICTS,
+      params: {
+        province_id: provinceId
+      },
+      headers: {
+        token: PARTNERS.GHN.TOKEN
+      },
+      method: 'GET'
+    })
+
+    if (response.status === StatusCodes.OK && response.data?.data) {
+      return response.data?.data
+        .map((district) => ({
+          provinceId: district.ProvinceID,
+          id: district.DistrictID,
+          code: district.Code,
+          name: district.DistrictName,
+          nameExtension: district.NameExtension
+        }))
+        .sort((district1, district2) =>
+          district1.name
+            .toLocaleLowerCase()
+            .localeCompare(district2.name.toLocaleLowerCase())
+        )
+    }
+    throw new Error('Fetch API error')
+  } catch (error) {
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Something went wrong'
+    )
+  }
+}
+
+const getWards = async (districtId) => {
+  try {
+    const response = await axios({
+      baseURL: PARTNER_APIS.GHN.API_ROOT,
+      url: PARTNER_APIS.GHN.APIS.GET_WARDS,
+      params: {
+        district_id: districtId
+      },
+      headers: {
+        token: PARTNERS.GHN.TOKEN
+      },
+      method: 'GET'
+    })
+
+    if (response.status === StatusCodes.OK && response.data?.data) {
+      return response.data?.data
+        .map((ward) => ({
+          districtId: ward.DistrictID,
+          code: ward.WardCode,
+          name: ward.WardName,
+          nameExtension: ward.NameExtension
+        }))
+        .sort((ward1, ward2) =>
+          ward1.name
+            .toLocaleLowerCase()
+            .localeCompare(ward2.name.toLocaleLowerCase())
+        )
+    }
+    console.log(response)
+    throw new Error('Fetch API error')
+  } catch (error) {
+    if (error?.response?.status === StatusCodes.BAD_REQUEST)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Ward not found')
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Something went wrong'
+    )
+  }
+}
+
+const getProvince = async (provinceId) => {
+  try {
+    const province = (await getProvinces()).find(
+      (province) => province.id === provinceId
+    )
+    if (!province) throw new ApiError(StatusCodes.NOT_FOUND, 'Province not found')
+    return province
+  } catch (error) {
+    if (error.name === ApiError.name) throw error
     throw error
   }
 }
 
-const fetchDistrictsToDB = async () => {
-  const { viettelPost } = config.partners
-  const session = await mongoose.startSession()
-  session.startTransaction()
-
+const getDistrict = async ({ provinceId, districtId }) => {
   try {
-    await districtModel.deleteMany()
-    const response = await axios({
-      baseURL: viettelPost.apiRoot,
-      url: viettelPost.services.getDistricts.api,
-      method: viettelPost.services.getDistricts.method,
-      params: {
-        provinceId: -1
-      }
-    })
-    if (response.status === StatusCodes.OK && response.data?.data) {
-      const insertOperations = response.data?.data.map((district) => ({
-        insertOne: {
-          document: {
-            _id: district.DISTRICT_ID,
-            provinceId: district.PROVINCE_ID,
-            code: district.DISTRICT_VALUE,
-            name: district.DISTRICT_NAME
-          }
-        }
-      }))
-      await districtModel.bulkWrite(insertOperations, { session })
-      await session.commitTransaction()
-      await session.endSession()
-    }
+    const district = (await getDistricts(provinceId)).find(
+      (district) => district.id === districtId
+    )
+    if (!district) throw new ApiError(StatusCodes.NOT_FOUND, 'District not found')
+    return district
   } catch (error) {
-    await session.abortTransaction()
-    await session.endSession()
+    if (error.name === ApiError.name) throw error
     throw error
   }
 }
 
-const fetchWardsToDB = async () => {
-  const { viettelPost } = config.partners
-  const session = await mongoose.startSession()
-  session.startTransaction()
-
+const getWard = async ({ districtId, wardCode }) => {
   try {
-    await wardModel.deleteMany()
-    const response = await axios({
-      baseURL: viettelPost.apiRoot,
-      url: viettelPost.services.getWards.api,
-      method: viettelPost.services.getDistricts.method,
-      params: {
-        districtId: -1
-      }
-    })
-    if (response.status === StatusCodes.OK && response.data?.data) {
-      const insertOperations = response.data?.data.map((ward) => ({
-        insertOne: {
-          document: {
-            _id: ward.WARDS_ID,
-            districtId: ward.DISTRICT_ID,
-            name: ward.WARDS_NAME
-          }
-        }
-      }))
-      await wardModel.bulkWrite(insertOperations, { session })
-      await session.commitTransaction()
-      await session.endSession()
-    }
+    const ward = (await getWards(districtId)).find(
+      (ward) => ward.code === wardCode
+    )
+    if (!ward) throw new ApiError(StatusCodes.NOT_FOUND, 'Ward not found')
+    return ward
   } catch (error) {
-    await session.abortTransaction()
-    await session.endSession()
+    if (error.name === ApiError.name) throw error
     throw error
   }
 }
 
-const fetchLocationToDB = async () => {
-  try {
-    console.log('Fetching location to database')
-    await fetchProvincesToDB()
-    await fetchDistrictsToDB()
-    await fetchWardsToDB()
-    console.log('Fetched location to successfully')
-  } catch (error) {
-    console.error('Fetched location to failed:: ', error)
+const checkLocation = async ({ provinceId, districtId, wardCode }) => {
+  const [provinces, districts, wards] = await Promise.all([
+    getProvinces(),
+    getDistricts(provinceId),
+    getWards(districtId)
+  ])
+  const isProvinceExist = provinces.some(
+    (province) => province.id == provinceId
+  )
+  const isDistrictExist = districts.some(
+    (district) => district.id == districtId
+  )
+  const isWardExist = wards.some((ward) => ward.code == wardCode)
+  if (isProvinceExist && isDistrictExist && isWardExist) {
+    return true
   }
+  return false
 }
-
-const getProvinces = async (reqQuery) => {
-  try {
-    const { query, sort, fields, skip, limit, page } =
-      parseQueryParams(reqQuery)
-
-    const [provinces, totalProvinces] = await Promise.all([
-      await provinceModel
-        .find(query)
-        .sort(sort)
-        .select(fields)
-        .skip(skip)
-        .limit(limit === -1 ? 0 : limit),
-      await provinceModel.find(query).countDocuments()
-    ])
-
-    return {
-      page,
-      limit,
-      totalPages: calculateTotalPages(totalProvinces, limit),
-      totalItems: totalProvinces,
-      items: provinces
-    }
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
-  }
-}
-
-const getDistricts = async (reqQuery) => {
-  try {
-    const { query, sort, fields, skip, limit, page } =
-      parseQueryParams(reqQuery)
-
-    const [districts, totalDistricts] = await Promise.all([
-      await districtModel
-        .find(query)
-        .sort(sort)
-        .select(fields)
-        .skip(skip)
-        .limit(limit === -1 ? 0 : limit),
-      await districtModel.find(query).countDocuments()
-    ])
-
-    return {
-      page,
-      limit,
-      totalPages: calculateTotalPages(totalDistricts, limit),
-      totalItems: totalDistricts,
-      items: districts
-    }
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
-  }
-}
-
-
-const getWards = async (reqQuery) => {
-  try {
-    const { query, sort, fields, skip, limit, page } =
-      parseQueryParams(reqQuery)
-
-    const [wards, totalWards] = await Promise.all([
-      await wardModel
-        .find(query)
-        .sort(sort)
-        .select(fields)
-        .skip(skip)
-        .limit(limit === -1 ? 0 : limit),
-      await wardModel.find(query).countDocuments()
-    ])
-
-    return {
-      page,
-      limit,
-      totalPages: calculateTotalPages(totalWards, limit),
-      totalItems: totalWards,
-      items: wards
-    }
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
-  }
-}
-
 
 export default {
-  fetchLocationToDB,
   getProvinces,
   getDistricts,
-  getWards
+  getWards,
+  getProvince,
+  getDistrict,
+  getWard,
+  checkLocation
 }

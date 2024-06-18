@@ -72,3 +72,14 @@ export const MODEL_NAMES = {
   DISTRICT: 'District',
   WARD: 'Ward'
 }
+
+export const PARTNER_APIS = {
+  GHN: {
+    API_ROOT: 'https://dev-online-gateway.ghn.vn/shiip/public-api',
+    APIS: {
+      GET_PROVINCES: '/master-data/province',
+      GET_DISTRICTS: '/master-data/district',
+      GET_WARDS: '/master-data/ward'
+    }
+  }
+}

@@ -6,7 +6,7 @@ const getUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get current user successfully',
     metadata: {
-      user: await userService.getUser(req.params?.id, req.query)
+      user: await userService.getUser(req.params?.id)
     }
   }).send(res)
 })
@@ -15,7 +15,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get current user successfully',
     metadata: {
-      user: await userService.getCurrentUser(req.user?._id, req.query)
+      user: await userService.getUser(req.user?._id)
     }
   }).send(res)
 })
@@ -66,6 +66,15 @@ const setBlocked = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const setDefaultAddress = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Set default address successfully',
+    metadata: {
+      user: await userService.setDefaultAddress(req.user._id, req.body.addressId)
+    }
+  }).send(res)
+})
+
 export default {
   getUser,
   getCurrentUser,
@@ -73,5 +82,6 @@ export default {
   updateCurrentUser,
   updateUser,
   deleteUser,
-  setBlocked
+  setBlocked,
+  setDefaultAddress
 }

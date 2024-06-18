@@ -1,16 +1,34 @@
-import { StatusCodes } from 'http-status-codes'
-import { Types } from 'mongoose'
+import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import addressModel from '~/models/addressModel'
 import userModel from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
-import { COLLECTION_NAMES } from '~/utils/constants'
+import locationService from './locationService'
+import userService from './userService'
 
 const createNew = async (userId, reqBody) => {
   try {
-    const address = await addressModel.create({ ...reqBody, userId: null })
-    await userModel.findByIdAndUpdate(userId, {
-      $push: { addresses: address._id }
+    const { provinceId, districtId, wardCode } = reqBody
+
+    const isValidLocation = await locationService.checkLocation({
+      provinceId,
+      districtId,
+      wardCode
     })
+    if (!isValidLocation) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid parameters')
+    }
+
+    const addressData = {
+      ...reqBody,
+      user: userId
+    }
+    delete addressData.setAsDefault
+
+    const address = await addressModel.create(addressData)
+    if (reqBody.setAsDefault) {
+      await userService.setDefaultAddress(userId, address._id)
+    }
+
     return address
   } catch (error) {
     if (error.name === ApiError.name) throw error
@@ -21,178 +39,107 @@ const createNew = async (userId, reqBody) => {
   }
 }
 
-const getUserAddresses = async ({ userId }) => {
+const getUserAddresses = async ({ userId, addressId }) => {
   try {
-    const addresses = await addressModel.aggregate([
-      {
-        $match: {
-          userId: Types.ObjectId.createFromHexString(userId)
-        }
-      },
-      {
-        $lookup: {
-          from: COLLECTION_NAMES.PROVINCE,
-          foreignField: '_id',
-          localField: 'provinceId',
-          as: 'province',
-          pipeline: [
-            {
-              $project: {
-                createdAt: 0,
-                updatedAt: 0
-              }
-            }
-          ]
-        }
-      },
-      {
-        $lookup: {
-          from: COLLECTION_NAMES.DISTRICT,
-          foreignField: '_id',
-          localField: 'districtId',
-          as: 'district',
-          pipeline: [
-            {
-              $project: {
-                createdAt: 0,
-                updatedAt: 0
-              }
-            }
-          ]
-        }
-      },
-      {
-        $lookup: {
-          from: COLLECTION_NAMES.WARD,
-          foreignField: '_id',
-          localField: 'wardId',
-          as: 'ward',
-          pipeline: [
-            {
-              $project: {
-                createdAt: 0,
-                updatedAt: 0
-              }
-            }
-          ]
-        }
-      },
-      {
-        $unwind: '$province'
-      },
-      {
-        $unwind: '$district'
-      },
-      {
-        $unwind: '$ward'
-      },
-      {
-        $project: {
-          provinceId: 0,
-          districtId: 0,
-          wardId: 0
-        }
+    const addresses = await addressModel
+      .find(
+        addressId
+          ? {
+            user: userId,
+            _id: addressId
+          }
+          : {
+            user: userId
+          }
+      )
+      .select('-user')
+      .sort('-createdAt')
+      .lean()
+
+    const foundUser = await userService.getUser(userId)
+    if (!foundUser) throw Error('User not found')
+
+    let responseAddresses = []
+    for (const address of addresses) {
+      const { provinceId, districtId, wardCode } = address
+      const [province, district, ward] = await Promise.all([
+        locationService.getProvince(provinceId),
+        locationService.getDistrict({ provinceId, districtId }),
+        locationService.getWard({ districtId, wardCode })
+      ])
+      if (!province || !district || !ward)
+        throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)
+
+      let tempAddress = {
+        ...address,
+        province,
+        district,
+        ward,
+        default:
+          address?._id.toString() == foundUser.defaultAddress?._id.toString() ??
+          false
       }
-    ])
-    return addresses
+      delete tempAddress.provinceId
+      delete tempAddress.districtId
+      delete tempAddress.wardCode
+
+      responseAddresses = [...responseAddresses, tempAddress]
+    }
+
+    return responseAddresses
   } catch (error) {
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get address failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Get user addresses failed'
+    )
   }
 }
 
-const getAddress = async ({ id }) => {
+const getUserAddress = async ({ userId, addressId }) => {
   try {
-    const address = (
-      await addressModel.aggregate([
-        {
-          $match: {
-            _id: Types.ObjectId.createFromHexString(id)
-          }
-        },
-        {
-          $lookup: {
-            from: COLLECTION_NAMES.PROVINCE,
-            foreignField: '_id',
-            localField: 'provinceId',
-            as: 'province',
-            pipeline: [
-              {
-                $project: {
-                  createdAt: 0,
-                  updatedAt: 0
-                }
-              }
-            ]
-          }
-        },
-        {
-          $lookup: {
-            from: COLLECTION_NAMES.DISTRICT,
-            foreignField: '_id',
-            localField: 'districtId',
-            as: 'district',
-            pipeline: [
-              {
-                $project: {
-                  createdAt: 0,
-                  updatedAt: 0
-                }
-              }
-            ]
-          }
-        },
-        {
-          $lookup: {
-            from: COLLECTION_NAMES.WARD,
-            foreignField: '_id',
-            localField: 'wardId',
-            as: 'ward',
-            pipeline: [
-              {
-                $project: {
-                  createdAt: 0,
-                  updatedAt: 0
-                }
-              }
-            ]
-          }
-        },
-        {
-          $unwind: '$province'
-        },
-        {
-          $unwind: '$district'
-        },
-        {
-          $unwind: '$ward'
-        },
-        {
-          $project: {
-            provinceId: 0,
-            districtId: 0,
-            wardId: 0
-          }
-        }
-      ])
-    )[0]
+    const [address] = await getUserAddresses({ userId, addressId })
     if (!address) throw new ApiError(StatusCodes.NOT_FOUND, 'Address not found')
     return address
   } catch (error) {
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get address failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Get user address failed'
+    )
   }
 }
 
 const updateAddressForCurrentUser = async ({ userId, addressId, reqBody }) => {
   try {
-    const { acknowledged } = await addressModel.updateOne(
-      { _id: addressId, userId },
-      { ...reqBody }
+    const { provinceId, districtId, wardCode } = reqBody
+    const isValidLocation = await locationService.checkLocation({
+      provinceId,
+      districtId,
+      wardCode
+    })
+    if (!isValidLocation) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid parameters')
+    }
+
+    const addressData = {
+      ...reqBody
+    }
+    delete addressData.setAsDefault
+    delete addressData.user
+
+    const { matchedCount } = await addressModel.updateOne(
+      { _id: addressId, user: userId },
+      addressData
     )
-    if (!acknowledged)
+    if (!matchedCount)
       throw new ApiError(StatusCodes.NOT_FOUND, 'Address not found')
-    return getAddress({ id: addressId })
+
+    if (reqBody.setAsDefault) {
+      await userService.setDefaultAddress(userId, addressId)
+    }
+
+    return getUserAddress({ userId, addressId })
   } catch (error) {
     if (error.name === 'ApiError') throw error
     throw new ApiError(
@@ -225,6 +172,7 @@ const deleteAddressForCurrentUser = async (addressId, userId) => {
 export default {
   createNew,
   getUserAddresses,
+  getUserAddress,
   updateAddressForCurrentUser,
   deleteAddressForCurrentUser
 }

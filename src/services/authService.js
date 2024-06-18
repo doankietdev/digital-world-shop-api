@@ -20,6 +20,7 @@ import {
 import { formatPlaceHolderUrl } from '~/utils/formatter'
 import { sendMailWithHTML } from '~/utils/sendMail'
 import cartService from './cartService'
+import userService from './userService'
 
 const createTokenAndSendEmailToVerify = async (userId, email) => {
   const token = generateBase64Token()
@@ -80,16 +81,9 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
     })
 
     await createTokenAndSendEmailToVerify(newUser._id, email)
-
     await cartService.createNewCart({ userId: newUser._id })
 
-    return {
-      _id: newUser._id,
-      firstName: newUser.firstName,
-      lastName: newUser.lastName,
-      mobile: newUser.mobile,
-      email: newUser.email
-    }
+    return await userService.getUser(newUser._id)
   } catch (error) {
     if (error.name === ApiError.name) throw error
     throw new ApiError(
@@ -200,17 +194,7 @@ const signIn = async ({ email, password }) => {
     })
 
     return {
-      user: {
-        _id: foundUser._id,
-        firstName: foundUser.firstName,
-        lastName: foundUser.lastName,
-        image: foundUser.image,
-        email: foundUser.email,
-        mobile: foundUser.mobile,
-        address: foundUser.address
-      },
-      cart: foundUser.cart,
-      wishlist: foundUser.wishlist,
+      user: await userService.getUser(foundUser._id),
       accessToken,
       refreshToken
     }

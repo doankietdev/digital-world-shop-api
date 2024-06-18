@@ -66,7 +66,7 @@ export const CLOUDINARY = {
   API_SECRET: CLOUDINARY_API_SECRET
 }
 
-export const PARTNER = {
+export const PARTNERS = {
   GHN: {
     TOKEN: GHN_TOKEN
   }

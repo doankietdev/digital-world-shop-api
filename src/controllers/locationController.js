@@ -5,21 +5,27 @@ const { default: asyncHandler } = require('~/utils/asyncHandler')
 const getProvinces = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get provinces successfully',
-    metadata: await locationService.getProvinces(req.query)
+    metadata: {
+      provinces: await locationService.getProvinces()
+    }
   }).send(res)
 })
 
 const getDistricts = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get districts successfully',
-    metadata: await locationService.getDistricts(req.query)
+    metadata: {
+      districts: await locationService.getDistricts(req.query.provinceId)
+    }
   }).send(res)
 })
 
 const getWards = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get wards successfully',
-    metadata: await locationService.getWards(req.query)
+    metadata: {
+      wards: await locationService.getWards(req.query.districtId)
+    }
   }).send(res)
 })
 

@@ -8,8 +8,9 @@ const createNew = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     provinceId: Joi.number().required(),
     districtId: Joi.number().required(),
-    wardId: Joi.number().required(),
-    streetAddress: Joi.string().min(2).required()
+    wardCode: Joi.string().required(),
+    streetAddress: Joi.string().min(2).allow(null),
+    setAsDefault: Joi.boolean()
   })
 
   try {
@@ -26,10 +27,11 @@ const updateAddressForCurrentUser = asyncHandler(async (req, res, next) => {
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE)
       .required(),
-    provinceId: Joi.number(),
-    districtId: Joi.number(),
-    wardId: Joi.number(),
-    streetAddress: Joi.string().min(2)
+    provinceId: Joi.number().required(),
+    districtId: Joi.number().required(),
+    wardCode: Joi.string().required(),
+    streetAddress: Joi.string().min(2).allow(null),
+    setAsDefault: Joi.boolean()
   })
 
   try {

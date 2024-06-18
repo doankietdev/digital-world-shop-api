@@ -1,8 +1,7 @@
 import express from 'express'
-import addressValidation from '~/validations/addressValidation'
 import addressController from '~/controllers/addressController'
 import authMiddleware from '~/middlewares/authMiddleware'
-import { ROLES } from '~/utils/constants'
+import addressValidation from '~/validations/addressValidation'
 
 const router = express.Router()
 
@@ -21,7 +20,8 @@ router
     addressController.deleteAddressForCurrentUser
   )
 
-router.route('/get-user-address').get(addressController.getUserAddress)
+router.route('/get-user-addresses').get(addressController.getUserAddresses)
+router.route('/get-user-address/:addressId').get(addressController.getUserAddress)
 
 router.route('/').post(addressValidation.createNew, addressController.createNew)
 

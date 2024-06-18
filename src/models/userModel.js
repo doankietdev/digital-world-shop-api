@@ -61,6 +61,11 @@ const userSchema = new Schema(
       required: true,
       unique: true
     },
+    defaultAddress: {
+      type: Schema.Types.ObjectId,
+      ref: MODEL_NAMES.ADDRESS,
+      default: null
+    },
     password: {
       type: String,
       trim: true,
@@ -78,7 +83,6 @@ const userSchema = new Schema(
         message: generateDBErrorMessage('is invalid')
       }
     },
-    addresses: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.ADDRESS }],
     wishlist: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.PRODUCT }],
     isBlocked: { type: Boolean, default: false },
     verified: {

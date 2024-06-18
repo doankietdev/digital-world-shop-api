@@ -1,16 +1,15 @@
-import express from 'express'
-import cors from 'cors'
-import cookieParser from 'cookie-parser'
-import helmet from 'helmet'
 import compression from 'compression'
+import cookieParser from 'cookie-parser'
+import cors from 'cors'
+import express from 'express'
+import helmet from 'helmet'
 import morgan from 'morgan'
-import notFoundHandlingMiddleware from './middlewares/notFoundHandlingMiddleware'
-import errorHandlingMiddleware from './middlewares/errorHandlingMiddleware'
-import { DEV_ENV } from './utils/constants'
-import { BUILD_MODE } from './configs/environment'
 import { corsOptions } from './configs/cors'
+import { BUILD_MODE } from './configs/environment'
+import errorHandlingMiddleware from './middlewares/errorHandlingMiddleware'
+import notFoundHandlingMiddleware from './middlewares/notFoundHandlingMiddleware'
 import { route } from './routes'
-import fetchLocationToDBJob from './cronJobs/dataCollection/fetchLocationToDBJob'
+import { DEV_ENV } from './utils/constants'
 
 const app = express()
 
@@ -26,7 +25,5 @@ route(app)
 
 app.use(notFoundHandlingMiddleware)
 app.use(errorHandlingMiddleware)
-
-fetchLocationToDBJob.start()
 
 export default app

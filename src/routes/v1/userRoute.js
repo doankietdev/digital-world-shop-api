@@ -9,24 +9,30 @@ const router = express.Router()
 
 router.use(authMiddleware.authenticate)
 
-router.route('/get-current')
-  .get(userController.getCurrentUser)
+router.route('/get-current').get(userController.getCurrentUser)
 
-router.route('/update-current')
+router
+  .route('/set-default-address')
+  .post(userValidation.setDefaultAddress, userController.setDefaultAddress)
+
+router
+  .route('/update-current')
   .patch(
     uploadMiddleware.single('image'),
     userValidation.updateCurrentUser,
     userController.updateCurrentUser
   )
 
-router.route('/set-blocked/:id')
+router
+  .route('/set-blocked/:id')
   .patch(
     authMiddleware.checkPermission(ROLES.ADMIN),
     userValidation.setBlocked,
     userController.setBlocked
   )
 
-router.route('/:id')
+router
+  .route('/:id')
   .get(
     authMiddleware.checkPermission(ROLES.ADMIN),
     userValidation.getUser,
@@ -44,6 +50,8 @@ router.route('/:id')
     userController.deleteUser
   )
 
-router.route('/').get(authMiddleware.checkPermission(ROLES.ADMIN), userController.getUsers)
+router
+  .route('/')
+  .get(authMiddleware.checkPermission(ROLES.ADMIN), userController.getUsers)
 
 export default router

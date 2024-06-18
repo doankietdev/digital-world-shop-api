@@ -1,13 +1,11 @@
 import { Schema, model } from 'mongoose'
 import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
-import orderModel from './orderModel'
 
 const addressSchema = new Schema(
   {
     provinceId: {
       type: Number,
-      ref: MODEL_NAMES.PROVINCE,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
@@ -15,15 +13,13 @@ const addressSchema = new Schema(
     },
     districtId: {
       type: Number,
-      ref: MODEL_NAMES.DISCOUNT,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
       ]
     },
-    wardId: {
-      type: Number,
-      ref: MODEL_NAMES.WARD,
+    wardCode: {
+      type: String,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
@@ -33,21 +29,15 @@ const addressSchema = new Schema(
       type: String,
       trim: true,
       minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
+      default: null
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: MODEL_NAMES.USER,
       required: [
         true,
         generateDBErrorMessage('is required', { showValue: false })
       ]
-    },
-    userId: {
-      type: Schema.Types.ObjectId,
-      ref: MODEL_NAMES.USER,
-      validate: {
-        validator: async function (value) {
-          const foundUser = await orderModel.findOne({ userId: value })
-          return !foundUser
-        },
-        message: generateDBErrorMessage('is required', { showValue: false })
-      }
     }
   },
   {
