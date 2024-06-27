@@ -10,7 +10,6 @@ import addressRoute from './addressRoute'
 import checkoutRoute from './checkoutRoute'
 import orderRoute from './orderRoute'
 import locationRoute from './locationRoute'
-import paymentMethodRoute from './paymentMethodRoute'
 
 const router = express.Router()
 
@@ -25,6 +24,5 @@ router.use('/addresses', addressRoute)
 router.use('/checkout', checkoutRoute)
 router.use('/orders', orderRoute)
 router.use('/locations', locationRoute)
-router.use('/payment-methods', paymentMethodRoute)
 
 export default router
