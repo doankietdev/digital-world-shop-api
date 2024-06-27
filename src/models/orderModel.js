@@ -5,20 +5,16 @@ import {
   ORDER_STATUSES,
   PAYMENT_METHODS
 } from '~/utils/constants'
-import { generateDBErrorMessage } from '~/utils/formatter'
+import {
+  convertObjectToArrayValues,
+  generateDBErrorMessage
+} from '~/utils/formatter'
 
 const orderSchema = new Schema(
   {
-    orderBy: {
-      type: Schema.Types.ObjectId,
-      ref: MODEL_NAMES.USER,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    orderProducts: [
+    products: [
       {
+        _id: false,
         productId: {
           type: Schema.Types.ObjectId,
           required: [
@@ -41,7 +37,7 @@ const orderSchema = new Schema(
             generateDBErrorMessage('is required', { showValue: false })
           ]
         },
-        totalPrice: {
+        oldPrice: {
           type: Number,
           min: [0, generateDBErrorMessage('must be at least 0')],
           required: [
@@ -49,7 +45,7 @@ const orderSchema = new Schema(
             generateDBErrorMessage('is required', { showValue: false })
           ]
         },
-        totalPriceApplyDiscount: {
+        price: {
           type: Number,
           min: [0, generateDBErrorMessage('must be at least 0')],
           required: [
@@ -59,22 +55,6 @@ const orderSchema = new Schema(
         }
       }
     ],
-    totalPrice: {
-      type: Number,
-      min: [0, generateDBErrorMessage('must be at least 0')],
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    totalPriceApplyDiscount: {
-      type: Number,
-      min: [0, generateDBErrorMessage('must be at least 0')],
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
     shippingAddress: {
       type: Schema.Types.ObjectId,
       ref: MODEL_NAMES.ADDRESS,
@@ -85,31 +65,27 @@ const orderSchema = new Schema(
     },
     paymentMethod: {
       type: String,
-      trim: true,
-      enum: {
-        values: Object.values(PAYMENT_METHODS),
-        message: generateDBErrorMessage('is invalid')
-      },
-      default: PAYMENT_METHODS.COD
+      enum: convertObjectToArrayValues(PAYMENT_METHODS),
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    },
+    shippingFee: {
+      type: Number,
+      min: [0, generateDBErrorMessage('must be at least 0')],
+      default: null
     },
     status: {
       type: String,
-      trim: true,
-      enum: {
-        values: Object.values(ORDER_STATUSES),
-        message: generateDBErrorMessage('is invalid')
-      },
+      enum: convertObjectToArrayValues(ORDER_STATUSES),
       default: ORDER_STATUSES.PENDING
     },
     statusHistory: [
       {
         status: {
           type: String,
-          trim: true,
-          enum: {
-            values: Object.values(ORDER_STATUSES),
-            message: generateDBErrorMessage('is invalid')
-          },
+          enum: convertObjectToArrayValues(PAYMENT_METHODS),
           required: [
             true,
             generateDBErrorMessage('is required', { showValue: false })
@@ -120,14 +96,37 @@ const orderSchema = new Schema(
           default: Date.now
         }
       }
-    ]
+    ],
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: MODEL_NAMES.USER,
+      required: [
+        true,
+        generateDBErrorMessage('is required', { showValue: false })
+      ]
+    }
   },
   {
+    id: false,
     versionKey: false,
     timestamps: true,
     collation: { locale: 'en' },
     collection: COLLECTION_NAMES.ORDER
   }
 )
+
+orderSchema.virtual('totalProductsPrice').get(function () {
+  return this.products.reduce(
+    (acc, product) => acc + product.price * product.quantity,
+    0
+  )
+})
+
+orderSchema.virtual('totalPayment').get(function () {
+  if (this.shippingFee) {
+    return this.totalProductsPrice + this.shippingFee
+  }
+  return this.totalProductsPrice
+})
 
 export default model(MODEL_NAMES.ORDER, orderSchema)

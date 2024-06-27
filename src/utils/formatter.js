@@ -59,3 +59,20 @@ export const formatPlaceHolderUrl = (originalUrl, data = {}) => {
     }
   })
 }
+
+export const parsePlaceHolderUrl = (originalUrl, data = {}) => {
+  const placeholderRegex = /:(\w+)/g
+  const placeholderNames = Object.keys(data)
+
+  return originalUrl.replace(placeholderRegex, (match, placeholderName) => {
+    if (placeholderNames.includes(placeholderName)) {
+      return data[placeholderName]
+    } else {
+      return match
+    }
+  })
+}
+
+export const convertObjectToArrayValues = (obj) => {
+  return Object.keys(obj).map((key) => obj[key])
+}

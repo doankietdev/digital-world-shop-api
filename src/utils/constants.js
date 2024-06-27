@@ -24,17 +24,18 @@ export const DISCOUNT_APPLY_TYPES = {
   SPECIFIC: 'specific'
 }
 
-export const ORDER_STATUSES = {
-  PENDING: 'pending',
-  CONFIRMED: 'confirmed',
-  SHIPPED: 'shipped',
-  DELIVERED: 'delivered',
-  CANCELED: 'canceled'
+export const PAYMENT_METHODS = {
+  CASH_ON_DELIVERY: 'CASH_ON_DELIVERY',
+  PAY_IN_STORE: 'PAY_IN_STORE',
+  ONLINE_PAYMENT: 'ONLINE_PAYMENT'
 }
 
-export const PAYMENT_METHODS = {
-  COD: 'cod',
-  DIGITAL_WALLET: 'digital_wallet'
+export const ORDER_STATUSES = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  CONFIRMED: 'CONFIRMED',
+  SHIPPING: 'SHIPPING',
+  COMPLETED: 'COMPLETED'
 }
 
 export const COLLECTION_NAMES = {
@@ -52,7 +53,9 @@ export const COLLECTION_NAMES = {
   PASSWORD_HISTORY: 'password_history',
   PROVINCE: 'provinces',
   DISTRICT: 'districts',
-  WARD: 'wards'
+  WARD: 'wards',
+  PAYMENT_METHOD: 'payment_methods',
+  ORDER_STATUS: 'order_statuses'
 }
 
 export const MODEL_NAMES = {
@@ -70,7 +73,9 @@ export const MODEL_NAMES = {
   PASSWORD_HISTORY: 'PasswordHistory',
   PROVINCE: 'Province',
   DISTRICT: 'District',
-  WARD: 'Ward'
+  WARD: 'Ward',
+  PAYMENT_METHOD: 'PaymentMethod',
+  ORDER_STATUS: 'OrderStatus'
 }
 
 export const PARTNER_APIS = {
@@ -79,7 +84,18 @@ export const PARTNER_APIS = {
     APIS: {
       GET_PROVINCES: '/master-data/province',
       GET_DISTRICTS: '/master-data/district',
-      GET_WARDS: '/master-data/ward'
+      GET_WARDS: '/master-data/ward',
+      CALCULATE_FEE: '/v2/shipping-order/fee'
+    },
+    SERVICE_ID: 53321,
+    SERVICE_TYPE_ID: 2
+  },
+  PAYPAL: {
+    API_ROOT: 'https://api-m.sandbox.paypal.com',
+    APIS: {
+      GENERATE_ACCESS_TOKEN: '/v1/oauth2/token',
+      CREATE_ORDER: '/v2/checkout/orders',
+      CAPTURE_ORDER: '/v2/checkout/orders/:orderId/capture'
     }
   }
 }

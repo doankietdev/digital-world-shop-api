@@ -318,6 +318,7 @@ const updateVariantToCart = async ({ userId, product }) => {
 
 /**
  * @param {{
+ *   userId: string,
  *   products: [{
  *      productId: string,
  *      variantId: string

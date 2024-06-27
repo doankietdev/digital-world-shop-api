@@ -7,19 +7,23 @@ const router = express.Router()
 
 router.use(authMiddleware.authenticate)
 
-router.route('/:orderId/get-order-of-current-user')
+router
+  .route('/:orderId/get-order-of-current-user')
   .get(orderController.getOrderOfCurrentUser)
 
-router.route('/get-orders-of-current-user')
+router
+  .route('/get-orders-of-current-user')
   .get(orderController.getOrdersOfCurrentUser)
 
-router.route('/:orderId/update-status')
+router
+  .route('/:orderId/update-status')
   .patch(
     authMiddleware.checkPermission(ROLES.ADMIN),
     orderController.updateStatus
   )
 
-router.route('/:orderId')
+router
+  .route('/:orderId')
   .delete(
     authMiddleware.checkPermission(ROLES.ADMIN),
     orderController.deleteOrder

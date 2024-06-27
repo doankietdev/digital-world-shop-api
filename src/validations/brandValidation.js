@@ -11,7 +11,7 @@ const createNew = asyncHandler(async (req, res, next) => {
   })
 
   try {
-    await correctCondition.validateAsync(req.body)
+    await correctCondition.validateAsync(req.body, { abortEarly: false })
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)

@@ -31,6 +31,30 @@ const checkProductsAvailable = async (products) => {
   )
 }
 
+/**
+ * @param {Array<Product>} products
+ * @returns {Promise<[{
+ *  _id: import('mongoose').ObjectId,
+ *  title: string,
+ *  slug: string,
+ *  thumb: string,
+ *  brand: object,
+ *  variants: [{
+ *    _id: import('mongoose').ObjectId,
+ *    name: string,
+ *    images: [string],
+ *    quantity: number
+ *  }],
+ *  specs: [{
+ *    k: string,
+ *    v: string,
+ *    u: string
+ *  }],
+ *  oldPrice: number,
+ *  price: number,
+ *  discounts: [object]
+ * }]>}
+ */
 const getProductsApplyDiscount = async (products = []) => {
   const productIds = products.map((product) => product._id)
 
@@ -66,7 +90,15 @@ const getProductsApplyDiscount = async (products = []) => {
     )
     if (priceApplyDiscount < 0) priceApplyDiscount = 0
 
-    const fields = ['_id', 'title', 'slug', 'thumb', 'brand', 'variants']
+    const fields = [
+      '_id',
+      'title',
+      'slug',
+      'thumb',
+      'brand',
+      'variants',
+      'specs'
+    ]
     return {
       ...getObjectByFields(product, fields),
       oldPrice: separateDiscounts.length ? product.price : null,
