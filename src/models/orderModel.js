@@ -15,14 +15,15 @@ const orderSchema = new Schema(
     products: [
       {
         _id: false,
-        productId: {
+        product: {
           type: Schema.Types.ObjectId,
+          ref: MODEL_NAMES.PRODUCT,
           required: [
             true,
             generateDBErrorMessage('is required', { showValue: false })
           ]
         },
-        variantId: {
+        variant: {
           type: Schema.Types.ObjectId,
           required: [
             true,

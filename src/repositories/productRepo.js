@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes'
 import productModel from '~/models/productModel'
 import discountRepo from '~/repositories/discountRepo'
+import mongooseHelper from '~/helpers/mongooseHelper'
 import ApiError from '~/utils/ApiError'
 import { DISCOUNT_APPLY_TYPES, DISCOUNT_TYPES } from '~/utils/constants'
 
@@ -86,7 +87,7 @@ const convertToProductsApplyDiscount = async (products = []) => {
     if (priceApplyDiscount < 0) priceApplyDiscount = 0
 
     return {
-      ...product.toObject(),
+      ...mongooseHelper.convertMongooseObjectToVanillaObject(product),
       oldPrice: separateDiscounts.length ? product.price : null,
       price: separateDiscounts.length ? priceApplyDiscount : product.price,
       discounts: separateDiscounts.map((discount) => ({

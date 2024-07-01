@@ -14,6 +14,18 @@ const addToCart = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const addProductsToCart = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Add products to cart successfully',
+    metadata: {
+      cart: await cartService.addProductsToCart({
+        userId: req.user?._id,
+        products: req.body.products
+      })
+    }
+  }).send(res)
+})
+
 const updateProductQuantityToCart = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Update product quantity to cart successfully',
@@ -61,6 +73,7 @@ const getUserCart = asyncHandler(async (req, res) => {
 
 export default {
   addToCart,
+  addProductsToCart,
   updateProductQuantityToCart,
   updateVariantToCart,
   deleteFromCart,

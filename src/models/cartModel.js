@@ -39,6 +39,10 @@ const cartSchema = new Schema(
             generateDBErrorMessage('is required', { showValue: false })
           ]
         },
+        addedAt: {
+          type: Date,
+          default: Date.now
+        },
         _id: false
       }
     ],

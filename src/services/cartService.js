@@ -151,6 +151,29 @@ const addToCart = async ({ userId, product }) => {
 
 /**
  * @param {{
+ *  userId: string,
+ *  products: [{
+ *    productId: string,
+ *    variantId: string,
+ *    quantity: number
+ *  }]
+ * }}
+ */
+const addProductsToCart = async ({ userId, products }) => {
+  try {
+    const carts = await Promise.all(products.map(product => addToCart({ userId, product })))
+    return carts[carts.length - 1]
+  } catch (error) {
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Add products to cart failed'
+    )
+  }
+}
+
+/**
+ * @param {{
  *   userId: string,
  *   product: {
  *     productId: string,
@@ -385,6 +408,7 @@ const getCart = async ({ userId }) => {
 export default {
   createNewCart,
   addToCart,
+  addProductsToCart,
   updateProductQuantityToCart,
   updateVariantToCart,
   deleteFromCart,

@@ -12,6 +12,10 @@ router
   .post(cartValidation.addToCart, cartController.addToCart)
 
 router
+  .route('/add-products-to-cart')
+  .post(cartValidation.addProductsToCart, cartController.addProductsToCart)
+
+router
   .route('/update-product-quantity')
   .post(cartValidation.updateProductQuantityToCart, cartController.updateProductQuantityToCart)
 

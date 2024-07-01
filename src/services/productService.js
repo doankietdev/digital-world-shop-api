@@ -25,10 +25,17 @@ const createNew = async (reqBody, reqFile) => {
   }
 }
 
-const getProduct = async (id, reqQuery) => {
+const getProduct = async (id, reqQuery = {}) => {
   try {
     const { fields } = parseQueryParams(reqQuery)
-    return await productRepo.getProductApplyDiscount(id, { fields })
+    const foundProduct = await productModel.findOne({
+      _id: id
+    })
+    if (!foundProduct)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found')
+    return await productRepo.getProductApplyDiscount(foundProduct._id, {
+      fields
+    })
   } catch (error) {
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get product failed')
@@ -59,9 +66,9 @@ const getProducts = async (reqQuery) => {
 
     const productQuery = {
       ...query,
-      $and: query?.specs?.map(spec => ({
+      $and: query?.specs?.map((spec) => ({
         'specs.k': spec.k,
-        'specs.v': { $in: spec?.v?.map(vItem => parseInt(vItem)) }
+        'specs.v': { $in: spec?.v?.map((vItem) => parseInt(vItem)) }
       })) ?? [{}]
     }
     delete productQuery.specs
@@ -89,7 +96,10 @@ const getProducts = async (reqQuery) => {
       products: productsApplyDiscount
     }
   } catch (error) {
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Something went wrong'
+    )
   }
 }
 

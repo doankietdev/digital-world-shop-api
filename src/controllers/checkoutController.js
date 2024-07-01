@@ -26,7 +26,7 @@ const cancelOrder = asyncHandler(async (req, res) => {
     metadata: {
       order: await checkoutService.cancelOrder(
         req.user?._id,
-        req.params.orderId
+        req.query.orderId
       )
     }
   }).send(res)

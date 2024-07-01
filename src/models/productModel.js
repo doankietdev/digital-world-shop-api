@@ -118,6 +118,7 @@ const productSchema = new Schema(
         {
           versionKey: false,
           timestamps: true,
+          id: false,
           collation: { locale: 'en' }
         }
       )

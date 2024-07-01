@@ -15,8 +15,10 @@ router.route('/order').post(checkoutValidation.order, checkoutController.order)
 
 router.route('/create-paypal-order').post(checkoutController.createPayPalOrder)
 
-router.route('/capture-paypal-order').post(checkoutController.capturePayPalOrder)
+router
+  .route('/capture-paypal-order')
+  .post(checkoutController.capturePayPalOrder)
 
-router.route('/cancel-order/:orderId').patch(checkoutController.cancelOrder)
+router.route('/cancel-order').patch(checkoutController.cancelOrder)
 
 export default router

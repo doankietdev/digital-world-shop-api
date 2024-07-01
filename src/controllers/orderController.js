@@ -17,12 +17,10 @@ const getOrderOfCurrentUser = asyncHandler(async (req, res) => {
 const getOrdersOfCurrentUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get orders of current user successfully',
-    metadata: {
-      orders: await orderService.getOrdersOfCurrentUser(
-        req.user?._id,
-        req.params.orderId
-      )
-    }
+    metadata: await orderService.getOrdersOfCurrentUser(
+      req.user?._id,
+      req.query
+    )
   }).send(res)
 })
 
