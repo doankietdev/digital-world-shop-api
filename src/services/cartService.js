@@ -394,7 +394,7 @@ const getCart = async ({ userId }) => {
       )
       delete cartProduct.productId
     }
-
+    cart.products.reverse()
     return cart
   } catch (error) {
     if (error.name === ApiError.name) throw error
