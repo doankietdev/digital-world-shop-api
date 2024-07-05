@@ -6,10 +6,11 @@ import paypalProvider from '~/providers/paypalProvider'
 import checkoutRepo from '~/repositories/checkoutRepo'
 import orderRepo from '~/repositories/orderRepo'
 import ApiError from '~/utils/ApiError'
-import { ORDER_STATUSES, PAYMENT_METHODS } from '~/utils/constants'
+import { ORDER_STATUSES, PARTNER_APIS, PAYMENT_METHODS } from '~/utils/constants'
 import cartService from './cartService'
 import orderService from './orderService'
 import userService from './userService'
+import ghnAxiosClient from '~/configs/ghnAxiosClient'
 
 /**
  * @param {*} userId
@@ -44,7 +45,8 @@ import userService from './userService'
  *  totalPrice: number,
  *  totalPriceApplyDiscount: number,
  *  totalPayment: number,
- *  shippingFee: number}>}
+ *  shippingFee: number,
+ *  totalWeight: number}>}
  */
 const review = async (userId, reqBody) => {
   try {
@@ -140,25 +142,28 @@ const review = async (userId, reqBody) => {
       .populate('defaultAddress')
       .lean()
     if (!foundUser) throw new Error('User not found')
-    // if (foundUser.defaultAddress) {
-    //   const { total: shippingFee } = await ghnAxiosClient.post(
-    //     PARTNER_APIS.GHN.APIS.CALCULATE_FEE,
-    //     {
-    //       to_ward_code: foundUser.defaultAddress.wardCode,
-    //       to_district_id: foundUser.defaultAddress.districtId,
-    //       weight: totalWeight,
-    //       service_id: PARTNER_APIS.GHN.SERVICE_ID,
-    //       service_type_id: PARTNER_APIS.GHN.SERVICE_TYPE_ID
-    //     }
-    //   )
-    //   reviewInfo = {
-    //     ...reviewInfo,
-    //     shippingFee,
-    //     totalPayment: shippingFee + reviewInfo.totalPriceApplyDiscount
-    //   }
-    // }
+    if (foundUser.defaultAddress) {
+      const { total: shippingFee } = await ghnAxiosClient.post(
+        PARTNER_APIS.GHN.APIS.CALCULATE_FEE,
+        {
+          to_ward_code: foundUser.defaultAddress.wardCode,
+          to_district_id: foundUser.defaultAddress.districtId,
+          weight: totalWeight,
+          service_id: PARTNER_APIS.GHN.SERVICE_ID,
+          service_type_id: PARTNER_APIS.GHN.SERVICE_TYPE_ID
+        }
+      )
+      reviewInfo = {
+        ...reviewInfo,
+        shippingFee,
+        totalPayment: shippingFee + reviewInfo.totalPriceApplyDiscount
+      }
+    }
 
-    return reviewInfo
+    return {
+      ...reviewInfo,
+      totalWeight
+    }
   } catch (error) {
     if (error.name === ApiError.name) throw error
     throw new ApiError(
@@ -329,6 +334,7 @@ const cancelOrder = async (userId, orderId) => {
     if (!modifiedCount === 0) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot cancel order')
     }
+    return await orderService.getOrderOfCurrentUser(userId, orderId)
   } catch (error) {
     if (error.name === 'ApiError') throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Cancel order failed')

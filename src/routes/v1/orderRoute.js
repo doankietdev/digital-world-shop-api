@@ -23,6 +23,12 @@ router
   )
 
 router
+  .route('/:orderId/update-shipping-address-of-current-user')
+  .patch(
+    orderController.updateShippingAddressOfCurrentUser
+  )
+
+router
   .route('/:orderId')
   .delete(
     authMiddleware.checkPermission(ROLES.ADMIN),

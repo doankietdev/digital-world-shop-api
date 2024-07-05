@@ -38,6 +38,19 @@ const updateStatus = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const updateShippingAddressOfCurrentUser = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Update shipping address successfully',
+    metadata: {
+      order: await orderService.updateShippingAddress({
+        userId: req.user._id,
+        orderId: req.params.orderId,
+        addressId: req.body.addressId
+      })
+    }
+  }).send(res)
+})
+
 const deleteOrder = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Delete order successfully',
@@ -51,5 +64,6 @@ export default {
   getOrderOfCurrentUser,
   getOrdersOfCurrentUser,
   updateStatus,
+  updateShippingAddressOfCurrentUser,
   deleteOrder
 }
