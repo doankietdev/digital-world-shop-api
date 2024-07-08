@@ -20,4 +20,8 @@ export const getObjectByFields = (obj, fields = []) => {
   return responseObj
 }
 
+export const findFileFromReqFiles = (reqFiles = [], fieldName = '') => {
+  return reqFiles.find(file => file.fieldname === fieldName)
+}
+
 export const typeOf = (value) => Object.prototype.toString.call(value).slice(8, -1)

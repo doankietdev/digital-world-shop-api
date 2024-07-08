@@ -9,6 +9,7 @@ import userModel from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
 import {
   checkEmailVerificationTokenExpired,
+  checkNewPasswordPolicy,
   checkPasswordResetOTPExpired,
   generateBase64Token,
   generateKeyPairRSA,
@@ -303,10 +304,7 @@ const verifyPasswordResetOtp = async ({ userId, email, otp }) => {
 
 const resetPassword = async ({ userId, email, token, newPassword }) => {
   try {
-    const foundUser = await userModel.findOne({
-      _id: userId,
-      email
-    })
+    const foundUser = await userModel.findOne({ _id: userId, email }).lean()
     if (!foundUser)
       throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)
 
@@ -318,43 +316,34 @@ const resetPassword = async ({ userId, email, token, newPassword }) => {
       throw new ApiError(StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST)
     }
 
-    // check new password same old passwords
-    const passwordHistory = await passwordHistoryModel.find({
-      userId,
-      createdAt: {
-        $gte: Date.now() - AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME
-      }
-    })
-    let isSame = false
-    for (const { password: hashedOldPassword } of passwordHistory) {
-      isSame = await verifyHashed(newPassword, hashedOldPassword)
-      if (isSame) break
-    }
-    if (isSame) {
+    if (!await checkNewPasswordPolicy(newPassword, foundUser.passwordHistory)) {
       const numberDays =
-        AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME / (1000 * 60 * 60 * 24)
+          AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME / (1000 * 60 * 60 * 24)
       throw new ApiError(
         StatusCodes.CONFLICT,
         `New password must not be the same as old password for ${numberDays} days`
       )
     }
 
-    // push current password to history
-    await passwordHistoryModel.create({
-      userId,
-      password: foundUser.password
-    })
-
     // reset password
-    await userModel.updateOne(
+    const { modifiedCount } = await userModel.updateOne(
       {
         _id: userId,
         email
       },
       {
-        password: (await hash(newPassword)).hashed
+        password: (await hash(newPassword)).hashed,
+        '$addToSet': {
+          'passwordHistory': {
+            password: foundUser.password
+          }
+        }
       }
     )
+    if (modifiedCount === 0) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Change password failed')
+    }
+    await authenticationTokenModel.deleteMany({ userId })
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)

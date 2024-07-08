@@ -1,6 +1,7 @@
 import SuccessResponse from '~/utils/SuccessResponse'
 import asyncHandler from '~/utils/asyncHandler'
 import userService from '~/services/userService'
+import { findFileFromReqFiles } from '~/utils/util'
 
 const getUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
@@ -30,21 +31,27 @@ const getUsers = asyncHandler(async (req, res) => {
 })
 
 const updateCurrentUser = asyncHandler(async (req, res) => {
-  const userId = req.user?._id
   new SuccessResponse({
     message: 'Update current user successfully',
     metadata: {
-      user: await userService.updateCurrentUser(userId, req.file, req.body)
+      user: await userService.updateUser(req.user?._id, req.body)
     }
   }).send(res)
 })
 
-const updateUser = asyncHandler(async (req, res) => {
+const uploadAvatarForCurrentUser = asyncHandler(async (req, res) => {
   new SuccessResponse({
-    message: 'Update user successfully',
+    message: 'Upload avatar for current user successfully',
     metadata: {
-      user: await userService.updateUser(req.params.id, req.file, req.body)
+      user: await userService.uploadAvatar(req.user?._id, findFileFromReqFiles(req.files, 'image'))
     }
+  }).send(res)
+})
+
+const changePassword = asyncHandler(async (req, res) => {
+  await userService.changePassword(req.user._id, req.body)
+  new SuccessResponse({
+    message: 'Change password successfully'
   }).send(res)
 })
 
@@ -80,7 +87,8 @@ export default {
   getCurrentUser,
   getUsers,
   updateCurrentUser,
-  updateUser,
+  uploadAvatarForCurrentUser,
+  changePassword,
   deleteUser,
   setBlocked,
   setDefaultAddress

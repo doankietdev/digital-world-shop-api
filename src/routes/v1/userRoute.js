@@ -1,8 +1,8 @@
 import express from 'express'
 import userController from '~/controllers/userController'
 import authMiddleware from '~/middlewares/authMiddleware'
+import imageUploadMiddleware from '~/middlewares/imageUploadMiddleware'
 import { ROLES } from '~/utils/constants'
-import uploadMiddleware from '~/middlewares/uploadMiddleware'
 import userValidation from '~/validations/userValidation'
 
 const router = express.Router()
@@ -18,9 +18,23 @@ router
 router
   .route('/update-current')
   .patch(
-    uploadMiddleware.single('image'),
     userValidation.updateCurrentUser,
     userController.updateCurrentUser
+  )
+
+router
+  .route('/upload-avatar-for-current')
+  .patch(
+    imageUploadMiddleware({ maxFileNumber: 1 }),
+    userValidation.uploadAvatarForCurrentUser,
+    userController.uploadAvatarForCurrentUser
+  )
+
+router
+  .route('/change-password')
+  .patch(
+    userValidation.changePassword,
+    userController.changePassword
   )
 
 router
@@ -37,12 +51,6 @@ router
     authMiddleware.checkPermission(ROLES.ADMIN),
     userValidation.getUser,
     userController.getUser
-  )
-  .patch(
-    authMiddleware.checkPermission(ROLES.ADMIN),
-    uploadMiddleware.single('image'),
-    userValidation.updateUser,
-    userController.updateUser
   )
   .delete(
     authMiddleware.checkPermission(ROLES.ADMIN),

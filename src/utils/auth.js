@@ -2,6 +2,8 @@ import bcrypt from 'bcrypt'
 import forge from 'node-forge'
 import jwt from 'jsonwebtoken'
 import CryptoJS from 'crypto-js'
+import { AUTH } from '~/configs/environment'
+import ApiError from './ApiError'
 
 const { rsa, publicKeyToPem, privateKeyToPem } = forge.pki
 
@@ -60,4 +62,21 @@ export const checkPasswordResetOTPExpired = (expireAt) => {
   const msExpireAt = new Date(expireAt).getTime()
   const msNow = Date.now()
   return msNow >= msExpireAt
+}
+
+/**
+ * @param {string} newPassword
+ * @param {[{
+ *  password: string,
+ *  changedAt: Date
+ * }]} passwordHistory
+ * @returns {Promise<boolean>}
+ */
+export const checkNewPasswordPolicy = async (newPassword = '', passwordHistory = []) => {
+  for (const { password: hashedOldPassword, changedAt } of passwordHistory) {
+    const invalidTime = Date.now() - new Date(changedAt).getTime() <= AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME
+    const samePassword = await verifyHashed(newPassword, hashedOldPassword)
+    if (invalidTime && samePassword) return false
+  }
+  return true
 }

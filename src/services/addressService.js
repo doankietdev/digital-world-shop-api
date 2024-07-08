@@ -56,7 +56,7 @@ const getUserAddresses = async ({ userId, addressId }) => {
       .sort('-createdAt')
       .lean()
 
-    const foundUser = await userService.getUser(userId)
+    const foundUser = await userModel.findOne({ _id: userId })
     if (!foundUser) throw Error('User not found')
 
     let responseAddresses = []
@@ -76,7 +76,7 @@ const getUserAddresses = async ({ userId, addressId }) => {
         district,
         ward,
         default:
-          address?._id.toString() == foundUser.defaultAddress?._id.toString() ??
+          address?._id.toString() == foundUser.defaultAddress.toString() ??
           false
       }
       delete tempAddress.provinceId

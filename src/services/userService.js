@@ -1,169 +1,151 @@
-import { ReasonPhrases, StatusCodes } from 'http-status-codes'
+import { StatusCodes } from 'http-status-codes'
+import cloudinary from '~/configs/cloudinary'
 import addressModel from '~/models/addressModel'
 import userModel from '~/models/userModel'
 import cloudinaryProvider from '~/providers/cloudinaryProvider'
 import ApiError from '~/utils/ApiError'
 import { parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
-import locationService from './locationService'
+import addressService from './addressService'
+import { checkNewPasswordPolicy, hash, verifyHashed } from '~/utils/auth'
+import authenticationTokenModel from '~/models/authenticationTokenModel'
+import { AUTH } from '~/configs/environment'
 
 const getUser = async (userId) => {
   try {
-    const foundUser = await userModel
-      .findOne({
-        _id: userId
-      })
-      .populate({
-        path: 'defaultAddress',
-        select: '-user'
-      })
-      .select('-password -publicKey -privateKey -usedRefreshTokens')
-      .lean()
+    const { items: [foundUser] } = await getUsers({ _id: userId })
     if (!foundUser)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
-
-    if (foundUser.defaultAddress) {
-      const { provinceId, districtId, wardCode } = foundUser.defaultAddress
-      const [province, district, ward] = await Promise.all([
-        locationService.getProvince(provinceId),
-        locationService.getDistrict({ provinceId, districtId }),
-        locationService.getWard({ districtId, wardCode })
-      ])
-      if (!province || !district || !ward)
-        throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)
-
-      foundUser.defaultAddress = {
-        ...foundUser.defaultAddress,
-        province,
-        district,
-        ward
-      }
-      delete foundUser.defaultAddress.provinceId
-      delete foundUser.defaultAddress.districtId
-      delete foundUser.defaultAddress.wardCode
-    }
-
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
     return foundUser
   } catch (error) {
     if (error.name === ApiError.name) throw error
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
-      'Get current user failed'
+      'Something went wrong'
     )
   }
 }
 
 const getUsers = async (reqQuery) => {
   try {
-    const { query, sort, fields, limit, skip, page } =
+    const { query, sort, limit, skip, page } =
       parseQueryParams(reqQuery)
-
-    const BASE_SELECT = '-password -publicKey -privateKey -usedRefreshTokens'
 
     const [users, totalUsers] = await Promise.all([
       userModel
         .find(query)
-        .populate({
-          path: 'defaultAddress',
-          select: '-user'
-        })
-        .select(fields ? `${fields} ${BASE_SELECT}` : BASE_SELECT)
+        .select('-passwordHistory -defaultAddress -password -publicKey -privateKey -usedRefreshTokens')
         .sort(sort)
         .skip(skip)
         .limit(limit)
         .lean(),
-      userModel.countDocuments()
+      userModel.find(query).countDocuments()
     ])
 
-    let responseUsers = []
-    for (const user of users) {
-      if (user.defaultAddress) {
-        const { provinceId, districtId, wardCode } = user.defaultAddress
-        const [province, district, ward] = await Promise.all([
-          locationService.getProvince(provinceId),
-          locationService.getDistrict({ provinceId, districtId }),
-          locationService.getWard({ districtId, wardCode })
-        ])
-        if (!province || !district || !ward)
-          throw new ApiError(StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND)
-
-        user.defaultAddress = {
-          ...user.defaultAddress,
-          province,
-          district,
-          ward
-        }
-        delete user.defaultAddress.provinceId
-        delete user.defaultAddress.districtId
-        delete user.defaultAddress.wardCode
-      }
-      responseUsers = [...responseUsers, user]
-    }
+    const attachedAddressesUser = await Promise.all(
+      users.map(async (user) => ({
+        ...user,
+        addresses: await addressService.getUserAddresses({ userId: user._id })
+      }))
+    )
 
     return {
       page,
       totalPages: calculateTotalPages(totalUsers, limit),
-      totalUsers,
-      users: responseUsers
+      totalItems: totalUsers,
+      items: attachedAddressesUser
     }
   } catch (error) {
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Get users failed')
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
   }
 }
 
-const updateCurrentUser = async (userId, reqFile, reqBody) => {
+const updateUser = async (userId, reqBody) => {
   try {
-    const prevUser = await userModel.findById(userId)
-    if (!prevUser) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
-
-    let image = undefined
-    if (reqFile) {
-      [image] = await Promise.all([
-        cloudinaryProvider.uploadSingle(reqFile),
-        cloudinaryProvider.deleteSingle(prevUser.image.id)
-      ])
-    }
-
     const user = await userModel.findByIdAndUpdate(
       userId,
-      { ...reqBody, image },
-      { new: true }
-    )
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'Something went wrong')
-    return getUser(user._id)
-  } catch (error) {
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Update current user failed'
-    )
-  }
-}
-
-const updateUser = async (userId, reqFile, reqBody) => {
-  try {
-    const prevUser = await userModel.findById(userId)
-    if (!prevUser) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
-
-    let image = undefined
-    if (reqFile) {
-      [image] = await Promise.all([
-        cloudinaryProvider.uploadSingle(reqFile),
-        cloudinaryProvider.deleteSingle(prevUser.image.id)
-      ])
-    }
-
-    const user = await userModel.findByIdAndUpdate(
-      userId,
-      { ...reqBody, image },
+      reqBody,
       { new: true }
     )
     if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
     return getUser(user._id)
   } catch (error) {
     if (error.name === ApiError.name) throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Update user failed')
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Something went wrong'
+    )
+  }
+}
+
+const uploadAvatar = async (userId, avatar) => {
+  try {
+    const { path, filename } = avatar
+    const prevUser = await userModel.findByIdAndUpdate(
+      userId,
+      { image: { url: path, id: filename } }
+    )
+
+    if (!prevUser) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
+    if (prevUser.image) {
+      await cloudinary.uploader.destroy(prevUser.image.id)
+    }
+
+    return getUser(userId)
+  } catch (error) {
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Something went wrong'
+    )
+  }
+}
+
+const changePassword = async (userId, { currentPassword, newPassword }) => {
+  try {
+    const foundUser = await userModel.findOne({ _id: userId }).lean()
+    if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
+    const isValidPassword = await verifyHashed(currentPassword, foundUser.password)
+    if (!isValidPassword) throw new ApiError(StatusCodes.BAD_REQUEST, 'Incorrect current password')
+
+    const isSameCurrentPassword = await verifyHashed(newPassword, foundUser.password)
+    if (isSameCurrentPassword)
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        'New password must not be the same as current password'
+      )
+
+    if (!await checkNewPasswordPolicy(newPassword, foundUser.passwordHistory)) {
+      const numberDays =
+          AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME / (1000 * 60 * 60 * 24)
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        `New password must not be the same as old password for ${numberDays} days`
+      )
+    }
+
+    const { hashed } = await hash(newPassword)
+    const { modifiedCount } = await userModel.updateOne(
+      { _id: userId },
+      {
+        password: hashed,
+        '$addToSet': {
+          'passwordHistory': {
+            password: foundUser.password
+          }
+        }
+      }
+    )
+    if (modifiedCount === 0) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Change password failed')
+    }
+    await authenticationTokenModel.deleteMany({ userId })
+  } catch (error) {
+    if (error.name === ApiError.name) throw error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
   }
 }
 
@@ -216,8 +198,9 @@ const setDefaultAddress = async (userId, addressId) => {
 export default {
   getUser,
   getUsers,
-  updateCurrentUser,
   updateUser,
+  uploadAvatar,
+  changePassword,
   deleteUser,
   setBlocked,
   setDefaultAddress

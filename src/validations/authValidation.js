@@ -11,7 +11,7 @@ import {
 
 const signUp = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    firstName: Joi.string().required(),
+    firstName: Joi.string().min(1).required(),
     lastName: Joi.string().min(2).required(),
     mobile: Joi.string()
       .pattern(PHONE_NUMBER_RULE)

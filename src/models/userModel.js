@@ -7,7 +7,12 @@ import { PHONE_NUMBER_RULE } from '~/utils/validators'
 
 const userSchema = new Schema(
   {
-    firstName: { type: String, trim: true, required: true },
+    firstName: {
+      type: String,
+      trim: true,
+      minLength: [1, generateDBErrorMessage('must have a minimum length of 1')],
+      required: true
+    },
     lastName: {
       type: String,
       trim: true,
@@ -74,6 +79,21 @@ const userSchema = new Schema(
         generateDBErrorMessage('is required', { showValue: false })
       ]
     },
+    passwordHistory: [{
+      password: {
+        type: String,
+        trim: true,
+        required: [
+          true,
+          generateDBErrorMessage('is required', { showValue: false })
+        ]
+      },
+      changedAt: {
+        type: Date,
+        default: Date.now
+      },
+      _id: false
+    }],
     role: {
       type: String,
       trim: true,

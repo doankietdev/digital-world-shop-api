@@ -1,4 +1,4 @@
-import cloudinary from '~/configs/cloudinary'
+import cloudinary from '~/configs/cloudinaryStorage'
 
 const uploadSingle = async (file = {}) => {
   const result = await cloudinary.uploader.upload(file.path, { folder: 'digital-shop' })

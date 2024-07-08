@@ -2,8 +2,9 @@ import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
-import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
+import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGES } from '~/utils/validators'
 import { ROLES } from '~/utils/constants'
+import { findFileFromReqFiles } from '~/utils/util'
 
 const getUser = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
@@ -36,16 +37,13 @@ const setDefaultAddress = asyncHandler(async (req, res, next) => {
 
 const updateCurrentUser = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    firstName: Joi.string(),
-    lastName: Joi.string(),
-    mobile: Joi.string(),
-    password: Joi.string().min(6),
-    image: Joi.object()
+    firstName: Joi.string().min(1),
+    lastName: Joi.string().min(2)
   })
 
   try {
     await correctCondition.validateAsync(
-      { ...req.body, image: req.file },
+      req.body,
       { abortEarly: false }
     )
     next()
@@ -54,21 +52,34 @@ const updateCurrentUser = asyncHandler(async (req, res, next) => {
   }
 })
 
-const updateUser = asyncHandler(async (req, res, next) => {
-  const correctCondition = Joi.object({
-    firstName: Joi.string(),
-    lastName: Joi.string(),
-    mobile: Joi.string(),
-    password: Joi.string().min(6),
-    role: Joi.string().valid(...Object.values(ROLES)),
-    image: Joi.object()
-  })
-
+const uploadAvatarForCurrentUser = asyncHandler(async (req, res, next) => {
   try {
-    await correctCondition.validateAsync(
-      { ...req.body, image: req.file },
-      { abortEarly: false }
-    )
+    const correctCondition = Joi.object({
+      image: Joi.object().required()
+    })
+    await correctCondition.validateAsync({
+      image: findFileFromReqFiles(req.files, 'image')
+    })
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
+const changePassword = asyncHandler(async (req, res, next) => {
+  try {
+    const correctCondition = Joi.object({
+      currentPassword: Joi.string().required(),
+      newPassword: Joi.string()
+        .min(6)
+        .regex(PASSWORD_RULE)
+        .messages({
+          'string.min': PASSWORD_RULE_MESSAGES.MIN_LENGTH,
+          'string.pattern.base': PASSWORD_RULE_MESSAGES.SPECIAL_CHAR
+        })
+        .required()
+    })
+    await correctCondition.validateAsync(req.body, { abortEarly: false })
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
@@ -112,7 +123,8 @@ export default {
   getUser,
   setDefaultAddress,
   updateCurrentUser,
-  updateUser,
+  uploadAvatarForCurrentUser,
+  changePassword,
   setBlocked,
   deleteUser
 }
