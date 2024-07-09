@@ -274,6 +274,7 @@ const createPayPalOrder = async (userId, reqBody) => {
           },
           shipping: {
             currency_code: 'USD',
+            // value: Math.round(shippingFee / 23500)
             value: shippingFee
           }
         }
