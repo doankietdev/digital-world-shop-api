@@ -205,7 +205,13 @@ const order = async (userId, reqBody) => {
   try {
     const { paymentMethod } = reqBody
 
-    const foundUser = await userService.getUser(userId)
+    const foundUser = await userModel.findOne({
+      _id: userId
+    })
+    if (!foundUser) throw new Error('User not found')
+
+    if (!foundUser.defaultAddress)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'User has not set a default address')
 
     const { shippingFee, orderProducts } = await review(userId, reqBody)
 
@@ -217,7 +223,7 @@ const order = async (userId, reqBody) => {
         oldPrice: product.oldPrice,
         price: product.price
       })),
-      shippingAddress: foundUser.defaultAddress._id,
+      shippingAddress: foundUser.defaultAddress,
       shippingFee: shippingFee ?? 0,
       paymentMethod,
       user: foundUser._id
