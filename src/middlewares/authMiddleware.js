@@ -1,43 +1,64 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
-import { verifyToken } from '~/utils/auth'
-import authenticationTokenModel from '~/models/authenticationTokenModel'
 import userModel from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
+import { verifyToken } from '~/utils/auth'
 import { HEADER_KEYS } from '~/utils/constants'
 
 const authenticate = asyncHandler(async (req, res, next) => {
-  try {
-    const userId = req.headers[HEADER_KEYS.USER_ID]
-    const authorization = req.headers[HEADER_KEYS.AUTHORIZATION]
-    if (!userId || !authorization?.includes('Bearer')) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
-    }
-    const accessToken = authorization?.split(' ')[1]
-    if (!accessToken) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+  const userId = req.headers[HEADER_KEYS.USER_ID]
+  const authorization = req.headers[HEADER_KEYS.AUTHORIZATION]
+  if (!userId || !authorization?.startsWith('Bearer ')) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+  }
+  const accessToken = authorization?.split(' ')[1]
+  if (!accessToken) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
-    const user = await userModel.findById(userId)
+  let user = null
+  try {
+    user = await userModel.findOne({
+      _id: userId,
+      verified: true,
+      blocked: false
+    })
     if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
-    const token = await authenticationTokenModel.findOne({ userId: user?._id, accessToken })
-    if (!token) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+    if (!user.accessTokens.includes(accessToken)) {
+      await userModel.updateOne(
+        { _id: user._id },
+        { accessTokens: [], refreshTokens: [] }
+      )
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
+    }
 
     const decodedUser = verifyToken(accessToken, user.publicKey)
     if (decodedUser.userId !== user?._id.toString()) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
     }
-    req.user = { _id: user._id.toString(), role: user.role }
-    req.token = token
+    req.user = {
+      _id: user._id.toString(),
+      email: user.email,
+      role: user.role
+    }
     next()
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Expired access token')
+      throw new ApiError(StatusCodes.GONE, 'Need to refresh token')
     }
     if (error.name === 'JsonWebTokenError') {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid access token')
+      await userModel.updateOne(
+        { _id: userId },
+        {
+          accessTokens: [],
+          refreshTokens: [],
+          $addToSet: {
+            usedRefreshTokens: user?.refreshTokens
+          }
+        }
+      )
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
     }
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, ReasonPhrases.INTERNAL_SERVER_ERROR)
+    throw error
   }
 })
 

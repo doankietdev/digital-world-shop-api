@@ -1,9 +1,8 @@
 import bcrypt from 'bcrypt'
-import forge from 'node-forge'
-import jwt from 'jsonwebtoken'
 import CryptoJS from 'crypto-js'
+import jwt from 'jsonwebtoken'
+import forge from 'node-forge'
 import { AUTH } from '~/configs/environment'
-import ApiError from './ApiError'
 
 const { rsa, publicKeyToPem, privateKeyToPem } = forge.pki
 
@@ -31,10 +30,10 @@ export const generateKeyPairRSA = () => {
   }
 }
 
-export const generateToken = (payload = {}, privateKey, expiresIn) => {
+export const generateToken = (payload = {}, privateKey, tokenLife) => {
   return jwt.sign(payload, privateKey, {
     algorithm: 'RS256',
-    expiresIn
+    expiresIn: tokenLife
   })
 }
 
@@ -52,16 +51,10 @@ export const generateBase64Token = () => {
   return modifiedBase64
 }
 
-export const checkEmailVerificationTokenExpired = (expireAt) => {
-  const msExpireAt = new Date(expireAt).getTime()
+export const checkExpired = (expiresAt) => {
+  const msExpiresAt = new Date(expiresAt).getTime()
   const msNow = Date.now()
-  return msNow >= msExpireAt
-}
-
-export const checkPasswordResetOTPExpired = (expireAt) => {
-  const msExpireAt = new Date(expireAt).getTime()
-  const msNow = Date.now()
-  return msNow >= msExpireAt
+  return msNow >= msExpiresAt
 }
 
 /**

@@ -107,9 +107,9 @@ const getWards = async (districtId) => {
             .localeCompare(ward2.name.toLocaleLowerCase())
         )
     }
-    console.log(response)
     throw new Error('Fetch API error')
   } catch (error) {
+    console.log(error)
     if (error?.response?.status === StatusCodes.BAD_REQUEST)
       throw new ApiError(StatusCodes.NOT_FOUND, 'Ward not found')
     if (error.name === ApiError.name) throw error

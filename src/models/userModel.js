@@ -103,11 +103,68 @@ const userSchema = new Schema(
         message: generateDBErrorMessage('is invalid')
       }
     },
-    wishlist: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.PRODUCT }],
-    isBlocked: { type: Boolean, default: false },
+    blocked: { type: Boolean, default: false },
     verified: {
       type: Boolean,
       default: false
+    },
+    verificationToken: {
+      type: {
+        token: {
+          type: String,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        },
+        expiresAt: {
+          type: Date,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        },
+        _id: false
+      },
+      default: null
+    },
+    passwordResetOTP: {
+      type: {
+        otp: {
+          type: String,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        },
+        expiresAt: {
+          type: Date,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        }
+      },
+      default: null
+    },
+    passwordResetToken: {
+      type: {
+        token: {
+          type: String,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        },
+        expiresAt: {
+          type: Date,
+          required: [
+            true,
+            generateDBErrorMessage('is required', { showValue: false })
+          ]
+        }
+      },
+      default: null
     },
     publicKey: {
       type: String,
@@ -123,6 +180,8 @@ const userSchema = new Schema(
         generateDBErrorMessage('is required', { showValue: false })
       ]
     },
+    accessTokens: { type: Array, default: [] },
+    refreshTokens: { type: Array, default: [] },
     usedRefreshTokens: { type: Array, default: [] }
   },
   {

@@ -6,10 +6,9 @@ import cloudinaryProvider from '~/providers/cloudinaryProvider'
 import ApiError from '~/utils/ApiError'
 import { parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
-import addressService from './addressService'
-import { checkNewPasswordPolicy, hash, verifyHashed } from '~/utils/auth'
-import authenticationTokenModel from '~/models/authenticationTokenModel'
+// import addressService from './addressService'
 import { AUTH } from '~/configs/environment'
+import { checkNewPasswordPolicy, hash, verifyHashed } from '~/utils/auth'
 
 const getUser = async (userId) => {
   try {
@@ -34,7 +33,19 @@ const getUsers = async (reqQuery) => {
     const [users, totalUsers] = await Promise.all([
       userModel
         .find(query)
-        .select('-passwordHistory -defaultAddress -password -publicKey -privateKey -usedRefreshTokens')
+        .select({
+          verificationToken: 0,
+          passwordResetOTP: 0,
+          passwordResetToken: 0,
+          passwordHistory: 0,
+          defaultAddress: 0,
+          password: 0,
+          publicKey: 0,
+          privateKey: 0,
+          accessTokens: 0,
+          refreshTokens: 0,
+          usedRefreshTokens: 0
+        })
         .sort(sort)
         .skip(skip)
         .limit(limit)
@@ -44,8 +55,8 @@ const getUsers = async (reqQuery) => {
 
     const attachedAddressesUser = await Promise.all(
       users.map(async (user) => ({
-        ...user,
-        addresses: await addressService.getUserAddresses({ userId: user._id })
+        ...user
+        // addresses: await addressService.getUserAddresses({ userId: user._id })
       }))
     )
 
@@ -142,7 +153,6 @@ const changePassword = async (userId, { currentPassword, newPassword }) => {
     if (modifiedCount === 0) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Change password failed')
     }
-    await authenticationTokenModel.deleteMany({ userId })
   } catch (error) {
     if (error.name === ApiError.name) throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')

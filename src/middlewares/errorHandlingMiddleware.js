@@ -1,15 +1,17 @@
-import { StatusCodes } from 'http-status-codes'
+import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import ErrorResponse from '~/utils/ErrorResponse'
 import { BUILD_MODE } from '~/configs/environment'
 import { DEV_ENV } from '~/utils/constants'
+import ApiError from '~/utils/ApiError'
 
 // eslint-disable-next-line no-unused-vars
 const errorHandlingMiddleware = (error, req, res, next) => {
-  if (!error.statusCode) error.statusCode = StatusCodes.INTERNAL_SERVER_ERROR
+  const isApiError = error.name === ApiError.name
 
   const errorResponse = new ErrorResponse({
-    statusCode: error.statusCode,
-    message: error.message,
+    statusCode: isApiError ? error.statusCode : StatusCodes.INTERNAL_SERVER_ERROR,
+    message: isApiError ? error.message : ReasonPhrases.INTERNAL_SERVER_ERROR,
+    metadata: error.metadata,
     stack: error.stack
   })
 

@@ -1,10 +1,9 @@
-import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
+import Joi from 'joi'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
-import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGES } from '~/utils/validators'
-import { ROLES } from '~/utils/constants'
 import { findFileFromReqFiles } from '~/utils/util'
+import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGES } from '~/utils/validators'
 
 const getUser = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({

@@ -1,17 +1,27 @@
 import express from 'express'
-import authValidation from '~/validations/authValidation'
 import authController from '~/controllers/authController'
-import authMiddleware from '~/middlewares/authMiddleware'
+import authValidation from '~/validations/authValidation'
 
 const router = express.Router()
 
-router.route('/sign-up').post(authValidation.signUp, authController.signUp)
+router
+  .route('/sign-up')
+  .post(authValidation.signUp, authController.signUp)
 
-router.route('/verify-email').post(authController.verifyEmail)
+router
+  .route('/verify-email')
+  .post(
+    authValidation.verifyEmail,
+    authController.verifyEmail
+  )
 
-router.route('/sign-in').post(authValidation.signIn, authController.signIn)
+router
+  .route('/sign-in')
+  .post(authValidation.signIn, authController.signIn)
 
-router.route('/refresh-token').get(authController.handleRefreshToken)
+router
+  .route('/refresh-token')
+  .put(authController.refreshToken)
 
 router
   .route('/forgot-password')
@@ -25,17 +35,10 @@ router
   )
 
 router
-  .route('/resend-password-reset-otp')
-  .post(
-    authController.resendPasswordResetOtp
-  )
-
-router
   .route('/reset-password')
-  .post(authValidation.resetPassword, authController.resetPassword)
-
-router.use(authMiddleware.authenticate)
-
-router.route('/sign-out').post(authController.signOut)
+  .post(
+    authValidation.resetPassword,
+    authController.resetPassword
+  )
 
 export default router
