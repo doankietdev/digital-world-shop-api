@@ -110,6 +110,14 @@ const signIn = async ({ email, password, headerUserAgent, ip }) => {
       StatusCodes.BAD_REQUEST,
       'Incorrect email or password'
     )
+
+  const isValidPassword = await verifyHashed(password, user.password)
+  if (!isValidPassword)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Incorrect email or password'
+    )
+
   if (user.blocked)
     throw new ApiError(StatusCodes.FORBIDDEN, 'Account has been blocked')
 
@@ -133,13 +141,6 @@ const signIn = async ({ email, password, headerUserAgent, ip }) => {
       'Account has not been verified. Please check your email and verify account!'
     )
   }
-
-  const isValidPassword = await verifyHashed(password, user.password)
-  if (!isValidPassword)
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Incorrect email or password'
-    )
 
   if (user.sessions.length >= AUTH.MAX_SESSIONS) {
     user.sessions.shift()
@@ -313,8 +314,7 @@ const resetPassword = async ({ email, token, newPassword }) => {
       { _id: foundUser._id },
       {
         password: (await hash(newPassword)).hashed,
-        accessTokens: [],
-        refreshTokens: [],
+        sessions: [],
         $addToSet: {
           'passwordHistory': {
             password: foundUser.password
@@ -336,27 +336,26 @@ const resetPassword = async ({ email, token, newPassword }) => {
 }
 
 const refreshToken = async ({ userId, refreshToken }) => {
-  let user = null
+  if (!userId || !refreshToken)
+    throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+
+  const user = await userModel.findOne({
+    _id: userId
+  })
+  if (!user)
+    throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+
+  if (user.usedRefreshTokens?.includes(refreshToken)) {
+    user.sessions = []
+    await user.save()
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
+  }
+
+  const session = user.sessions?.find(session => session.refreshToken === refreshToken)
+  if (!session)
+    throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+
   try {
-    if (!userId || !refreshToken)
-      throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
-
-    const user = await userModel.findOne({
-      _id: userId
-    })
-    if (!user)
-      throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
-
-    if (user.usedRefreshTokens?.includes(refreshToken)) {
-      user.sessions = []
-      await user.save()
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
-    }
-
-    const session = user.sessions?.find(session => session.refreshToken === refreshToken)
-    if (!session)
-      throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
-
     const decodedUser = verifyToken(refreshToken, user.publicKey)
 
     const payload = {
@@ -377,14 +376,14 @@ const refreshToken = async ({ userId, refreshToken }) => {
     }
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
+      user.usedRefreshTokens.push(refreshToken)
+      await user.save()
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Expired refresh token')
     }
     if (error.name === 'JsonWebTokenError') {
-      if (user) {
-        user.sessions = []
-        user.usedRefreshTokens.push(refreshToken)
-        await user.save()
-      }
+      user.sessions = []
+      user.usedRefreshTokens.push(refreshToken)
+      await user.save()
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
     }
     throw error
