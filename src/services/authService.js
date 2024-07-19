@@ -1,12 +1,13 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import { TOTP } from 'totp-generator'
+import useragent from 'useragent'
+import { v4 as uuidv4 } from 'uuid'
 import { AUTH, CLIENT } from '~/configs/environment'
 import userModel from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
 import {
   checkExpired,
   checkNewPasswordPolicy,
-  generateBase64Token,
   generateKeyPairRSA,
   generateToken,
   hash,
@@ -29,7 +30,7 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
       ...errorMessages,
       {
         field: 'email',
-        message: 'is already in use'
+        message: 'Email is already in use'
       }
     ]
   }
@@ -38,36 +39,37 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
       ...errorMessages,
       {
         field: 'mobile',
-        message: 'is already in use'
+        message: 'Phone number is already in use'
       }
     ]
   }
-  if (errorMessages.length) {
-    throw new ApiError(StatusCodes.CONFLICT, errorMessages)
-  }
+  if (errorMessages.length)
+    throw new ApiError(
+      StatusCodes.CONFLICT,
+      'The information entered is invalid. Please check and try again!',
+      { errors: errorMessages }
+    )
 
   const { publicKey, privateKey } = generateKeyPairRSA()
   const { hashed } = await hash(password)
 
-  const token = generateBase64Token()
+  const verificationToken = uuidv4()
   const newUser = await userModel.create({
     firstName,
     lastName,
     mobile,
     email,
     password: hashed,
-    verificationToken: {
-      token, expiresAt: Date.now() + AUTH.EMAIL_VERIFICATION_TOKEN_LIFE
-    },
+    verificationToken,
     publicKey,
     privateKey
   })
   await sendMailWithHTML({
     email,
-    subject: 'Please confirm your email',
+    subject: 'Verify Account',
     pathToView: 'verify-email.ejs',
     data: {
-      url: `${CLIENT.URL}/auth/verify-email/${newUser._id}/${token}`
+      url: `${CLIENT.URL}/auth/verify-account?email=${newUser.email}&token=${newUser.verificationToken}`
     }
   })
 
@@ -78,7 +80,7 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
   }
 }
 
-const verifyEmail = async ({ email, token }) => {
+const verifyAccount = async ({ email, token }) => {
   const foundUser = await userModel.findOne({ email })
   if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Email not found')
 
@@ -86,16 +88,8 @@ const verifyEmail = async ({ email, token }) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Account has been verified')
   }
 
-  if (foundUser.verificationToken?.token !== token) {
+  if (foundUser.verificationToken !== token) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Token not found')
-  }
-
-  if (checkExpired(foundUser.verificationToken.expiresAt)) {
-    await userModel.updateOne(
-      { _id: foundUser._id },
-      { verificationToken: null }
-    )
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Token has expired')
   }
 
   const { modifiedCount } = await userModel.updateOne(
@@ -109,32 +103,29 @@ const verifyEmail = async ({ email, token }) => {
   }
 }
 
-const signIn = async ({ email, password }) => {
-  const foundUser = await userModel.findOne({ email })
-  if (!foundUser)
+const signIn = async ({ email, password, headerUserAgent, ip }) => {
+  const user = await userModel.findOne({ email })
+  if (!user)
     throw new ApiError(
-      StatusCodes.UNAUTHORIZED,
+      StatusCodes.BAD_REQUEST,
       'Incorrect email or password'
     )
-  if (foundUser.blocked)
+  if (user.blocked)
     throw new ApiError(StatusCodes.FORBIDDEN, 'Account has been blocked')
 
-  if (!foundUser.verified) {
-    const token = generateBase64Token()
-    const newUser = await userModel.updateOne(
-      { _id: foundUser._id },
-      {
-        verificationToken: {
-          token, expiresAt: Date.now() + AUTH.EMAIL_VERIFICATION_TOKEN_LIFE
-        }
-      }
-    )
+  if (!user.verified) {
+    let verificationToken = user.verificationToken
+    if (!verificationToken) {
+      verificationToken = uuidv4()
+      user.verificationToken = verificationToken
+      await user.save()
+    }
     await sendMailWithHTML({
       email,
-      subject: 'Please confirm your email',
+      subject: 'Verify Account',
       pathToView: 'verify-email.ejs',
       data: {
-        url: `${CLIENT.URL}/auth/verify-email/${newUser._id}/${token}`
+        url: `${CLIENT.URL}/auth/verify-account?email=${user.email}&token=${verificationToken}`
       }
     })
     throw new ApiError(
@@ -143,46 +134,78 @@ const signIn = async ({ email, password }) => {
     )
   }
 
-  const isValidPassword = await verifyHashed(password, foundUser.password)
+  const isValidPassword = await verifyHashed(password, user.password)
   if (!isValidPassword)
     throw new ApiError(
-      StatusCodes.UNAUTHORIZED,
+      StatusCodes.BAD_REQUEST,
       'Incorrect email or password'
     )
 
-  const payload = { userId: foundUser._id, email: foundUser.email }
+  if (user.sessions.length >= AUTH.MAX_SESSIONS) {
+    user.sessions.shift()
+  }
+
+  const payload = { userId: user._id, email: user.email }
   const accessToken = generateToken(
     payload,
-    foundUser.privateKey,
+    user.privateKey,
     AUTH.ACCESS_TOKEN_LIFE
   )
   const refreshToken = generateToken(
     payload,
-    foundUser.privateKey,
+    user.privateKey,
     AUTH.REFRESH_TOKEN_LIFE
   )
 
-  await userModel.updateOne(
-    { _id: foundUser._id },
-    {
-      $addToSet: {
-        accessTokens: accessToken,
-        refreshTokens: refreshToken
-      }
+  const agent = useragent.parse(headerUserAgent)
+
+  user.sessions.push({
+    accessToken,
+    refreshToken,
+    device: {
+      name: agent.device.toString(),
+      deviceType: agent.device.family,
+      os: agent.os.toString(),
+      browser: agent.toAgent(),
+      ip
     }
-  )
+  })
+
+  await user.save()
 
   return {
-    user: await userService.getUser(foundUser._id),
+    user: await userService.getUser(user._id),
     accessToken,
     refreshToken
+  }
+}
+
+const signInStatus = async ({ sessions = [], accessToken }) => {
+  const session = sessions.find(session => session.accessToken === accessToken)
+  if (!session) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+  return {
+    device: session.device,
+    signInTime: session.createdAt
+  }
+}
+
+const signOut = async ({ userId, ip }) => {
+  const user = await userModel.findOne({
+    _id: userId,
+    'sessions.device.ip': ip
+  })
+  if (user) {
+    user.sessions = user.sessions.filter(session => session.device.ip !== ip)
+    await user.save()
   }
 }
 
 const forgotPassword = async ({ email }) => {
   const foundUser = await userModel.findOne({ email })
   if (!foundUser)
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Incorrect email')
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Sorry, email you entered is not associated with any account. Please check your email and try again!')
 
   const expiresAt = Date.now() + AUTH.PASSWORD_RESET_OTP_LIFE
 
@@ -226,18 +249,17 @@ const forgotPassword = async ({ email }) => {
 const verifyPasswordResetOtp = async ({ email, otp }) => {
   const foundUser = await userModel.findOne({ email })
   if (!foundUser)
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Account not found')
+    throw new ApiError(StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST)
+
+  if (!foundUser.passwordResetOTP) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST)
+  }
 
   const { otp: hashedOTP, expiresAt } = foundUser.passwordResetOTP
   if (checkExpired(expiresAt))
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Expired OTP')
+    throw new ApiError(StatusCodes.GONE, 'Expired OTP. Please press OTP resend button!')
   const isCorrect = await verifyHashed(otp, hashedOTP)
   if (!isCorrect) throw new ApiError(StatusCodes.BAD_REQUEST, 'Incorrect OTP')
-
-  await userModel.updateOne(
-    { _id: foundUser },
-    { passwordResetOTP: null }
-  )
 
   const token = generateToken(
     {
@@ -245,82 +267,99 @@ const verifyPasswordResetOtp = async ({ email, otp }) => {
       email: foundUser.email
     },
     foundUser.privateKey,
-    AUTH.PASSWORD_RESET_TOKEN_LIFE
+    Math.floor(AUTH.PASSWORD_RESET_TOKEN_LIFE / 1000)
+  )
+
+  await userModel.updateOne(
+    { _id: foundUser },
+    {
+      passwordResetOTP: null,
+      passwordResetToken: {
+        token,
+        expiresAt: Date.now() + AUTH.PASSWORD_RESET_TOKEN_LIFE
+      }
+    }
   )
 
   return { email, token }
 }
 
 const resetPassword = async ({ email, token, newPassword }) => {
-  if (!token) throw new ApiError(StatusCodes.BAD_REQUEST, 'Token not found')
+  if (!token) throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing token')
   const foundUser = await userModel.findOne({ email })
   if (!foundUser)
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Account not found')
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Email is not associated with any account')
+  if (foundUser.passwordResetToken?.token !== token)
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid token')
 
-  const decodedUser = verifyToken(token, foundUser.publicKey)
-  if (
-    foundUser._id.toString() !== decodedUser.userId ||
+  try {
+    const decodedUser = verifyToken(token, foundUser.publicKey)
+    if (
+      foundUser._id.toString() !== decodedUser.userId ||
       decodedUser.email !== foundUser.email
-  ) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST)
-  }
-
-  if (!await checkNewPasswordPolicy(newPassword, foundUser.passwordHistory)) {
-    const numberDays =
-          AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME / (1000 * 60 * 60 * 24)
-    throw new ApiError(
-      StatusCodes.CONFLICT,
-      `New password must not be the same as old password for ${numberDays} days`
-    )
-  }
-
-  // reset password
-  const { modifiedCount } = await userModel.updateOne(
-    { _id: foundUser._id },
-    {
-      password: (await hash(newPassword)).hashed,
-      accessTokens: [],
-      refreshTokens: [],
-      $addToSet: {
-        'passwordHistory': {
-          password: foundUser.password
-        }
-      }
+    ) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid token')
     }
-  )
-  if (modifiedCount === 0) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Change password failed')
+
+    if (!await checkNewPasswordPolicy(newPassword, foundUser.passwordHistory)) {
+      const numberDays =
+          AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME / (1000 * 60 * 60 * 24)
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        `New password must not be the same as old password for ${numberDays} days`
+      )
+    }
+
+    // reset password
+    const { modifiedCount } = await userModel.updateOne(
+      { _id: foundUser._id },
+      {
+        password: (await hash(newPassword)).hashed,
+        accessTokens: [],
+        refreshTokens: [],
+        $addToSet: {
+          'passwordHistory': {
+            password: foundUser.password
+          }
+        },
+        passwordResetToken: null
+      }
+    )
+    if (modifiedCount === 0) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Reset password failed')
+    }
+  } catch (error) {
+    if (error.name === 'TokenExpiredError')
+      throw new ApiError(StatusCodes.GONE, 'Password reset deadline has expired. Please try again!')
+    if (error.name === 'JsonWebTokenError')
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid token')
+    throw error
   }
 }
 
-const refreshToken = async ({ userId, accessToken, refreshToken }) => {
-  let foundUser = null
+const refreshToken = async ({ userId, refreshToken }) => {
+  let user = null
   try {
-    if (!userId)
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing parameters')
-    foundUser = await userModel.findOne({ _id: userId })
-    if (!foundUser)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    if (!userId || !refreshToken)
+      throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
-    if (
-      foundUser.usedRefreshTokens.includes(refreshToken) ||
-      !foundUser.accessTokens.includes(accessToken) ||
-      !foundUser.refreshTokens.includes(refreshToken)
-    ) {
-      await userModel.updateOne(
-        { _id: userId },
-        {
-          accessTokens: [],
-          refreshTokens: [],
-          $addToSet: {
-            usedRefreshTokens: foundUser?.refreshTokens
-          }
-        }
-      )
+    const user = await userModel.findOne({
+      _id: userId
+    })
+    if (!user)
+      throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+
+    if (user.usedRefreshTokens?.includes(refreshToken)) {
+      user.sessions = []
+      await user.save()
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
     }
 
-    const decodedUser = verifyToken(refreshToken, foundUser.publicKey)
+    const session = user.sessions?.find(session => session.refreshToken === refreshToken)
+    if (!session)
+      throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+
+    const decodedUser = verifyToken(refreshToken, user.publicKey)
 
     const payload = {
       userId: decodedUser.userId,
@@ -328,54 +367,26 @@ const refreshToken = async ({ userId, accessToken, refreshToken }) => {
     }
     const newAccessToken = generateToken(
       payload,
-      foundUser.privateKey,
+      user.privateKey,
       AUTH.ACCESS_TOKEN_LIFE
     )
-    const newRefreshToken = generateToken(
-      payload,
-      foundUser.privateKey,
-      AUTH.REFRESH_TOKEN_LIFE
-    )
 
-    await userModel.updateOne(
-      { _id: foundUser._id },
-      {
-        $pull: {
-          accessTokens: accessToken,
-          refreshTokens: refreshToken
-        }
-      }
-    )
-    await userModel.updateOne(
-      { _id: foundUser._id },
-      {
-        $addToSet: {
-          usedRefreshTokens: refreshToken,
-          accessTokens: newAccessToken,
-          refreshTokens: newRefreshToken
-        }
-      }
-    )
+    session.accessToken = newAccessToken
+    await user.save()
 
     return {
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken
+      accessToken: newAccessToken
     }
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Expired refresh token')
     }
     if (error.name === 'JsonWebTokenError') {
-      await userModel.updateOne(
-        { _id: userId },
-        {
-          accessTokens: [],
-          refreshTokens: [],
-          $addToSet: {
-            usedRefreshTokens: foundUser?.refreshTokens
-          }
-        }
-      )
+      if (user) {
+        user.sessions = []
+        user.usedRefreshTokens.push(refreshToken)
+        await user.save()
+      }
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
     }
     throw error
@@ -385,7 +396,9 @@ const refreshToken = async ({ userId, accessToken, refreshToken }) => {
 export default {
   signUp,
   signIn,
-  verifyEmail,
+  signInStatus,
+  signOut,
+  verifyAccount,
   forgotPassword,
   verifyPasswordResetOtp,
   resetPassword,

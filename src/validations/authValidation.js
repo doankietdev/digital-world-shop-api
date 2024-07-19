@@ -39,7 +39,7 @@ const signUp = asyncHandler(async (req, res, next) => {
   }
 })
 
-const verifyEmail = asyncHandler(async (req, res, next) => {
+const verifyAccount = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     email: Joi.string().email().required(),
     token: Joi.string().required()
@@ -55,12 +55,30 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
 
 const signIn = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    email: Joi.string().required(),
-    password: Joi.string().required()
+    email: Joi.string().allow(''),
+    password: Joi.string().allow('')
   })
 
   try {
     await correctCondition.validateAsync(req.body, { abortEarly: false })
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
+const signOut = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    [HEADER_KEYS.USER_ID]: Joi.string()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE)
+      .required()
+  })
+
+  try {
+    await correctCondition.validateAsync({
+      [HEADER_KEYS.USER_ID]: req.headers[HEADER_KEYS.USER_ID]
+    })
     next()
   } catch (error) {
     throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
@@ -99,11 +117,11 @@ const resetPassword = asyncHandler(async (req, res, next) => {
     email: Joi.string().email().required(),
     newPassword: Joi.string()
       .min(6)
-      // .regex(PASSWORD_RULE)
-      // .messages({
-      //   'string.min': PASSWORD_RULE_MESSAGES.MIN_LENGTH,
-      //   'string.pattern.base': PASSWORD_RULE_MESSAGES.SPECIAL_CHAR
-      // })
+      .regex(PASSWORD_RULE)
+      .messages({
+        'string.min': PASSWORD_RULE_MESSAGES.MIN_LENGTH,
+        'string.pattern.base': PASSWORD_RULE_MESSAGES.SPECIAL_CHAR
+      })
       .required()
   })
 
@@ -121,16 +139,12 @@ const refreshToken = asyncHandler(async (req, res, next) => {
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE)
       .required(),
-    accessToken: Joi.string().required(),
     refreshToken: Joi.string().required()
   })
 
   try {
     await correctCondition.validateAsync(
-      {
-        ...req.body,
-        [HEADER_KEYS.AUTHORIZATION]: req.headers[HEADER_KEYS.AUTHORIZATION].substring('Bearer '.length)
-      },
+      { ...req.body, [HEADER_KEYS.USER_ID]: req.headers[HEADER_KEYS.USER_ID] },
       { abortEarly: false }
     )
     next()
@@ -141,8 +155,9 @@ const refreshToken = asyncHandler(async (req, res, next) => {
 
 export default {
   signUp,
-  verifyEmail,
+  verifyAccount,
   signIn,
+  signOut,
   forgotPassword,
   verifyPasswordResetOtp,
   resetPassword,

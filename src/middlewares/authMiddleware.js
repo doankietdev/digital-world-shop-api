@@ -7,65 +7,42 @@ import { HEADER_KEYS } from '~/utils/constants'
 
 const authenticate = asyncHandler(async (req, res, next) => {
   const userId = req.headers[HEADER_KEYS.USER_ID]
-  const authorization = req.headers[HEADER_KEYS.AUTHORIZATION]
-  if (!userId || !authorization?.startsWith('Bearer ')) {
+  const accessToken = req.headers[HEADER_KEYS.AUTHORIZATION]?.substring('Bearer '.length)
+  if (!userId || !accessToken) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
   }
-  const accessToken = authorization?.split(' ')[1]
-  if (!accessToken) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
-  let user = null
+  const user = await userModel.findOne({
+    _id: userId,
+    verified: true,
+    blocked: false,
+    'sessions.accessToken': accessToken,
+    'sessions.device.ip': req.ip
+  })
+  if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+
   try {
-    user = await userModel.findOne({
-      _id: userId,
-      verified: true,
-      blocked: false
-    })
-    if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
-
-    if (!user.accessTokens.includes(accessToken)) {
-      await userModel.updateOne(
-        { _id: user._id },
-        { accessTokens: [], refreshTokens: [] }
-      )
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
-    }
-
     const decodedUser = verifyToken(accessToken, user.publicKey)
-    if (decodedUser.userId !== user?._id.toString()) {
+    if (decodedUser.userId !== user?._id?.toString()) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
     }
-    req.user = {
-      _id: user._id.toString(),
-      email: user.email,
-      role: user.role
-    }
+    req.user = user
+    req.accessToken = accessToken
     next()
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      throw new ApiError(StatusCodes.GONE, 'Need to refresh token')
+      throw new ApiError(StatusCodes.GONE, 'Need to refresh token', {
+        accessToken
+      })
     }
-    if (error.name === 'JsonWebTokenError') {
-      await userModel.updateOne(
-        { _id: userId },
-        {
-          accessTokens: [],
-          refreshTokens: [],
-          $addToSet: {
-            usedRefreshTokens: user?.refreshTokens
-          }
-        }
-      )
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
-    }
-    throw error
+    throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
   }
 })
 
 const checkPermission = (role) => {
   return asyncHandler(async (req, res, next) => {
     const hasPermission = req.user?.role === role
-    if (!hasPermission) throw new ApiError(StatusCodes.FORBIDDEN, 'User has no permissions')
+    if (!hasPermission) throw new ApiError(StatusCodes.FORBIDDEN, 'Account has no permissions')
     next()
   })
 }

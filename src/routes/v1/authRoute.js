@@ -1,5 +1,6 @@
 import express from 'express'
 import authController from '~/controllers/authController'
+import authMiddleware from '~/middlewares/authMiddleware'
 import authValidation from '~/validations/authValidation'
 
 const router = express.Router()
@@ -9,10 +10,10 @@ router
   .post(authValidation.signUp, authController.signUp)
 
 router
-  .route('/verify-email')
+  .route('/verify-account')
   .post(
-    authValidation.verifyEmail,
-    authController.verifyEmail
+    authValidation.verifyAccount,
+    authController.verifyAccount
   )
 
 router
@@ -20,8 +21,12 @@ router
   .post(authValidation.signIn, authController.signIn)
 
 router
+  .route('/sign-out')
+  .delete(authValidation.signOut, authController.signOut)
+
+router
   .route('/refresh-token')
-  .put(authController.refreshToken)
+  .put(authValidation.refreshToken, authController.refreshToken)
 
 router
   .route('/forgot-password')
@@ -40,5 +45,11 @@ router
     authValidation.resetPassword,
     authController.resetPassword
   )
+
+router.use(authMiddleware.authenticate)
+
+router
+  .route('/sign-in-status')
+  .get(authController.signInStatus)
 
 export default router

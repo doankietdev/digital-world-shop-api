@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose'
 import uniqueValidator from 'mongoose-unique-validator'
 import { isEmail } from 'validator'
+import { AUTH } from '~/configs/environment'
 import { COLLECTION_NAMES, MODEL_NAMES, ROLES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
 import { PHONE_NUMBER_RULE } from '~/utils/validators'
@@ -109,23 +110,7 @@ const userSchema = new Schema(
       default: false
     },
     verificationToken: {
-      type: {
-        token: {
-          type: String,
-          required: [
-            true,
-            generateDBErrorMessage('is required', { showValue: false })
-          ]
-        },
-        expiresAt: {
-          type: Date,
-          required: [
-            true,
-            generateDBErrorMessage('is required', { showValue: false })
-          ]
-        },
-        _id: false
-      },
+      type: String,
       default: null
     },
     passwordResetOTP: {
@@ -162,7 +147,8 @@ const userSchema = new Schema(
             true,
             generateDBErrorMessage('is required', { showValue: false })
           ]
-        }
+        },
+        _id: false
       },
       default: null
     },
@@ -180,8 +166,39 @@ const userSchema = new Schema(
         generateDBErrorMessage('is required', { showValue: false })
       ]
     },
-    accessTokens: { type: Array, default: [] },
-    refreshTokens: { type: Array, default: [] },
+    sessions: [{
+      accessToken: {
+        type: String,
+        trim: true,
+        required: [
+          true,
+          generateDBErrorMessage('is required', { showValue: false })
+        ]
+      },
+      refreshToken: {
+        type: String,
+        trim: true,
+        required: [
+          true,
+          generateDBErrorMessage('is required', { showValue: false })
+        ]
+      },
+      device: {
+        type: {
+          name: { type: String, trim: true, required: [true, generateDBErrorMessage('is required', { showValue: false })] },
+          deviceType: { type: String, trim: true, required: [true, generateDBErrorMessage('is required', { showValue: false })] },
+          os: { type: String, trim: true, required: [true, generateDBErrorMessage('is required', { showValue: false })] },
+          browser: { type: String, trim: true, required: [true, generateDBErrorMessage('is required', { showValue: false })] },
+          ip: { type: String, trim: true, required: [true, generateDBErrorMessage('is required', { showValue: false })] },
+          _id: false
+        },
+        required: [
+          true,
+          generateDBErrorMessage('is required', { showValue: false })
+        ]
+      },
+      createdAt: { type: Date, default: Date.now, expires: AUTH.SESSION_LIFE }
+    }],
     usedRefreshTokens: { type: Array, default: [] }
   },
   {
