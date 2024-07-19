@@ -301,14 +301,12 @@ const resetPassword = async ({ email, token, newPassword }) => {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid token')
     }
 
-    if (!await checkNewPasswordPolicy(newPassword, foundUser.passwordHistory)) {
-      const numberDays =
-          AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME / (1000 * 60 * 60 * 24)
-      throw new ApiError(
-        StatusCodes.CONFLICT,
-        `New password must not be the same as old password for ${numberDays} days`
-      )
-    }
+    const { isValid, message } = await checkNewPasswordPolicy(
+      newPassword,
+      foundUser.passwordHistory,
+      foundUser.password
+    )
+    if (!isValid) throw new ApiError(StatusCodes.CONFLICT, message)
 
     // reset password
     const { modifiedCount } = await userModel.updateOne(

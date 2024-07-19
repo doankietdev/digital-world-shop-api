@@ -65,11 +65,30 @@ export const checkExpired = (expiresAt) => {
  * }]} passwordHistory
  * @returns {Promise<boolean>}
  */
-export const checkNewPasswordPolicy = async (newPassword = '', passwordHistory = []) => {
+export const checkNewPasswordPolicy = async (
+  newPassword = '',
+  passwordHistory = [],
+  hashedCurrentPassword = ''
+) => {
+  const isMatchWithCurrentPassword = await verifyHashed(newPassword, hashedCurrentPassword)
+  if (isMatchWithCurrentPassword)
+    return { isValid: false, message: 'New password must not be the same as the old password' }
+
   for (const { password: hashedOldPassword, changedAt } of passwordHistory) {
-    const invalidTime = Date.now() - new Date(changedAt).getTime() <= AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME
-    const samePassword = await verifyHashed(newPassword, hashedOldPassword)
-    if (invalidTime && samePassword) return false
+    const isInvalidTime = Date.now() - new Date(changedAt).getTime() <= AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME
+    const isMatchWithOldPassword = await verifyHashed(newPassword, hashedOldPassword)
+
+    if (isInvalidTime && isMatchWithOldPassword) {
+      const numberDays =
+          AUTH.NEW_PASSWORD_NOT_SAME_OLD_PASSWORD_TIME / (1000 * 60 * 60 * 24)
+      return {
+        isValid: false,
+        message: `New password must not be the same as old password for ${numberDays} days`
+      }
+    }
   }
-  return true
+  return {
+    isValid: true,
+    message: 'New password is valid'
+  }
 }
