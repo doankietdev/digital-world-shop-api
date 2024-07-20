@@ -462,6 +462,8 @@ const signInWithGoogle = async ({
     publicKey,
     privateKey
   })
+  await cartService.createNewCart({ userId: newUser._id })
+
 
   const payload = { userId: newUser._id, email: newUser.email }
   const accessToken = generateToken(
