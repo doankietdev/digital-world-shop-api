@@ -50,7 +50,6 @@ const userSchema = new Schema(
     mobile: {
       type: String,
       trim: true,
-      default: null,
       validate: {
         validator: function (value) {
           return PHONE_NUMBER_RULE.test(value) || !value
