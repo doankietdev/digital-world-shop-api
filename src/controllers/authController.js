@@ -107,6 +107,17 @@ const refreshToken = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const signInWithGoogle = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Sign in with Google successfully',
+    metadata: await authService.signInWithGoogle({
+      code: req.body.code,
+      headerUserAgent: req.headers['user-agent'],
+      ip: req.ip
+    })
+  }).send(res)
+})
+
 export default {
   signUp,
   verifyAccount,
@@ -116,5 +127,6 @@ export default {
   forgotPassword,
   verifyPasswordResetOtp,
   resetPassword,
-  refreshToken
+  refreshToken,
+  signInWithGoogle
 }

@@ -67,6 +67,20 @@ const signIn = asyncHandler(async (req, res, next) => {
   }
 })
 
+const signInWithGoogle = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    code: Joi.string().required()
+  })
+
+  try {
+    await correctCondition.validateAsync(req.body)
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
+
 const signOut = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     [HEADER_KEYS.USER_ID]: Joi.string()
@@ -157,6 +171,7 @@ export default {
   signUp,
   verifyAccount,
   signIn,
+  signInWithGoogle,
   signOut,
   forgotPassword,
   verifyPasswordResetOtp,

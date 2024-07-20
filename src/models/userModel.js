@@ -8,6 +8,11 @@ import { PHONE_NUMBER_RULE } from '~/utils/validators'
 
 const userSchema = new Schema(
   {
+    googleId: {
+      type: String,
+      trim: true,
+      default: null
+    },
     firstName: {
       type: String,
       trim: true,
@@ -36,10 +41,7 @@ const userSchema = new Schema(
         id: {
           type: String,
           trim: true,
-          required: [
-            true,
-            generateDBErrorMessage('is required', { showValue: false })
-          ]
+          default: null
         }
       },
       default: null,
@@ -48,14 +50,10 @@ const userSchema = new Schema(
     mobile: {
       type: String,
       trim: true,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ],
-      unique: true,
+      default: null,
       validate: {
         validator: function (value) {
-          return PHONE_NUMBER_RULE.test(value)
+          return PHONE_NUMBER_RULE.test(value) || !value
         },
         message: generateDBErrorMessage('must be exactly 10 digits')
       }
@@ -75,10 +73,7 @@ const userSchema = new Schema(
     password: {
       type: String,
       trim: true,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
+      default: null
     },
     passwordHistory: [{
       password: {

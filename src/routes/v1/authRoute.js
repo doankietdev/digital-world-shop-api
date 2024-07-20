@@ -21,6 +21,10 @@ router
   .post(authValidation.signIn, authController.signIn)
 
 router
+  .route('/sign-in-with-google')
+  .post(authValidation.signInWithGoogle, authController.signInWithGoogle)
+
+router
   .route('/sign-out')
   .delete(authValidation.signOut, authController.signOut)
 

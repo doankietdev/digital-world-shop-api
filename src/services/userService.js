@@ -6,8 +6,6 @@ import cloudinaryProvider from '~/providers/cloudinaryProvider'
 import ApiError from '~/utils/ApiError'
 import { parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
-// import addressService from './addressService'
-import { AUTH } from '~/configs/environment'
 import { checkNewPasswordPolicy, hash, verifyHashed } from '~/utils/auth'
 
 const getUser = async (userId) => {

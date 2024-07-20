@@ -18,6 +18,7 @@ import { formatPlaceHolderUrl } from '~/utils/formatter'
 import { sendMailWithHTML } from '~/utils/sendMail'
 import cartService from './cartService'
 import userService from './userService'
+import googleOAuthProvider from '~/providers/googleOAuthProvider'
 
 const signUp = async ({ firstName, lastName, mobile, email, password }) => {
   let errorMessages = []
@@ -390,6 +391,111 @@ const refreshToken = async ({ userId, refreshToken }) => {
   }
 }
 
+const signInWithGoogle = async ({
+  code,
+  headerUserAgent,
+  ip
+}) => {
+  const {
+    sub,
+    given_name,
+    family_name,
+    email,
+    email_verified,
+    picture
+  } = await googleOAuthProvider.getProfile(code)
+
+  const agent = useragent.parse(headerUserAgent)
+
+  const foundUserWithGoogleId = await userModel.findOne({ googleId: sub })
+  if (foundUserWithGoogleId) {
+    if (foundUserWithGoogleId.blocked)
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Account has been blocked')
+
+    if (foundUserWithGoogleId.sessions.length >= AUTH.MAX_SESSIONS) {
+      foundUserWithGoogleId.sessions.shift()
+    }
+
+    const payload = { userId: foundUserWithGoogleId._id, email: foundUserWithGoogleId.email }
+    const accessToken = generateToken(
+      payload,
+      foundUserWithGoogleId.privateKey,
+      AUTH.ACCESS_TOKEN_LIFE
+    )
+    const refreshToken = generateToken(
+      payload,
+      foundUserWithGoogleId.privateKey,
+      AUTH.REFRESH_TOKEN_LIFE
+    )
+    const session = {
+      accessToken,
+      refreshToken,
+      device: {
+        name: agent.device.toString(),
+        deviceType: agent.device.family,
+        os: agent.os.toString(),
+        browser: agent.toAgent(),
+        ip
+      }
+    }
+
+    foundUserWithGoogleId.sessions.push(session)
+    await foundUserWithGoogleId.save()
+    return {
+      user: await userService.getUser(foundUserWithGoogleId._id),
+      accessToken,
+      refreshToken
+    }
+  }
+
+  const foundUserWithEmail = await userModel.findOne({ email })
+  if (foundUserWithEmail?.email === email) throw new ApiError(StatusCodes.CONFLICT, 'This email was used to register the account')
+
+  const { publicKey, privateKey } = generateKeyPairRSA()
+  const newUser = await userModel.create({
+    googleId: sub,
+    firstName: given_name,
+    lastName: family_name,
+    email,
+    image: { url: picture },
+    verified: email_verified,
+    publicKey,
+    privateKey
+  })
+
+  const payload = { userId: newUser._id, email: newUser.email }
+  const accessToken = generateToken(
+    payload,
+    newUser.privateKey,
+    AUTH.ACCESS_TOKEN_LIFE
+  )
+  const refreshToken = generateToken(
+    payload,
+    newUser.privateKey,
+    AUTH.REFRESH_TOKEN_LIFE
+  )
+  const session = {
+    accessToken,
+    refreshToken,
+    device: {
+      name: agent.device.toString(),
+      deviceType: agent.device.family,
+      os: agent.os.toString(),
+      browser: agent.toAgent(),
+      ip
+    }
+  }
+
+  newUser.sessions.push(session)
+  await newUser.save()
+
+  return {
+    user: await userService.getUser(newUser._id),
+    accessToken,
+    refreshToken
+  }
+}
+
 export default {
   signUp,
   signIn,
@@ -399,5 +505,6 @@ export default {
   forgotPassword,
   verifyPasswordResetOtp,
   resetPassword,
-  refreshToken
+  refreshToken,
+  signInWithGoogle
 }
