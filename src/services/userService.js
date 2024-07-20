@@ -7,6 +7,7 @@ import ApiError from '~/utils/ApiError'
 import { parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
 import { checkNewPasswordPolicy, hash, verifyHashed } from '~/utils/auth'
+import addressService from './addressService'
 
 const getUser = async (userId) => {
   try {
@@ -53,8 +54,8 @@ const getUsers = async (reqQuery) => {
 
     const attachedAddressesUser = await Promise.all(
       users.map(async (user) => ({
-        ...user
-        // addresses: await addressService.getUserAddresses({ userId: user._id })
+        ...user,
+        addresses: await addressService.getUserAddresses({ userId: user._id })
       }))
     )
 
