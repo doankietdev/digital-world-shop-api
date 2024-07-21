@@ -3,7 +3,7 @@ import Joi from 'joi'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
 import { findFileFromReqFiles } from '~/utils/util'
-import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGES, PHONE_NUMBER_RULE, PHONE_NUMBER_RULE_MESSAGE } from '~/utils/validators'
+import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGES } from '~/utils/validators'
 
 const getUser = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
@@ -37,11 +37,7 @@ const setDefaultAddress = asyncHandler(async (req, res, next) => {
 const updateCurrentUser = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
     firstName: Joi.string().min(1),
-    lastName: Joi.string().min(2),
-    mobile: Joi.string()
-      .pattern(PHONE_NUMBER_RULE)
-      .message(PHONE_NUMBER_RULE_MESSAGE('mobile'))
-      .required()
+    lastName: Joi.string().min(2)
   })
 
   try {

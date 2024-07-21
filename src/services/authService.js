@@ -20,27 +20,15 @@ import cartService from './cartService'
 import userService from './userService'
 import googleOAuthProvider from '~/providers/googleOAuthProvider'
 
-const signUp = async ({ firstName, lastName, mobile, email, password }) => {
+const signUp = async ({ firstName, lastName, email, password }) => {
   let errorMessages = []
-  const [foundUserByEmail, foundUserByMobile] = await Promise.all([
-    userModel.findOne({ email }),
-    userModel.findOne({ mobile })
-  ])
+  const foundUserByEmail = await userModel.findOne({ email })
   if (foundUserByEmail) {
     errorMessages = [
       ...errorMessages,
       {
         field: 'email',
         message: 'Email is already in use'
-      }
-    ]
-  }
-  if (foundUserByMobile) {
-    errorMessages = [
-      ...errorMessages,
-      {
-        field: 'mobile',
-        message: 'Phone number is already in use'
       }
     ]
   }
@@ -58,7 +46,6 @@ const signUp = async ({ firstName, lastName, mobile, email, password }) => {
   const newUser = await userModel.create({
     firstName,
     lastName,
-    mobile,
     email,
     password: hashed,
     verificationToken,

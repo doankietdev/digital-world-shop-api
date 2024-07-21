@@ -4,7 +4,6 @@ import { isEmail } from 'validator'
 import { AUTH } from '~/configs/environment'
 import { COLLECTION_NAMES, MODEL_NAMES, ROLES } from '~/utils/constants'
 import { generateDBErrorMessage } from '~/utils/formatter'
-import { PHONE_NUMBER_RULE } from '~/utils/validators'
 
 const userSchema = new Schema(
   {
@@ -46,17 +45,6 @@ const userSchema = new Schema(
       },
       default: null,
       _id: false
-    },
-    mobile: {
-      type: String,
-      trim: true,
-      default: null,
-      validate: {
-        validator: function (value) {
-          return PHONE_NUMBER_RULE.test(value) || !value
-        },
-        message: generateDBErrorMessage('must be exactly 10 digits')
-      }
     },
     email: {
       type: String,
