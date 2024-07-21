@@ -67,7 +67,7 @@ const getUserAddresses = async ({ userId, addressId }) => {
       district,
       ward,
       default:
-        address?._id.toString() == foundUser.defaultAddress.toString() ??
+        address?._id.toString() == foundUser?.defaultAddress?.toString() ??
         false
     }
     delete tempAddress.provinceId

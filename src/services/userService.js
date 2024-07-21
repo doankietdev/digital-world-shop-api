@@ -66,6 +66,7 @@ const getUsers = async (reqQuery) => {
       items: attachedAddressesUser
     }
   } catch (error) {
+    console.log(error)
     if (error.name === ApiError.name) throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')
   }
