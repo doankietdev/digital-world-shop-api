@@ -72,21 +72,17 @@ const getUsers = async (reqQuery) => {
 }
 
 const updateUser = async (userId, reqBody) => {
-  try {
-    const user = await userModel.findByIdAndUpdate(
-      userId,
-      reqBody,
-      { new: true }
-    )
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
-    return getUser(user._id)
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Something went wrong'
-    )
-  }
+  const user = await userModel.findOne({
+    _id: userId
+  })
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
+  const { modifiedCount } = await userModel.updateOne(
+    { _id: userId },
+    reqBody
+  )
+  if (!modifiedCount) throw new ApiError(StatusCodes.BAD_REQUEST, 'Update user failed')
+  return await getUser(user._id)
 }
 
 const uploadAvatar = async (userId, avatar) => {

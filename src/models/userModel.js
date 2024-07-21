@@ -50,6 +50,7 @@ const userSchema = new Schema(
     mobile: {
       type: String,
       trim: true,
+      default: null,
       validate: {
         validator: function (value) {
           return PHONE_NUMBER_RULE.test(value) || !value
@@ -202,13 +203,6 @@ const userSchema = new Schema(
     collection: COLLECTION_NAMES.USER
   }
 )
-
-// userSchema.pre('save', async function (next) {
-//   if (!this.isModified('password')) {
-//     next()
-//   }
-//   this.password = await hash(this.password)
-// })
 
 userSchema.plugin(uniqueValidator, {
   message: generateDBErrorMessage('already exists')
