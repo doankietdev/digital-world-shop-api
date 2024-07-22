@@ -11,6 +11,7 @@ import cartService from './cartService'
 import orderService from './orderService'
 import userService from './userService'
 import ghnAxiosClient from '~/configs/ghnAxiosClient'
+import { connectDB } from '~/configs/mongodb'
 
 /**
  * @param {*} userId
@@ -202,6 +203,9 @@ const review = async (userId, reqBody) => {
  * }>}
  */
 const order = async (userId, reqBody) => {
+  const session = await (await connectDB()).startSession()
+  session.startTransaction()
+
   try {
     const { paymentMethod } = reqBody
 
@@ -214,6 +218,14 @@ const order = async (userId, reqBody) => {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'User has not set a default address')
 
     const { shippingFee, orderProducts } = await review(userId, reqBody)
+
+    const updateStockQuantityPromises = reqBody.orderProducts?.map(
+      ({ productId, variantId, quantity }) => productModel.findOneAndUpdate(
+        { _id: productId, 'variants._id': variantId },
+        { $inc: { 'variants.$.quantity': -quantity } }
+      )
+    )
+    await Promise.all(updateStockQuantityPromises)
 
     const newOrder = await orderModel.create({
       products: orderProducts.map(({ product, quantity }) => ({
@@ -235,13 +247,14 @@ const order = async (userId, reqBody) => {
         variantId: orderProduct.variantId
       }))
     })
+
+    await session.commitTransaction()
     return await orderRepo.findById(newOrder._id)
   } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Something went wrong'
-    )
+    await session.abortTransaction()
+    throw error
+  } finally {
+    session.endSession()
   }
 }
 
@@ -316,6 +329,9 @@ const capturePayPalOrder = async ({ userId, paypalOrderId, orderProducts }) => {
 }
 
 const cancelOrder = async (userId, orderId) => {
+  const session = await (await connectDB()).startSession()
+  session.startTransaction()
+
   try {
     const foundOrder = await orderModel.findOne({
       _id: orderId
@@ -340,10 +356,22 @@ const cancelOrder = async (userId, orderId) => {
     if (!modifiedCount === 0) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot cancel order')
     }
+
+    const updateStockQuantityPromises = foundOrder.products?.map(
+      ({ product, variant, quantity }) => productModel.findOneAndUpdate(
+        { _id: product, 'variants._id': variant },
+        { $inc: { 'variants.$.quantity': quantity } }
+      )
+    )
+    await Promise.all(updateStockQuantityPromises)
+
+    await session.commitTransaction()
     return await orderService.getOrderOfCurrentUser(userId, orderId)
   } catch (error) {
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Cancel order failed')
+    await session.abortTransaction()
+    throw error
+  } finally {
+    session.endSession()
   }
 }
 
