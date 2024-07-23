@@ -72,12 +72,12 @@ const verifyAccount = async ({ email, token }) => {
   const foundUser = await userModel.findOne({ email })
   if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Email not found')
 
-  if (foundUser.verified) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Account has been verified')
-  }
-
   if (foundUser.verificationToken !== token) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Token not found')
+  }
+
+  if (foundUser.verified) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Account has been verified')
   }
 
   const { modifiedCount } = await userModel.updateOne(
@@ -86,6 +86,7 @@ const verifyAccount = async ({ email, token }) => {
   )
   if (!modifiedCount)
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Verify account failed')
+
   return {
     email
   }

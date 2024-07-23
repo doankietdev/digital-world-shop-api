@@ -35,8 +35,8 @@ const signUp = asyncHandler(async (req, res, next) => {
 
 const verifyAccount = asyncHandler(async (req, res, next) => {
   const correctCondition = Joi.object({
-    email: Joi.string().email().required(),
-    token: Joi.string().required()
+    email: Joi.string(),
+    token: Joi.string()
   })
 
   try {
