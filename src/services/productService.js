@@ -359,11 +359,12 @@ const deleteVariant = async (productId, variantId) => {
 const search = async (reqQuery) => {
   const { query, sort, fields, skip, limit, page } =
       parseQueryParams(reqQuery)
+
   const productQuery = {
     ...query,
-    q: undefined,
     $text: { $search: query.q }
   }
+  delete productQuery.q
 
   const [products, totalProducts] = await Promise.all([
     productModel

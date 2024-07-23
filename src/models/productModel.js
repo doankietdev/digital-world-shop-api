@@ -181,7 +181,7 @@ const productSchema = new Schema(
 
 productSchema.index(
   { title: 'text', description: 'text' },
-  { weights: { title: 2, description: 1 } }
+  { weights: { title: 5, description: 1 } }
 )
 
 productSchema.index({ 'specs.k': 1, 'specs.v': 1 })
