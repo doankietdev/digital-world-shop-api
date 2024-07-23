@@ -356,6 +356,39 @@ const deleteVariant = async (productId, variantId) => {
   }
 }
 
+const search = async (reqQuery) => {
+  const { query, sort, fields, skip, limit, page } =
+      parseQueryParams(reqQuery)
+  const productQuery = {
+    ...query,
+    q: undefined,
+    $text: { $search: query.q }
+  }
+
+  const [products, totalProducts] = await Promise.all([
+    productModel
+      .find(productQuery)
+      .sort(sort)
+      .select(fields)
+      .skip(skip)
+      .limit(limit)
+      .populate('category', '-createdAt -updatedAt')
+      .populate('brand', '-description -createdAt -updatedAt'),
+    productModel.find(productQuery).countDocuments()
+  ])
+
+  const productsApplyDiscount =
+      await productRepo.convertToProductsApplyDiscount(products)
+
+  return {
+    page,
+    limit,
+    totalPages: calculateTotalPages(totalProducts, limit),
+    totalProducts: products.length ? totalProducts : 0,
+    products: productsApplyDiscount
+  }
+}
+
 export default {
   createNew,
   getProduct,
@@ -368,5 +401,6 @@ export default {
   rating,
   addVariant,
   editVariant,
-  deleteVariant
+  deleteVariant,
+  search
 }

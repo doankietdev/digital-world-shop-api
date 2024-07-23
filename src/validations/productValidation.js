@@ -226,6 +226,24 @@ const deleteVariant = asyncHandler(async (req, res, next) => {
   }
 })
 
+const search = asyncHandler(async (req, res, next) => {
+  const correctCondition = Joi.object({
+    q: Joi.string().required()
+  })
+  try {
+    await correctCondition.validateAsync(
+      req.query,
+      {
+        abortEarly: false,
+        allowUnknown: true
+      }
+    )
+    next()
+  } catch (error) {
+    throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message)
+  }
+})
+
 export default {
   createNew,
   getProduct,
@@ -236,5 +254,6 @@ export default {
   rating,
   addVariant,
   editVariant,
-  deleteVariant
+  deleteVariant,
+  search
 }

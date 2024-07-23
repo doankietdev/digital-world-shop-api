@@ -7,13 +7,19 @@ import uploadMiddleware from '~/middlewares/uploadMiddleware'
 
 const router = express.Router()
 
+router.route('/get-by-slug/:slug').get(productController.getProductBySlug)
+
+router
+  .route('/search')
+  .get(productValidation.search, productController.search)
+
 router
   .route('/:id')
   .get(productValidation.getProduct, productController.getProduct)
 
-router.route('/get-by-slug/:slug').get(productController.getProductBySlug)
 
 router.route('/').get(productController.getProducts)
+
 
 router.use(authMiddleware.authenticate)
 

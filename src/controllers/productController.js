@@ -118,6 +118,13 @@ const deleteVariant = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const search = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Search products successfully',
+    metadata: await productService.search(req.query)
+  }).send(res)
+})
+
 export default {
   createNew,
   getProduct,
@@ -130,5 +137,6 @@ export default {
   rating,
   addVariant,
   editVariant,
-  deleteVariant
+  deleteVariant,
+  search
 }
