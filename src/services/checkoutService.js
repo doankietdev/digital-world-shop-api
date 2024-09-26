@@ -144,16 +144,17 @@ const review = async (userId, reqBody) => {
       .lean()
     if (!foundUser) throw new Error('User not found')
     if (foundUser.defaultAddress) {
-      const { total: shippingFee } = await ghnAxiosClient.post(
-        PARTNER_APIS.GHN.APIS.CALCULATE_FEE,
-        {
-          to_ward_code: foundUser.defaultAddress.wardCode,
-          to_district_id: foundUser.defaultAddress.districtId,
-          weight: totalWeight,
-          service_id: PARTNER_APIS.GHN.SERVICE_ID,
-          service_type_id: PARTNER_APIS.GHN.SERVICE_TYPE_ID
-        }
-      )
+      // const { total: shippingFee } = await ghnAxiosClient.post(
+      //   PARTNER_APIS.GHN.APIS.CALCULATE_FEE,
+      //   {
+      //     to_ward_code: foundUser.defaultAddress.wardCode,
+      //     to_district_id: foundUser.defaultAddress.districtId,
+      //     weight: totalWeight,
+      //     service_id: PARTNER_APIS.GHN.SERVICE_ID,
+      //     service_type_id: PARTNER_APIS.GHN.SERVICE_TYPE_ID
+      //   }
+      // )
+      const shippingFee = 0
       reviewInfo = {
         ...reviewInfo,
         shippingFee,
