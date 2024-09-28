@@ -1,10 +1,13 @@
 import express from 'express'
 import brandController from '~/controllers/brandController'
 import authMiddleware from '~/middlewares/authMiddleware'
-import { ROLES } from '~/utils/constants'
+import { INVALID_REDIS_KEY, ROLES } from '~/utils/constants'
 import brandValidation from '~/validations/brandValidation'
+import { redisCachingMiddleware } from '~/middlewares/redis.middleware'
 
 const router = express.Router()
+
+router.use(redisCachingMiddleware({ EX: 21600, NX: false }, false, INVALID_REDIS_KEY.INVALID_CACHE_BRAND))
 
 router.route('/:id')
   .get(brandValidation.getBrand, brandController.getBrand)

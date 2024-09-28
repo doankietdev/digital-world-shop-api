@@ -2,24 +2,23 @@ import express from 'express'
 import productValidation from '~/validations/productValidation'
 import productController from '~/controllers/productController'
 import authMiddleware from '~/middlewares/authMiddleware'
-import { ROLES } from '~/utils/constants'
+import { INVALID_REDIS_KEY, ROLES } from '~/utils/constants'
 import uploadMiddleware from '~/middlewares/uploadMiddleware'
+import { redisCachingMiddleware } from '~/middlewares/redis.middleware'
 
 const router = express.Router()
 
+router.use(redisCachingMiddleware({ EX: 21600, NX: false }, false, INVALID_REDIS_KEY.INVALID_CACHE_PRODUCT))
+
 router.route('/get-by-slug/:slug').get(productController.getProductBySlug)
 
-router
-  .route('/search')
-  .get(productValidation.search, productController.search)
+router.route('/search').get(productValidation.search, productController.search)
 
 router
   .route('/:id')
   .get(productValidation.getProduct, productController.getProduct)
 
-
 router.route('/').get(productController.getProducts)
-
 
 router.use(authMiddleware.authenticate)
 
