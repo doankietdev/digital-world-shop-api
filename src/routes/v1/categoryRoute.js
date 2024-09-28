@@ -2,9 +2,12 @@ import express from 'express'
 import categoryValidation from '~/validations/categoryValidation'
 import categoryController from '~/controllers/categoryController'
 import authMiddleware from '~/middlewares/authMiddleware'
-import { ROLES } from '~/utils/constants'
+import { INVALID_REDIS_KEY, ROLES } from '~/utils/constants'
+import { redisCachingMiddleware } from '~/middlewares/redis.middleware'
 
 const router = express.Router()
+
+router.use(redisCachingMiddleware({ EX: 21600, NX: false }, false, INVALID_REDIS_KEY.INVALID_CACHE_CATEGORY))
 
 router
   .route('/get-by-slug/:slug')

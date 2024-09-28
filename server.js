@@ -3,6 +3,7 @@ import exitHook from 'async-exit-hook'
 import app from '~/app'
 import { connectDB, closeDB } from '~/configs/mongodb'
 import { APP } from '~/configs/environment'
+import { RedisDB } from '~/databases/init.redis'
 
 const startServer = async () => {
   const server = app.listen(APP.PORT, APP.HOST, () => {
@@ -24,6 +25,7 @@ const startServer = async () => {
 
 (async () => {
   try {
+    RedisDB.getInstance()
     await connectDB()
     console.log('Connect to MongoDB successfully')
     startServer()

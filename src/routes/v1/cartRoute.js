@@ -2,10 +2,14 @@ import express from 'express'
 import cartController from '~/controllers/cartController'
 import authMiddleware from '~/middlewares/authMiddleware'
 import cartValidation from '~/validations/cartValidation'
+import { redisCachingMiddleware } from '~/middlewares/redis.middleware'
+import { INVALID_REDIS_KEY } from '~/utils/constants'
 
 const router = express.Router()
 
 router.use(authMiddleware.authenticate)
+
+router.use(redisCachingMiddleware({ EX: 21600, NX: false }, false, INVALID_REDIS_KEY.INVALID_CACHE_CART))
 
 router
   .route('/add-to-cart')
