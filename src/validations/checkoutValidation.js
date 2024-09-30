@@ -17,7 +17,7 @@ const review = asyncHandler(async (req, res, next) => {
             .pattern(OBJECT_ID_RULE)
             .message(OBJECT_ID_RULE_MESSAGE)
             .required(),
-          oldPrice: Joi.number().min(0).required(),
+          oldPrice: Joi.number().min(0).required().allow(null),
           price: Joi.number().min(0).required(),
           quantity: Joi.number().min(0).required()
         })
