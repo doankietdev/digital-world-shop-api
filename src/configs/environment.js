@@ -34,7 +34,8 @@ const {
   REDIS_HOST,
   REDIS_PORT,
   REDIS_USER,
-  REDIS_PASSWORD
+  REDIS_PASSWORD,
+  MAX_AVATAR_SIZE
 } = process.env
 
 export const BUILD_MODE = NODE_ENV || DEV_ENV
@@ -43,7 +44,8 @@ export const APP = {
   PROTOCOL: APP_PROTOCOL || 'http',
   HOST: APP_HOST || 'localhost',
   PORT: APP_PORT || 5600,
-  BRAND_NAME: BRAND_NAME || 'No Name Yet'
+  BRAND_NAME: BRAND_NAME || 'No Name Yet',
+  MAX_AVATAR_SIZE: +MAX_AVATAR_SIZE || 5242880
 }
 
 export const CLIENT = {

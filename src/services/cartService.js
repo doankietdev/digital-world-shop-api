@@ -1,9 +1,9 @@
 import { StatusCodes } from 'http-status-codes'
+import mongoose from 'mongoose'
 import cartModel from '~/models/cartModel'
 import checkoutRepo from '~/repositories/checkoutRepo'
 import ApiError from '~/utils/ApiError'
 import productService from './productService'
-import mongoose from 'mongoose'
 
 /**
  * @param {{
@@ -245,6 +245,7 @@ const updateProductQuantityToCart = async ({ userId, product }) => {
     if (!updatedCart) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Update quantity failed')
     }
+
     return await getCart({ userId })
   } catch (error) {
     if (error.name === 'ApiError') throw error
