@@ -1,0 +1,31 @@
+# Ignore node_modules directory
+node_modules
+
+# Ignore log files
+*.log
+
+# Ignore build directories
+dist
+build
+
+# Ignore local environment files
+.env.development
+.env.test
+.env.production
+
+# Ignore Docker-related files
+Dockerfile
+
+.dockerignore
+
+# Ignore git-related files
+.git
+.gitignore
+
+# Ignore editor and OS-specific files
+.vscode
+.idea
+*.swp
+*~
+.DS_Store
+Thumbs.db
