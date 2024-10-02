@@ -1,4 +1,5 @@
 import { StatusCodes } from 'http-status-codes'
+import { connectDB } from '~/configs/mongodb'
 import orderModel from '~/models/orderModel'
 import productModel from '~/models/productModel'
 import userModel from '~/models/userModel'
@@ -6,12 +7,10 @@ import paypalProvider from '~/providers/paypalProvider'
 import checkoutRepo from '~/repositories/checkoutRepo'
 import orderRepo from '~/repositories/orderRepo'
 import ApiError from '~/utils/ApiError'
-import { ORDER_STATUSES, PARTNER_APIS, PAYMENT_METHODS } from '~/utils/constants'
+import { ORDER_STATUSES, PAYMENT_METHODS } from '~/utils/constants'
 import cartService from './cartService'
 import orderService from './orderService'
 import userService from './userService'
-import ghnAxiosClient from '~/configs/ghnAxiosClient'
-import { connectDB } from '~/configs/mongodb'
 
 /**
  * @param {*} userId

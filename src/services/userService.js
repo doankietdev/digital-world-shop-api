@@ -8,6 +8,7 @@ import { parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
 import { checkNewPasswordPolicy, hash, verifyHashed } from '~/utils/auth'
 import addressService from './addressService'
+import passwordHistoryModel from '~/models/passwordHistoryModel'
 
 const getUser = async (userId) => {
   try {
@@ -124,9 +125,11 @@ const changePassword = async (userId, { currentPassword, newPassword }) => {
         'New password must not be the same as current password'
       )
 
+    const passwordHistory = await passwordHistoryModel.find({ userId: foundUser._id }).lean()
+
     const { isValid, message } = await checkNewPasswordPolicy(
       newPassword,
-      foundUser.passwordHistory,
+      passwordHistory,
       foundUser.password
     )
     if (!isValid) throw new ApiError(StatusCodes.CONFLICT, message)
@@ -134,18 +137,17 @@ const changePassword = async (userId, { currentPassword, newPassword }) => {
     const { hashed } = await hash(newPassword)
     const { modifiedCount } = await userModel.updateOne(
       { _id: userId },
-      {
-        password: hashed,
-        '$addToSet': {
-          'passwordHistory': {
-            password: foundUser.password
-          }
-        }
-      }
+      { password: hashed }
     )
     if (modifiedCount === 0) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Change password failed')
     }
+
+    await passwordHistoryModel.create({
+      userId: foundUser._id,
+      password: foundUser.password
+    })
+
   } catch (error) {
     if (error.name === ApiError.name) throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Something went wrong')

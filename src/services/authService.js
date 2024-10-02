@@ -19,6 +19,7 @@ import { sendMailWithHTML } from '~/utils/sendMail'
 import cartService from './cartService'
 import userService from './userService'
 import googleOAuthProvider from '~/providers/googleOAuthProvider'
+import passwordHistoryModel from '~/models/passwordHistoryModel'
 
 const signUp = async ({ firstName, lastName, email, password }) => {
   let errorMessages = []
@@ -291,9 +292,10 @@ const resetPassword = async ({ email, token, newPassword }) => {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid token')
     }
 
+    const passwordHistory = await passwordHistoryModel.find({ userId: foundUser._id })
     const { isValid, message } = await checkNewPasswordPolicy(
       newPassword,
-      foundUser.passwordHistory,
+      passwordHistory,
       foundUser.password
     )
     if (!isValid) throw new ApiError(StatusCodes.CONFLICT, message)
@@ -304,17 +306,17 @@ const resetPassword = async ({ email, token, newPassword }) => {
       {
         password: (await hash(newPassword)).hashed,
         sessions: [],
-        $addToSet: {
-          'passwordHistory': {
-            password: foundUser.password
-          }
-        },
         passwordResetToken: null
       }
     )
     if (modifiedCount === 0) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Reset password failed')
     }
+
+    await passwordHistoryModel.create({
+      userId: foundUser._id,
+      password: foundUser.password
+    })
   } catch (error) {
     if (error.name === 'TokenExpiredError')
       throw new ApiError(StatusCodes.GONE, 'Password reset deadline has expired. Please try again!')

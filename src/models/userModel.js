@@ -63,21 +63,6 @@ const userSchema = new Schema(
       trim: true,
       default: null
     },
-    passwordHistory: [{
-      password: {
-        type: String,
-        trim: true,
-        required: [
-          true,
-          generateDBErrorMessage('is required', { showValue: false })
-        ]
-      },
-      changedAt: {
-        type: Date,
-        default: Date.now
-      },
-      _id: false
-    }],
     role: {
       type: String,
       trim: true,
