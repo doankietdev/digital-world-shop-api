@@ -15,7 +15,7 @@ COPY . .
 RUN yarn build
 
 # Expose port 5600
-EXPOSE 8080
+EXPOSE 5600
 
 # Command to run the Express server
 CMD ["node", "build/server.js"]
