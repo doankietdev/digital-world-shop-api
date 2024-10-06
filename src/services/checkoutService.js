@@ -259,73 +259,57 @@ const order = async (userId, reqBody) => {
 }
 
 const createPayPalOrder = async (userId, reqBody) => {
-  try {
-    const [
-      { shippingFee = 0, totalPriceApplyDiscount, totalPayment }
-      // { firstName, lastName, email, defaultAddress }
-    ] = await Promise.all([
-      review(userId, reqBody),
-      userService.getUser(userId)
-    ])
+  const [
+    { shippingFee = 0, totalPriceApplyDiscount, totalPayment }
+    // { firstName, lastName, email, defaultAddress }
+  ] = await Promise.all([
+    review(userId, reqBody),
+    userService.getUser(userId)
+  ])
 
-    return await paypalProvider.createOrder({
-      // items: orderProducts.map((orderProduct) => ({
-      //   name: orderProduct.product.title,
-      //   quantity: orderProduct.quantity,
-      //   unit_amount: {
-      //     currency_code: 'USD',
-      //     value: Math.round(orderProduct.product.price / 23500)
-      //   }
-      // })),
-      amount: {
-        currency_code: 'USD',
-        value: Math.round(totalPayment / 23500),
-        breakdown: {
-          item_total: {
-            currency_code: 'USD',
-            value: Math.round(totalPriceApplyDiscount / 23500)
-          },
-          shipping: {
-            currency_code: 'USD',
-            value: Math.round(shippingFee / 23500)
-          }
+  return await paypalProvider.createOrder({
+    // items: orderProducts.map((orderProduct) => ({
+    //   name: orderProduct.product.title,
+    //   quantity: orderProduct.quantity,
+    //   unit_amount: {
+    //     currency_code: 'USD',
+    //     value: Math.round(orderProduct.product.price / 23500)
+    //   }
+    // })),
+    amount: {
+      currency_code: 'USD',
+      value: Math.round(totalPayment / 23500),
+      breakdown: {
+        item_total: {
+          currency_code: 'USD',
+          value: Math.round(totalPriceApplyDiscount / 23500)
+        },
+        shipping: {
+          currency_code: 'USD',
+          value: Math.round(shippingFee / 23500)
         }
       }
-    })
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Something went wrong'
-    )
-  }
+    }
+  })
 }
 
 const capturePayPalOrder = async ({ userId, paypalOrderId, orderProducts }) => {
-  try {
-    const paypalOrderData = await paypalProvider.captureOrder(paypalOrderId)
-    if (paypalOrderData.status === 'COMPLETED') {
-      const { _id: newOrderId } = await order(userId, {
-        orderProducts,
-        paymentMethod: PAYMENT_METHODS.ONLINE_PAYMENT
-      })
-      await orderService.updateStatus({
-        userId,
-        orderId: newOrderId,
-        status: ORDER_STATUSES.PAID
-      })
-      // save payment
+  const paypalOrderData = await paypalProvider.captureOrder(paypalOrderId)
+  if (paypalOrderData.status === 'COMPLETED') {
+    const { _id: newOrderId } = await order(userId, {
+      orderProducts,
+      paymentMethod: PAYMENT_METHODS.ONLINE_PAYMENT
+    })
+    await orderService.updateStatus({
+      userId,
+      orderId: newOrderId,
+      status: ORDER_STATUSES.PAID
+    })
+    // save payment
 
-      return paypalOrderData
-    }
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Something went wrong')
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Something went wrong'
-    )
+    return paypalOrderData
   }
+  throw new ApiError(StatusCodes.BAD_REQUEST, 'Something went wrong')
 }
 
 const cancelOrder = async (userId, orderId) => {

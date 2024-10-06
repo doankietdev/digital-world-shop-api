@@ -25,10 +25,6 @@ router
   .post(authValidation.signInWithGoogle, authController.signInWithGoogle)
 
 router
-  .route('/sign-out')
-  .delete(authValidation.signOut, authController.signOut)
-
-router
   .route('/refresh-token')
   .put(authValidation.refreshToken, authController.refreshToken)
 
@@ -51,6 +47,10 @@ router
   )
 
 router.use(authMiddleware.authenticate)
+
+router
+  .route('/sign-out')
+  .delete(authValidation.signOut, authController.signOut)
 
 router
   .route('/sign-in-status')

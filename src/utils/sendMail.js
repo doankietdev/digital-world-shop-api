@@ -2,6 +2,7 @@
 import nodemailer from 'nodemailer'
 import ejs from 'ejs'
 import { EMAIL, APP } from '~/configs/environment'
+import path from 'path'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -43,8 +44,9 @@ export const sendMailWithHTML = async ({
   pathToView = '',
   data = {}
 }) => {
+  const rootDir = path.resolve(process.cwd())
   const html = await ejs.renderFile(
-    `${__dirname}/../views/${pathToView}`,
+    `${rootDir}/src/views/${pathToView}`,
     data,
     { async: true }
   )

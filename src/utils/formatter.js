@@ -1,4 +1,5 @@
 import slugify from 'slugify'
+import { typeOf } from './util'
 
 export const parseQueryParams = (reqQuery = {}) => {
   const queryObj = { ...reqQuery }
@@ -75,4 +76,31 @@ export const parsePlaceHolderUrl = (originalUrl, data = {}) => {
 
 export const convertObjectToArrayValues = (obj) => {
   return Object.keys(obj).map((key) => obj[key])
+}
+
+/**
+ * Delete null, undefined in nested object. Included in array.
+ * @param {object} originalObject
+ * @returns {object}
+ */
+export const cleanObject = (originalObject = {}) => {
+  return Object.keys(originalObject).reduce((cleanedObject, key) => {
+    const value = originalObject[key]
+    if (value === null || value === undefined) return cleanedObject
+    if (typeOf(value) === 'Object') {
+      return {
+        ...cleanedObject,
+        [key]: cleanObject(value)
+      }
+    }
+    if (typeOf(value) === 'Array') {
+      return {
+        ...cleanedObject,
+        [key]: value
+          .map((item) => (typeOf(item) === 'Object' ? cleanObject(item) : item))
+          .filter((item) => item !== null && item !== undefined)
+      }
+    }
+    return { ...cleanedObject, [key]: value }
+  }, {})
 }

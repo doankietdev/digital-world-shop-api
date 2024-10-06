@@ -6,6 +6,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import { corsOptions } from './configs/cors'
 import { BUILD_MODE } from './configs/environment'
+import agentParsingMiddleware from './middlewares/agentParsingMiddleware'
 import errorHandlingMiddleware from './middlewares/errorHandlingMiddleware'
 import notFoundHandlingMiddleware from './middlewares/notFoundHandlingMiddleware'
 import { route } from './routes'
@@ -20,6 +21,7 @@ app.use(cookieParser())
 app.use(helmet())
 app.use(compression())
 BUILD_MODE === DEV_ENV && app.use(morgan('dev'))
+app.use(agentParsingMiddleware)
 
 route(app)
 
