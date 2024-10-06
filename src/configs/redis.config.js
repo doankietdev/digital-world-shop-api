@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
   REDIS_CONNECT_MESSAGE,
   REDIS_CONNECT_TIMEOUT

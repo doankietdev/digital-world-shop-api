@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { statusConnectRedis } from '~/configs/redis.config'
 import { RedisDB } from '../databases/init.redis'
 import objectHash from 'object-hash'

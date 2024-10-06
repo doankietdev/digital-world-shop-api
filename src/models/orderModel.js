@@ -40,11 +40,7 @@ const orderSchema = new Schema(
         },
         oldPrice: {
           type: Number,
-          min: [0, generateDBErrorMessage('must be at least 0')],
-          required: [
-            true,
-            generateDBErrorMessage('is required', { showValue: false })
-          ]
+          min: [0, generateDBErrorMessage('must be at least 0')]
         },
         price: {
           type: Number,

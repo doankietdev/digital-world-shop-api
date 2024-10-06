@@ -1,13 +1,18 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
-import { TOTP } from 'totp-generator'
-import useragent from 'useragent'
+import otpGenerator from 'otp-generator'
 import { v4 as uuidv4 } from 'uuid'
 import { AUTH, CLIENT } from '~/configs/environment'
+import emailTokenModel from '~/models/emailTokenModel'
+import passwordHistoryModel from '~/models/passwordHistoryModel'
+import passwordResetOtpModel from '~/models/passwordResetOtpModel'
+import passwordResetTokenModel from '~/models/passwordResetTokenModel'
 import userModel from '~/models/userModel'
+import googleOAuthProvider from '~/providers/googleOAuthProvider'
 import ApiError from '~/utils/ApiError'
 import {
   checkExpired,
   checkNewPasswordPolicy,
+  generateBase64Token,
   generateKeyPairRSA,
   generateToken,
   hash,
@@ -17,8 +22,39 @@ import {
 import { formatPlaceHolderUrl } from '~/utils/formatter'
 import { sendMailWithHTML } from '~/utils/sendMail'
 import cartService from './cartService'
+import loginSessionService from './loginSessionService'
 import userService from './userService'
-import googleOAuthProvider from '~/providers/googleOAuthProvider'
+import usedRefreshTokenService from './usedRefreshTokenService'
+
+/**
+ * Create auth token pair
+ * @param {{ userId: string, email: string, agent: object }} data
+ */
+const createAuthTokenPair = async (data = {}) => {
+  const { userId, email, agent } = data
+
+  const { publicKey, privateKey } = generateKeyPairRSA()
+
+  const payload = { userId, email }
+  const accessToken = generateToken(
+    payload,
+    privateKey,
+    AUTH.ACCESS_TOKEN_LIFE
+  )
+  const refreshToken = generateToken(
+    payload,
+    privateKey,
+    AUTH.REFRESH_TOKEN_LIFE
+  )
+
+  await loginSessionService.createNew({
+    ...agent,
+    userId,
+    publicKey
+  })
+
+  return { accessToken, refreshToken }
+}
 
 const signUp = async ({ firstName, lastName, email, password }) => {
   let errorMessages = []
@@ -39,25 +75,28 @@ const signUp = async ({ firstName, lastName, email, password }) => {
       { errors: errorMessages }
     )
 
-  const { publicKey, privateKey } = generateKeyPairRSA()
   const { hashed } = await hash(password)
 
-  const verificationToken = uuidv4()
   const newUser = await userModel.create({
     firstName,
     lastName,
     email,
-    password: hashed,
-    verificationToken,
-    publicKey,
-    privateKey
+    password: hashed
   })
+
+  const token = uuidv4()
+  await emailTokenModel.findOneAndUpdate(
+    { userId: newUser._id },
+    { code: (await hash(token)).hashed, expiresAt: Date.now() + AUTH.EMAIL_VERIFICATION_TOKEN_LIFE },
+    { upsert: true, new: true }
+  )
+
   await sendMailWithHTML({
     email,
     subject: 'Verify Account',
     pathToView: 'verify-email.ejs',
     data: {
-      url: `${CLIENT.URL}/auth/verify-account?email=${newUser.email}&token=${newUser.verificationToken}`
+      url: `${CLIENT.URL}/auth/verify-account?email=${newUser.email}&token=${token}`
     }
   })
 
@@ -69,30 +108,30 @@ const signUp = async ({ firstName, lastName, email, password }) => {
 }
 
 const verifyAccount = async ({ email, token }) => {
-  const foundUser = await userModel.findOne({ email })
+  const foundUser = await userModel.findOne({ email }).lean()
   if (!foundUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Email not found')
 
-  if (foundUser.verificationToken !== token) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Token not found')
-  }
+  const foundEmailToken = await emailTokenModel.findOne({ userId: foundUser._id })
+  if (!foundEmailToken) throw new ApiError(StatusCodes.NOT_FOUND, 'Token not found')
 
-  if (foundUser.verified) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Account has been verified')
-  }
+  const isMatch = await verifyHashed(token, foundEmailToken.code)
+  if (!isMatch) throw new ApiError(StatusCodes.NOT_FOUND, 'Invalid token')
 
   const { modifiedCount } = await userModel.updateOne(
     { _id: foundUser._id },
-    { verificationToken: null, verified: true }
+    { verified: true }
   )
   if (!modifiedCount)
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Verify account failed')
+
+  await emailTokenModel.deleteMany({ userId: foundUser._id })
 
   return {
     email
   }
 }
 
-const signIn = async ({ email, password, headerUserAgent, ip }) => {
+const signIn = async ({ email, password, agent }) => {
   const user = await userModel.findOne({ email })
   if (!user)
     throw new ApiError(
@@ -131,37 +170,11 @@ const signIn = async ({ email, password, headerUserAgent, ip }) => {
     )
   }
 
-  if (user.sessions.length >= AUTH.MAX_SESSIONS) {
-    user.sessions.shift()
-  }
-
-  const payload = { userId: user._id, email: user.email }
-  const accessToken = generateToken(
-    payload,
-    user.privateKey,
-    AUTH.ACCESS_TOKEN_LIFE
-  )
-  const refreshToken = generateToken(
-    payload,
-    user.privateKey,
-    AUTH.REFRESH_TOKEN_LIFE
-  )
-
-  const agent = useragent.parse(headerUserAgent)
-
-  user.sessions.push({
-    accessToken,
-    refreshToken,
-    device: {
-      name: agent.device.toString(),
-      deviceType: agent.device.family,
-      os: agent.os.toString(),
-      browser: agent.toAgent(),
-      ip
-    }
+  const { accessToken, refreshToken } = await createAuthTokenPair({
+    userId: user._id.toString(),
+    email: user.email,
+    agent
   })
-
-  await user.save()
 
   return {
     user: await userService.getUser(user._id),
@@ -170,24 +183,65 @@ const signIn = async ({ email, password, headerUserAgent, ip }) => {
   }
 }
 
-const signInStatus = async ({ sessions = [], accessToken }) => {
-  const session = sessions.find(session => session.accessToken === accessToken)
-  if (!session) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+const signInWithGoogle = async ({
+  code,
+  agent
+}) => {
+  const {
+    sub,
+    given_name,
+    family_name,
+    email,
+    picture
+  } = await googleOAuthProvider.getProfile(code)
+
+  const foundUserWithGoogleId = await userModel.findOne({ googleId: sub })
+  if (foundUserWithGoogleId) {
+    if (foundUserWithGoogleId.blocked)
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Account has been blocked')
+
+    const { accessToken, refreshToken } = await createAuthTokenPair({
+      userId: foundUserWithGoogleId._id.toString(),
+      email: foundUserWithGoogleId.email,
+      agent
+    })
+
+    return {
+      user: await userService.getUser(foundUserWithGoogleId._id),
+      accessToken,
+      refreshToken
+    }
+  }
+
+  const foundUserWithEmail = await userModel.findOne({ email })
+  if (foundUserWithEmail?.email === email) throw new ApiError(StatusCodes.CONFLICT, 'This email was used to register the account')
+
+  const newUser = await userModel.create({
+    googleId: sub,
+    firstName: given_name,
+    lastName: family_name,
+    email,
+    image: { url: picture },
+    verified: true
+  })
+  await cartService.createNewCart({ userId: newUser._id })
+
+  const { accessToken, refreshToken } = await createAuthTokenPair({
+    userId: newUser._id.toString(),
+    email: newUser.email,
+    agent
+  })
+
   return {
-    device: session.device,
-    signInTime: session.createdAt
+    user: await userService.getUser(newUser._id),
+    accessToken,
+    refreshToken
   }
 }
 
-const signOut = async ({ userId, ip }) => {
-  const user = await userModel.findOne({
-    _id: userId,
-    'sessions.device.ip': ip
-  })
-  if (user) {
-    user.sessions = user.sessions.filter(session => session.device.ip !== ip)
-    await user.save()
-  }
+
+const signOut = async ({ loginSessionId }) => {
+  await loginSessionService.deleteById(loginSessionId)
 }
 
 const forgotPassword = async ({ email }) => {
@@ -197,20 +251,24 @@ const forgotPassword = async ({ email }) => {
       StatusCodes.BAD_REQUEST,
       'Sorry, email you entered is not associated with any account. Please check your email and try again!')
 
-  const expiresAt = Date.now() + AUTH.PASSWORD_RESET_OTP_LIFE
-
-  const { otp } = TOTP.generate(AUTH.PASSWORD_RESET_OTP_SECRET_KEY, {
-    algorithm: 'SHA3-512',
-    timestamp: expiresAt
+  const otp = otpGenerator.generate(6, {
+    digits: true,
+    lowerCaseAlphabets: false,
+    specialChars: false,
+    upperCaseAlphabets: false
   })
 
-  await userModel.updateOne(
-    { _id: foundUser._id },
+  const newPasswordResetOTP = await passwordResetOtpModel.findOneAndUpdate(
     {
-      passwordResetOTP: {
-        otp: (await hash(otp)).hashed,
-        expiresAt
-      }
+      userId: foundUser._id
+    },
+    {
+      code: (await hash(otp)).hashed,
+      expiresAt: Date.now() + AUTH.PASSWORD_RESET_OTP_LIFE
+    },
+    {
+      upsert: true,
+      new: true
     }
   )
 
@@ -232,7 +290,7 @@ const forgotPassword = async ({ email }) => {
 
   return {
     email,
-    expiresAt
+    expiresAt: new Date(newPasswordResetOTP.expiresAt).getTime()
   }
 }
 
@@ -241,37 +299,27 @@ const verifyPasswordResetOtp = async ({ email, otp }) => {
   if (!foundUser)
     throw new ApiError(StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST)
 
-  if (!foundUser.passwordResetOTP) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST)
-  }
+  const foundPasswordResetOtp = await passwordResetOtpModel.findOne({ userId: foundUser._id })
+  if (!foundPasswordResetOtp) throw new ApiError(StatusCodes.NOT_FOUND, 'OTP not found')
 
-  const { otp: hashedOTP, expiresAt } = foundUser.passwordResetOTP
+  const { code: hashedOTP, expiresAt } = foundPasswordResetOtp
   if (checkExpired(expiresAt))
-    throw new ApiError(StatusCodes.GONE, 'Expired OTP. Please press OTP resend button!')
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Expired OTP. Please press OTP resend button!')
   const isCorrect = await verifyHashed(otp, hashedOTP)
   if (!isCorrect) throw new ApiError(StatusCodes.BAD_REQUEST, 'Incorrect OTP')
 
-  const token = generateToken(
-    {
-      userId: foundUser._id,
-      email: foundUser.email
-    },
-    foundUser.privateKey,
-    Math.floor(AUTH.PASSWORD_RESET_TOKEN_LIFE / 1000)
+  await passwordResetOtpModel.deleteMany({ userId: foundUser._id })
+
+  const token = generateBase64Token()
+  const newPasswordResetToken = await passwordResetTokenModel.findOneAndUpdate(
+    { userId: foundUser._id },
+    { code: (await hash(token)).hashed, expiresAt: Date.now() + AUTH.PASSWORD_RESET_TOKEN_LIFE },
+    { upsert: true, new: true }
   )
 
-  await userModel.updateOne(
-    { _id: foundUser },
-    {
-      passwordResetOTP: null,
-      passwordResetToken: {
-        token,
-        expiresAt: Date.now() + AUTH.PASSWORD_RESET_TOKEN_LIFE
-      }
-    }
-  )
+  await passwordHistoryModel.deleteMany({ userId: foundUser._id })
 
-  return { email, token }
+  return { email, token, expiresAt: new Date(newPasswordResetToken.expiresAt).getTime() }
 }
 
 const resetPassword = async ({ email, token, newPassword }) => {
@@ -279,222 +327,96 @@ const resetPassword = async ({ email, token, newPassword }) => {
   const foundUser = await userModel.findOne({ email })
   if (!foundUser)
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Email is not associated with any account')
-  if (foundUser.passwordResetToken?.token !== token)
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid token')
 
-  try {
-    const decodedUser = verifyToken(token, foundUser.publicKey)
-    if (
-      foundUser._id.toString() !== decodedUser.userId ||
-      decodedUser.email !== foundUser.email
-    ) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid token')
+  const foundPasswordResetToken = await passwordResetTokenModel.findOne({ userId: foundUser._id }).lean()
+  if (!foundPasswordResetToken) throw new ApiError(StatusCodes.BAD_REQUEST, 'Password reset time has expired. Please try again')
+
+  const isMatch = await verifyHashed(token, foundPasswordResetToken.code)
+  if (!isMatch) throw new ApiError(StatusCodes.BAD_REQUEST, 'Password reset time has expired. Please try again')
+
+  const passwordHistory = await passwordHistoryModel.find({ userId: foundUser._id })
+  const { isValid, message } = await checkNewPasswordPolicy(
+    newPassword,
+    passwordHistory,
+    foundUser.password
+  )
+  if (!isValid) throw new ApiError(StatusCodes.CONFLICT, message)
+
+  // reset password
+  const { modifiedCount } = await userModel.updateOne(
+    { _id: foundUser._id },
+    {
+      password: (await hash(newPassword)).hashed,
+      sessions: []
     }
-
-    const { isValid, message } = await checkNewPasswordPolicy(
-      newPassword,
-      foundUser.passwordHistory,
-      foundUser.password
-    )
-    if (!isValid) throw new ApiError(StatusCodes.CONFLICT, message)
-
-    // reset password
-    const { modifiedCount } = await userModel.updateOne(
-      { _id: foundUser._id },
-      {
-        password: (await hash(newPassword)).hashed,
-        sessions: [],
-        $addToSet: {
-          'passwordHistory': {
-            password: foundUser.password
-          }
-        },
-        passwordResetToken: null
-      }
-    )
-    if (modifiedCount === 0) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Reset password failed')
-    }
-  } catch (error) {
-    if (error.name === 'TokenExpiredError')
-      throw new ApiError(StatusCodes.GONE, 'Password reset deadline has expired. Please try again!')
-    if (error.name === 'JsonWebTokenError')
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid token')
-    throw error
+  )
+  if (modifiedCount === 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Reset password failed')
   }
+
+  await passwordHistoryModel.create({
+    userId: foundUser._id,
+    password: foundUser.password
+  })
 }
 
-const refreshToken = async ({ userId, refreshToken }) => {
+const refreshToken = async ({ userId, refreshToken, agent }) => {
   if (!userId || !refreshToken)
     throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
-  const user = await userModel.findOne({
-    _id: userId
-  })
-  if (!user)
-    throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
+  const [foundUsedRefreshToken, foundLoginSession] = await Promise.all([
+    usedRefreshTokenService.getOne({
+      userId,
+      code: refreshToken
+    }),
+    loginSessionService.getOne({
+      userId,
+      ip: agent?.ip,
+      browserName: agent?.browser?.name,
+      osName: agent?.os?.name
+    })
+  ])
 
-  if (user.usedRefreshTokens?.includes(refreshToken)) {
-    user.sessions = []
-    await user.save()
-    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
+  if (foundUsedRefreshToken || !foundLoginSession) {
+    await loginSessionService.deleteManyByUserId(userId)
+    throw new Error('Users using blacklisted tokens or abnormal IP')
   }
-
-  const session = user.sessions?.find(session => session.refreshToken === refreshToken)
-  if (!session)
-    throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
   try {
-    const decodedUser = verifyToken(refreshToken, user.publicKey)
+    const decodedUser = verifyToken(refreshToken, foundLoginSession.publicKey)
 
-    const payload = {
-      userId: decodedUser.userId,
-      email: decodedUser.email
-    }
-    const newAccessToken = generateToken(
-      payload,
-      user.privateKey,
-      AUTH.ACCESS_TOKEN_LIFE
-    )
+    const foundUser = await userModel.findOne({ _id: decodedUser.userId })
+    if (!foundUser) throw new Error('User not found')
 
-    session.accessToken = newAccessToken
-    await user.save()
+    if (foundUser.blocked) throw new Error('Account has been blocked')
+    if (!foundUser.verified) throw new Error('Account has not been verified')
+    await loginSessionService.deleteById(foundLoginSession._id)
 
-    return {
-      accessToken: newAccessToken
-    }
+    await usedRefreshTokenService.add({ userId, code: refreshToken })
+
+    return await createAuthTokenPair({
+      userId: foundUser._id.toString(),
+      email: foundUser.email,
+      agent
+    })
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      user.usedRefreshTokens.push(refreshToken)
-      await user.save()
+      await usedRefreshTokenService.add({ userId, code: refreshToken })
+      await loginSessionService.deleteById(foundLoginSession._id)
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Expired refresh token')
     }
-    if (error.name === 'JsonWebTokenError') {
-      user.sessions = []
-      user.usedRefreshTokens.push(refreshToken)
-      await user.save()
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Something happened')
-    }
     throw error
-  }
-}
-
-const signInWithGoogle = async ({
-  code,
-  headerUserAgent,
-  ip
-}) => {
-  const {
-    sub,
-    given_name,
-    family_name,
-    email,
-    email_verified,
-    picture
-  } = await googleOAuthProvider.getProfile(code)
-
-  const agent = useragent.parse(headerUserAgent)
-
-  const foundUserWithGoogleId = await userModel.findOne({ googleId: sub })
-  if (foundUserWithGoogleId) {
-    if (foundUserWithGoogleId.blocked)
-      throw new ApiError(StatusCodes.FORBIDDEN, 'Account has been blocked')
-
-    if (foundUserWithGoogleId.sessions.length >= AUTH.MAX_SESSIONS) {
-      foundUserWithGoogleId.sessions.shift()
-    }
-
-    const payload = { userId: foundUserWithGoogleId._id, email: foundUserWithGoogleId.email }
-    const accessToken = generateToken(
-      payload,
-      foundUserWithGoogleId.privateKey,
-      AUTH.ACCESS_TOKEN_LIFE
-    )
-    const refreshToken = generateToken(
-      payload,
-      foundUserWithGoogleId.privateKey,
-      AUTH.REFRESH_TOKEN_LIFE
-    )
-    const session = {
-      accessToken,
-      refreshToken,
-      device: {
-        name: agent.device.toString(),
-        deviceType: agent.device.family,
-        os: agent.os.toString(),
-        browser: agent.toAgent(),
-        ip
-      }
-    }
-
-    foundUserWithGoogleId.sessions.push(session)
-    await foundUserWithGoogleId.save()
-    return {
-      user: await userService.getUser(foundUserWithGoogleId._id),
-      accessToken,
-      refreshToken
-    }
-  }
-
-  const foundUserWithEmail = await userModel.findOne({ email })
-  if (foundUserWithEmail?.email === email) throw new ApiError(StatusCodes.CONFLICT, 'This email was used to register the account')
-
-  const { publicKey, privateKey } = generateKeyPairRSA()
-  const newUser = await userModel.create({
-    googleId: sub,
-    firstName: given_name,
-    lastName: family_name,
-    email,
-    image: { url: picture },
-    verified: email_verified,
-    publicKey,
-    privateKey
-  })
-  await cartService.createNewCart({ userId: newUser._id })
-
-
-  const payload = { userId: newUser._id, email: newUser.email }
-  const accessToken = generateToken(
-    payload,
-    newUser.privateKey,
-    AUTH.ACCESS_TOKEN_LIFE
-  )
-  const refreshToken = generateToken(
-    payload,
-    newUser.privateKey,
-    AUTH.REFRESH_TOKEN_LIFE
-  )
-  const session = {
-    accessToken,
-    refreshToken,
-    device: {
-      name: agent.device.toString(),
-      deviceType: agent.device.family,
-      os: agent.os.toString(),
-      browser: agent.toAgent(),
-      ip
-    }
-  }
-
-  newUser.sessions.push(session)
-  await newUser.save()
-
-  return {
-    user: await userService.getUser(newUser._id),
-    accessToken,
-    refreshToken
   }
 }
 
 export default {
   signUp,
   signIn,
-  signInStatus,
+  signInWithGoogle,
   signOut,
   verifyAccount,
   forgotPassword,
   verifyPasswordResetOtp,
   resetPassword,
-  refreshToken,
-  signInWithGoogle
+  refreshToken
 }

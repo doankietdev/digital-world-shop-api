@@ -1,5 +1,6 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import userModel from '~/models/userModel'
+import loginSessionService from '~/services/loginSessionService'
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
 import { verifyToken } from '~/utils/auth'
@@ -12,22 +13,26 @@ const authenticate = asyncHandler(async (req, res, next) => {
     throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
   }
 
-  const user = await userModel.findOne({
-    _id: userId,
-    verified: true,
-    blocked: false,
-    'sessions.accessToken': accessToken,
-    'sessions.device.ip': req.ip
-  })
-  if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
-
   try {
-    const decodedUser = verifyToken(accessToken, user.publicKey)
-    if (decodedUser.userId !== user?._id?.toString()) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
-    }
-    req.user = user
-    req.accessToken = accessToken
+
+    const foundLoginSession = await loginSessionService.getOne({
+      userId,
+      ip: req?.agent?.ip,
+      browserName: req?.agent?.browser?.name,
+      osName: req?.agent?.os?.name
+    })
+    if (!foundLoginSession) throw new Error('Login session not found')
+
+    const decodedUser = verifyToken(accessToken, foundLoginSession.publicKey)
+
+    const foundUser = await userModel.findOne({ _id: decodedUser.userId })
+    if (!foundUser) throw new Error('User not found')
+    if (foundUser.blocked) throw new Error('Account has been blocked')
+    if (!foundUser.verified) throw new Error('Account has not been verified')
+
+    req.user = foundUser
+    req.loginSession = foundLoginSession
+
     next()
   } catch (error) {
     if (error.name === 'TokenExpiredError') {

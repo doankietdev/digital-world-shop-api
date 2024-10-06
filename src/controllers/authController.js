@@ -29,27 +29,29 @@ const signIn = asyncHandler(async (req, res) => {
     message: 'Sign in successfully',
     metadata: await authService.signIn({
       ...req.body,
-      headerUserAgent: req.headers['user-agent'],
-      ip: req.ip
+      agent: req.agent
+    })
+  }).send(res)
+})
+
+const signInWithGoogle = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Sign in with Google successfully',
+    metadata: await authService.signInWithGoogle({
+      code: req.body.code,
+      agent: req.agent
     })
   }).send(res)
 })
 
 const signInStatus = asyncHandler(async (req, res) => {
   new SuccessResponse({
-    message: 'Signed in',
-    metadata: await authService.signInStatus({
-      accessToken: req.accessToken,
-      sessions: req.user.sessions
-    })
+    message: 'Signed in'
   }).send(res)
 })
 
 const signOut = asyncHandler(async (req, res) => {
-  await authService.signOut({
-    userId: req.headers[HEADER_KEYS.USER_ID],
-    ip: req.ip
-  })
+  await authService.signOut({ loginSessionId: req.loginSession._id })
   new SuccessResponse({
     message: 'Sign out successfully'
   }).send(res)
@@ -102,18 +104,8 @@ const refreshToken = asyncHandler(async (req, res) => {
     message: 'Refresh token successfully',
     metadata: await authService.refreshToken({
       userId,
-      refreshToken: req.body.refreshToken
-    })
-  }).send(res)
-})
-
-const signInWithGoogle = asyncHandler(async (req, res) => {
-  new SuccessResponse({
-    message: 'Sign in with Google successfully',
-    metadata: await authService.signInWithGoogle({
-      code: req.body.code,
-      headerUserAgent: req.headers['user-agent'],
-      ip: req.ip
+      refreshToken: req.body.refreshToken,
+      agent: req.agent
     })
   }).send(res)
 })
@@ -122,11 +114,11 @@ export default {
   signUp,
   verifyAccount,
   signIn,
+  signInWithGoogle,
   signInStatus,
   signOut,
   forgotPassword,
   verifyPasswordResetOtp,
   resetPassword,
-  refreshToken,
-  signInWithGoogle
+  refreshToken
 }

@@ -41,7 +41,8 @@ export const ORDER_STATUSES = {
 
 export const COLLECTION_NAMES = {
   USER: 'users',
-  AUTHENTICATION_TOKEN: 'authentication_tokens',
+  LOGIN_SESSION: 'login_sessions',
+  USED_REFRESH_TOKEN: 'used_refresh_tokens',
   BRAND: 'brands',
   PRODUCT: 'products',
   CATEGORY: 'categories',
@@ -49,19 +50,16 @@ export const COLLECTION_NAMES = {
   ADDRESS: 'addresses',
   CART: 'carts',
   ORDER: 'orders',
-  EMAIL_VERIFICATION_TOKEN: 'email_verification_tokens',
+  EMAIL_TOKEN: 'email_tokens',
   PASSWORD_RESET_OTP: 'password_reset_otps',
-  PASSWORD_HISTORY: 'password_history',
-  PROVINCE: 'provinces',
-  DISTRICT: 'districts',
-  WARD: 'wards',
-  PAYMENT_METHOD: 'payment_methods',
-  ORDER_STATUS: 'order_statuses'
+  PASSWORD_RESET_TOKEN: 'password_reset_tokens',
+  PASSWORD_HISTORY: 'password_history'
 }
 
 export const MODEL_NAMES = {
   USER: 'User',
-  AUTHENTICATION_TOKEN: 'AuthenticationToken',
+  LOGIN_SESSION: 'LoginSession',
+  USED_REFRESH_TOKEN: 'UsedRefreshToken',
   BRAND: 'Brand',
   PRODUCT: 'Product',
   CATEGORY: 'Category',
@@ -69,14 +67,10 @@ export const MODEL_NAMES = {
   ADDRESS: 'Address',
   CART: 'Cart',
   ORDER: 'Order',
-  EMAIL_VERIFICATION_TOKEN: 'EmailVerificationToken',
+  EMAIL_TOKEN: 'EmailToken',
   PASSWORD_RESET_OTP: 'PasswordResetOTP',
-  PASSWORD_HISTORY: 'PasswordHistory',
-  PROVINCE: 'Province',
-  DISTRICT: 'District',
-  WARD: 'Ward',
-  PAYMENT_METHOD: 'PaymentMethod',
-  ORDER_STATUS: 'OrderStatus'
+  PASSWORD_RESET_TOKEN: 'PasswordResetToken',
+  PASSWORD_HISTORY: 'PasswordHistory'
 }
 
 export const PARTNER_APIS = {
