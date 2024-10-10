@@ -164,7 +164,7 @@ const signIn = async ({ email, password, agent }) => {
       user.verificationToken = verificationToken
       await user.save()
     }
-    await sendMailWithHTML({
+    sendMailWithHTML({
       email,
       subject: 'Verify Account',
       pathToView: 'verify-email.ejs',
@@ -174,7 +174,11 @@ const signIn = async ({ email, password, agent }) => {
     })
     throw new ApiError(
       StatusCodes.FORBIDDEN,
-      'Account has not been verified. Please check your email and verify account!'
+      'Account has not been verified. Please check your email and verify account!',
+      BUILD_MODE === DEV_ENV ? {
+        email: user.email,
+        token: verificationToken
+      } : {}
     )
   }
 
