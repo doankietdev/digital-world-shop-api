@@ -1,7 +1,7 @@
 import { ReasonPhrases, StatusCodes } from 'http-status-codes'
 import otpGenerator from 'otp-generator'
 import { v4 as uuidv4 } from 'uuid'
-import { AUTH, CLIENT } from '~/configs/environment'
+import { AUTH, BUILD_MODE, CLIENT } from '~/configs/environment'
 import emailTokenModel from '~/models/emailTokenModel'
 import passwordHistoryModel from '~/models/passwordHistoryModel'
 import passwordResetOtpModel from '~/models/passwordResetOtpModel'
@@ -25,6 +25,7 @@ import cartService from './cartService'
 import loginSessionService from './loginSessionService'
 import userService from './userService'
 import usedRefreshTokenService from './usedRefreshTokenService'
+import { DEV_ENV } from '~/utils/constants'
 
 /**
  * Create auth token pair
@@ -91,7 +92,7 @@ const signUp = async ({ firstName, lastName, email, password }) => {
     { upsert: true, new: true }
   )
 
-  await sendMailWithHTML({
+  sendMailWithHTML({
     email,
     subject: 'Verify Account',
     pathToView: 'verify-email.ejs',
@@ -101,6 +102,13 @@ const signUp = async ({ firstName, lastName, email, password }) => {
   })
 
   await cartService.createNewCart({ userId: newUser._id })
+
+  if (BUILD_MODE === DEV_ENV) {
+    return {
+      email: newUser.email,
+      token,
+    }
+  }
 
   return {
     email: newUser.email

@@ -7,12 +7,13 @@ import asyncHandler from '~/utils/asyncHandler'
 import { HEADER_KEYS } from '~/utils/constants'
 
 const signUp = asyncHandler(async (req, res) => {
-  const { email } = await authService.signUp(req.body)
+  const { email, token } = await authService.signUp(req.body)
   new SuccessResponse({
     statusCode: StatusCodes.CREATED,
     message: `An email has been sent to ${email}. Please check and verify your account before sign in!`,
     metadata: {
-      email
+      email,
+      token
     }
   }).send(res)
 })
