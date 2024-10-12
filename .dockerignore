@@ -9,14 +9,18 @@ dist
 build
 
 # Ignore local environment files
-.env.development
+.env
+.env.dev
 .env.test
-.env.production
+.env.prod
+.env.example
 
 # Ignore Docker-related files
 Dockerfile
-
+Dockerfile.dev
 .dockerignore
+docker-compose.yaml
+docker-compose.dev.yaml
 
 # Ignore git-related files
 .git
@@ -24,8 +28,14 @@ Dockerfile
 
 # Ignore editor and OS-specific files
 .vscode
+jsconfig.json
 .idea
 *.swp
 *~
 .DS_Store
 Thumbs.db
+
+# Ignore custom files and directories
+data
+docs
+README.md

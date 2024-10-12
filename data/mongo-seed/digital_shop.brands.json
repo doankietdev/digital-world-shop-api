@@ -1,0 +1,266 @@
+[{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6177"
+  },
+  "name": "Xiaomi",
+  "slug": "xiaomi-1718780905461",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.503Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.503Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6178"
+  },
+  "name": "Vivo",
+  "slug": "vivo-1718780905503",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.503Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.503Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6179"
+  },
+  "name": "Sony",
+  "slug": "sony-1718780905503",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.503Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.503Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb617a"
+  },
+  "name": "Samsung",
+  "slug": "samsung-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb617b"
+  },
+  "name": "LG",
+  "slug": "lg-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb617c"
+  },
+  "name": "Apple",
+  "slug": "apple-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb617d"
+  },
+  "name": "HTC",
+  "slug": "htc-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb617e"
+  },
+  "name": "Google",
+  "slug": "google-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb617f"
+  },
+  "name": "Lenovo",
+  "slug": "lenovo-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6180"
+  },
+  "name": "Huawei",
+  "slug": "huawei-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6181"
+  },
+  "name": "Asus",
+  "slug": "asus-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6182"
+  },
+  "name": "HP",
+  "slug": "hp-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6183"
+  },
+  "name": "Dell",
+  "slug": "dell-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6184"
+  },
+  "name": "Acer",
+  "slug": "acer-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6185"
+  },
+  "name": "USB",
+  "slug": "usb-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6186"
+  },
+  "name": "Sennheiser",
+  "slug": "sennheiser-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6187"
+  },
+  "name": "Motorola",
+  "slug": "motorola-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6188"
+  },
+  "name": "Logitech",
+  "slug": "logitech-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "667283e902e45219d0bb6189"
+  },
+  "name": "JBL",
+  "slug": "jbl-1718780905504",
+  "description": "",
+  "createdAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  },
+  "updatedAt": {
+    "$date": "2024-06-19T07:08:25.504Z"
+  }
+}]
