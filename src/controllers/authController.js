@@ -59,10 +59,10 @@ const signOut = asyncHandler(async (req, res) => {
 })
 
 const forgotPassword = asyncHandler(async (req, res) => {
-  const { email, expiresAt } = await authService.forgotPassword(req.body)
+  const { email, otp, expiresAt } = await authService.forgotPassword(req.body)
   new SuccessResponse({
     message: `An email has been sent to ${email}. Please check your email to enter OTP!`,
-    metadata: { email, expiresAt }
+    metadata: { email, otp, expiresAt }
   }).send(res)
 })
 

@@ -284,7 +284,7 @@ const forgotPassword = async ({ email }) => {
     }
   )
 
-  await sendMailWithHTML({
+  sendMailWithHTML({
     email,
     subject: 'Reset Password',
     pathToView: 'password-reset-otp.ejs',
@@ -299,6 +299,14 @@ const forgotPassword = async ({ email }) => {
       firstName: foundUser.firstName
     }
   })
+
+  if (BUILD_MODE === DEV_ENV) {
+    return {
+      email,
+      otp,
+      expiresAt: new Date(newPasswordResetOTP.expiresAt).getTime()
+    }
+  }
 
   return {
     email,
