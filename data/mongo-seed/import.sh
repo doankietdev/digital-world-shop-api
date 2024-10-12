@@ -1,0 +1,14 @@
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection addresses --type json --file /mongo-seed/digital_shop.addresses.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection brands --type json --file /mongo-seed/digital_shop.brands.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection carts --type json --file /mongo-seed/digital_shop.carts.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection categories --type json --file /mongo-seed/digital_shop.categories.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection discounts --type json --file /mongo-seed/digital_shop.discounts.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection email_tokens --type json --file /mongo-seed/digital_shop.email_tokens.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection login_sessions --type json --file /mongo-seed/digital_shop.login_sessions.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection orders --type json --file /mongo-seed/digital_shop.orders.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection password_history --type json --file /mongo-seed/digital_shop.password_history.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection password_reset_otps --type json --file /mongo-seed/digital_shop.password_reset_otps.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection password_reset_tokens --type json --file /mongo-seed/digital_shop.password_reset_tokens.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection products --type json --file /mongo-seed/digital_shop.products.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection used_refresh_tokens --type json --file /mongo-seed/digital_shop.used_refresh_tokens.json --jsonArray
+mongoimport --host mongodb --authenticationDatabase admin --username root --password dev --db digital_shop --collection users --type json --file /mongo-seed/digital_shop.users.json --jsonArray

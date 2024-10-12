@@ -1,6 +1,6 @@
-export const DEV_ENV = 'development'
+export const DEV_ENV = 'dev'
 
-export const PROD_ENV = 'production'
+export const PROD_ENV = 'prod'
 
 export const WHITE_LIST_DOMAINS = ['http://localhost:3000']
 

@@ -12,7 +12,7 @@ export const corsOptions = {
     if (isValidDomain) {
       return callback(null, true)
     }
-    return callback(new ApiError(StatusCodes.FORBIDDEN, `${origin} not allowed by our CORS Policy`))
+    return callback(new ApiError(StatusCodes.FORBIDDEN, 'Origin not allowed by our CORS Policy'))
   },
   optionsSuccessStatus: 200,
   credentials: true

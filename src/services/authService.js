@@ -106,7 +106,7 @@ const signUp = async ({ firstName, lastName, email, password }) => {
   if (BUILD_MODE === DEV_ENV) {
     return {
       email: newUser.email,
-      token,
+      token
     }
   }
 
