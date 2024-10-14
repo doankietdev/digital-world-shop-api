@@ -22,7 +22,8 @@ const review = asyncHandler(async (req, res, next) => {
           quantity: Joi.number().min(0).required()
         })
       )
-      .required()
+      .required(),
+    _currency: Joi.string().allow('VND')
   })
 
   try {

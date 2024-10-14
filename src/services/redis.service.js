@@ -108,6 +108,23 @@ const getKeysWithPattern = async (pattern) => {
   return redisClient.keys(pattern)
 }
 
+const cache = async ({ key, options = { EX: 21600, NX: false } }, callback, ...args) => {
+  const _isRedisWorking = isRedisWorking()
+
+  if (_isRedisWorking) {
+    const cachedValue = await readData(key)
+    if (cachedValue) {
+      return JSON.parse(cachedValue)
+    }
+  }
+
+  const result = await callback(...args)
+  if (_isRedisWorking) {
+    await writeData(key, JSON.stringify(result), options)
+  }
+  return result
+}
+
 export {
-  requestToKey, isRedisWorking, writeData, readData, deleteData, getKeysWithPattern
+  requestToKey, isRedisWorking, writeData, readData, deleteData, getKeysWithPattern, cache
 }

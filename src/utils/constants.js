@@ -92,6 +92,12 @@ export const PARTNER_APIS = {
       CREATE_ORDER: '/v2/checkout/orders',
       CAPTURE_ORDER: '/v2/checkout/orders/:orderId/capture'
     }
+  },
+  CURRENCY_FREAKS: {
+    API_ROOT: 'https://api.currencyfreaks.com/v2.0',
+    APIS: {
+      GET_LATEST_CURRENCY_EXCHANGE_RATES: '/rates/latest'
+    }
   }
 }
 
@@ -108,4 +114,8 @@ export const INVALID_REDIS_KEY = {
   INVALID_CACHE_CART: 'INVALID_CACHE_CART',
   INVALID_CACHE_CATEGORY: 'INVALID_CACHE_CATEGORY',
   INVALID_CACHE_DISCOUNT: 'INVALID_CACHE_DISCOUNT'
+}
+
+export const REDIS_KEY = {
+  EXCHANGE_RATES: 'EXCHANGE_RATES'
 }
