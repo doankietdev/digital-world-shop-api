@@ -6,10 +6,10 @@ let dbInstance = null
 
 export const connectDB = async () => {
   if (!dbInstance) {
-    if (BUILD_MODE === DEV_ENV) {
-      mongoose.set('debug', true)
-      mongoose.set('debug', { color: true })
-    }
+    // if (BUILD_MODE === DEV_ENV) {
+    //   mongoose.set('debug', true)
+    //   mongoose.set('debug', { color: true })
+    // }
     dbInstance = await mongoose.connect(MONGODB.URI, {
       dbName: MONGODB.DATABASE_NAME
     })

@@ -5,7 +5,6 @@ import productModel from '~/models/productModel'
 import userModel from '~/models/userModel'
 import paypalProvider from '~/providers/paypalProvider'
 import checkoutRepo from '~/repositories/checkoutRepo'
-import orderRepo from '~/repositories/orderRepo'
 import ApiError from '~/utils/ApiError'
 import { ORDER_STATUSES, PAYMENT_METHODS } from '~/utils/constants'
 import cartService from './cartService'
@@ -227,7 +226,7 @@ const order = async (userId, reqBody) => {
     )
     await Promise.all(updateStockQuantityPromises)
 
-    const newOrder = await orderModel.create({
+    await orderModel.create({
       products: orderProducts.map(({ product, quantity }) => ({
         product: product._id,
         variant: product.variant._id,
@@ -249,7 +248,6 @@ const order = async (userId, reqBody) => {
     })
 
     await session.commitTransaction()
-    return await orderRepo.findById(newOrder._id)
   } catch (error) {
     await session.abortTransaction()
     throw error

@@ -376,11 +376,7 @@ const deleteFromCart = async ({ userId, products }) => {
   } catch (error) {
     await session.abortTransaction()
     await session.endSession()
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Something went wrong'
-    )
+    throw error
   }
 }
 
