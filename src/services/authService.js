@@ -158,12 +158,13 @@ const signIn = async ({ email, password, agent }) => {
     throw new ApiError(StatusCodes.FORBIDDEN, 'Account has been blocked')
 
   if (!user.verified) {
-    let verificationToken = user.verificationToken
-    if (!verificationToken) {
-      verificationToken = uuidv4()
-      user.verificationToken = verificationToken
-      await user.save()
-    }
+    const verificationToken = uuidv4()
+    await emailTokenModel.findOneAndUpdate(
+      { userId: user._id },
+      { code: (await hash(verificationToken)).hashed, expiresAt: Date.now() + AUTH.EMAIL_VERIFICATION_TOKEN_LIFE },
+      { upsert: true, new: true }
+    )
+    
     sendMailWithHTML({
       email,
       subject: 'Verify Account',
