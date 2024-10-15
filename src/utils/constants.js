@@ -27,7 +27,17 @@ export const DISCOUNT_APPLY_TYPES = {
 export const PAYMENT_METHODS = {
   CASH_ON_DELIVERY: 'CASH_ON_DELIVERY',
   PAY_IN_STORE: 'PAY_IN_STORE',
-  ONLINE_PAYMENT: 'ONLINE_PAYMENT'
+  ONLINE_PAYMENT: 'ONLINE_PAYMENT',
+  MOMO: 'MOMO',
+  PAYPAL: 'PAYPAL',
+  CASH: 'CASH'
+}
+
+export const TRANSACTION_STATUS = {
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED'
 }
 
 export const ORDER_STATUSES = {
@@ -53,7 +63,9 @@ export const COLLECTION_NAMES = {
   EMAIL_TOKEN: 'email_tokens',
   PASSWORD_RESET_OTP: 'password_reset_otps',
   PASSWORD_RESET_TOKEN: 'password_reset_tokens',
-  PASSWORD_HISTORY: 'password_history'
+  PASSWORD_HISTORY: 'password_history',
+  PAYMENT_METHOD: 'payment_methods',
+  TRANSACTION: 'transactions'
 }
 
 export const MODEL_NAMES = {
@@ -70,7 +82,9 @@ export const MODEL_NAMES = {
   EMAIL_TOKEN: 'EmailToken',
   PASSWORD_RESET_OTP: 'PasswordResetOTP',
   PASSWORD_RESET_TOKEN: 'PasswordResetToken',
-  PASSWORD_HISTORY: 'PasswordHistory'
+  PASSWORD_HISTORY: 'PasswordHistory',
+  PAYMENT_METHOD: 'PaymentMethod',
+  TRANSACTION: 'Transaction'
 }
 
 export const PARTNER_APIS = {
@@ -97,6 +111,12 @@ export const PARTNER_APIS = {
     API_ROOT: 'https://api.currencyfreaks.com/v2.0',
     APIS: {
       GET_LATEST_CURRENCY_EXCHANGE_RATES: '/rates/latest'
+    }
+  },
+  MOMO: {
+    API_ROOT: 'https://test-payment.momo.vn',
+    APIS: {
+      CREATE_PAY_URL: '/v2/gateway/api/create'
     }
   }
 }

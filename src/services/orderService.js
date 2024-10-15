@@ -115,6 +115,24 @@ const updateStatus = async ({ userId, orderId, status }) => {
   }
 }
 
+const updateStatusById = async (id, status) => {
+  const foundOrder = await orderModel.findOne({ _id: id })
+  if (!foundOrder)
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Order not found')
+
+  const updatedOrder = await orderModel.findOneAndUpdate(
+    { _id: id },
+    {
+      $set: { status },
+      $push: { statusHistory: { status: foundOrder.status } }
+    },
+    { new: true }
+  )
+  if (!updatedOrder)
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Order not found')
+  return updatedOrder
+}
+
 const deleteOrder = async (orderId) => {
   try {
     const deletedOrder = await orderModel.findByIdAndDelete({ _id: orderId })
@@ -182,6 +200,7 @@ export default {
   getOrderOfCurrentUser,
   getOrdersOfCurrentUser,
   updateStatus,
+  updateStatusById,
   updateShippingAddress,
   deleteOrder
 }

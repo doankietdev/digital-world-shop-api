@@ -8,7 +8,7 @@ import { redisCachingMiddleware } from '~/middlewares/redis.middleware'
 
 const router = express.Router()
 
-router.use(redisCachingMiddleware({ EX: 21600, NX: false }, false, INVALID_REDIS_KEY.INVALID_CACHE_PRODUCT))
+// router.use(redisCachingMiddleware({ EX: 21600, NX: false }, false, INVALID_REDIS_KEY.INVALID_CACHE_PRODUCT))
 
 router.route('/get-by-slug/:slug').get(productController.getProductBySlug)
 

@@ -1,31 +1,34 @@
-import { Schema, model } from 'mongoose'
-import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
-import { generateDBErrorMessage } from '~/utils/formatter'
+'use strict'
 
-const paymentMethodSchema = new Schema(
-  {
-    name: {
-      type: String,
-      trim: true,
-      minLength: [2, generateDBErrorMessage('must have a minimum length of 2')],
-      unique: true,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
-    },
-    description: {
-      type: String,
-      trim: true,
-      default: ''
-    }
+import { model, Schema } from 'mongoose'
+import { COLLECTION_NAMES, MODEL_NAMES, PAYMENT_METHODS } from '~/utils/constants'
+
+const paymentMethodSchema = new Schema({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: MODEL_NAMES.USER,
+    required: true
   },
-  {
-    versionKey: false,
-    timestamps: true,
-    collation: { locale: 'en' },
-    collection: COLLECTION_NAMES.PAYMENT_METHOD
+  methodType: {
+    type: String,
+    enum: [PAYMENT_METHODS.MOMO, PAYMENT_METHODS.PAYPAL, PAYMENT_METHODS.CASH],
+    required: true
+  },
+  paymentToken: {
+    type: String, // token or id from paypal and momo
+    default: null
+  },
+  lastUsedAt: {
+    type: Date,
+    default: null
+  },
+  providerData: {
+    type: Schema.Types.Mixed,
+    default: null
   }
-)
+}, {
+  timestamps: true,
+  collection: COLLECTION_NAMES.PAYMENT_METHOD
+})
 
 export default model(MODEL_NAMES.PAYMENT_METHOD, paymentMethodSchema)

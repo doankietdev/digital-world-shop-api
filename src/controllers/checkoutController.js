@@ -51,10 +51,27 @@ const capturePayPalOrder = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const createMomoPayUrl = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Create Momo pay url successfully',
+    metadata: await checkoutService.createMomoPayUrl(req.user?._id, req.body)
+  }).send(res)
+})
+
+const momoCallback = asyncHandler(async (req, res) => {
+  await checkoutService.momoCallback(req.body)
+
+  new SuccessResponse({
+    message: 'Momo callback successfully'
+  }).send(res)
+})
+
 export default {
   review,
   order,
   createPayPalOrder,
   capturePayPalOrder,
+  createMomoPayUrl,
+  momoCallback,
   cancelOrder
 }
