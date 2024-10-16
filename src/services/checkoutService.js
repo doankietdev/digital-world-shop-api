@@ -307,12 +307,19 @@ const capturePayPalOrder = async ({ userId, paypalOrderId, orderProducts }) => {
 }
 
 const initMomoPayment = async (userId, reqBody) => {
-  const newOrder = await order(userId, reqBody)
+  const newOrder = await order(userId, {
+    ...reqBody,
+    paymentMethod: PAYMENT_METHODS.ONLINE_PAYMENT
+  })
   const fullOrder = await orderService.getOrderOfCurrentUser(userId, newOrder._id)
 
   const currency = 'VND'
   const exchangeRate = await currencyService.getExchangeRate(currency)
   if (!exchangeRate) throw new Error('Exchange rate not found')
+
+  const amount = Math.round(convertCurrency(fullOrder.totalPayment, exchangeRate))
+  if (amount < 1000 || amount > 50000000)
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Total payment must be above 1.000 VND and below 50.000.000 VND')
 
   const { payUrl } = await momoProvider.initPayment({
     orderId: newOrder._id.toString(),
@@ -328,8 +335,8 @@ const initMomoPayment = async (userId, reqBody) => {
         totalPrice: vndPrice * quantity
       }
     }),
-    amount: fullOrder.totalPayment,
-    taxAmount: fullOrder.shippingFee,
+    amount: amount,
+    taxAmount: Math.round(convertCurrency(fullOrder.shippingFee, exchangeRate)),
     orderInfo: `${fullOrder._id}`,
     extraData: { userId }
   })

@@ -9,7 +9,7 @@ import {
 
 export const redisCachingMiddleware = (
   options = {
-    EX: 21600, // 6h
+    EX: 30 * 60, // 6h
     NX: false
   },
   compression = false, // enable compression and decompression by default
