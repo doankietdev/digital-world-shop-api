@@ -14,13 +14,13 @@ const authenticate = asyncHandler(async (req, res, next) => {
   }
 
   try {
-
     const foundLoginSession = await loginSessionService.getOne({
       userId,
       ip: req?.agent?.ip,
       browserName: req?.agent?.browser?.name,
       osName: req?.agent?.os?.name
     })
+
     if (!foundLoginSession) throw new Error('Login session not found')
 
     const decodedUser = verifyToken(accessToken, foundLoginSession.publicKey)

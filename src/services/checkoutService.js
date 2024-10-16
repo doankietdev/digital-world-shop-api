@@ -208,7 +208,7 @@ const order = async (userId, reqBody) => {
     })
     if (!foundUser) throw new Error('User not found')
 
-    if (!foundUser.defaultAddress)
+    if (!foundUser.defaultAddress && paymentMethod !== PAYMENT_METHODS.PAY_IN_STORE)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'User has not set a default address')
 
     const { shippingFee, orderProducts } = await review(userId, reqBody)
@@ -314,7 +314,7 @@ const initMomoPayment = async (userId, reqBody) => {
   const exchangeRate = await currencyService.getExchangeRate(currency)
   if (!exchangeRate) throw new Error('Exchange rate not found')
 
-  return await momoProvider.initPayment({
+  const { payUrl } = await momoProvider.initPayment({
     orderId: newOrder._id.toString(),
     items: fullOrder.products.map(({ product, variant, quantity, price }) => {
       const vndPrice = convertCurrency(price, exchangeRate)
@@ -333,6 +333,8 @@ const initMomoPayment = async (userId, reqBody) => {
     orderInfo: `${fullOrder._id}`,
     extraData: { userId }
   })
+
+  return { payUrl }
 }
 
 const callbackMomo = async (payload) => {
