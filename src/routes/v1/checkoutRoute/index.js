@@ -2,8 +2,11 @@ import express from 'express'
 import checkoutController from '~/controllers/checkoutController'
 import authMiddleware from '~/middlewares/authMiddleware'
 import checkoutValidation from '~/validations/checkoutValidation'
+import momoRoute from './momoRoute'
 
 const router = express.Router()
+
+router.use('/momo', momoRoute)
 
 router.use(authMiddleware.authenticate)
 

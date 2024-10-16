@@ -4,7 +4,8 @@ import cloudinaryProvider from '~/providers/cloudinaryProvider'
 import productRepo from '~/repositories/productRepo'
 import ApiError from '~/utils/ApiError'
 import { generateSlug, parseQueryParams } from '~/utils/formatter'
-import { calculateTotalPages } from '~/utils/util'
+import { calculateTotalPages, convertCurrency } from '~/utils/util'
+import currencyService from './currencyService'
 
 const createNew = async (reqBody, reqFile) => {
   try {
@@ -61,7 +62,7 @@ const getProductBySlug = async (slug, reqQuery) => {
 
 const getProducts = async (reqQuery) => {
   try {
-    const { query, sort, fields, skip, limit, page } =
+    const { query, sort, fields, skip, limit, page, currency } =
       parseQueryParams(reqQuery)
 
     const productQuery = {
@@ -85,8 +86,28 @@ const getProducts = async (reqQuery) => {
       productModel.find(productQuery).countDocuments()
     ])
 
-    const productsApplyDiscount =
+    let productsApplyDiscount =
       await productRepo.convertToProductsApplyDiscount(products)
+
+    const exchangeRate = await currencyService.getExchangeRate(currency)
+
+    productsApplyDiscount = productsApplyDiscount.map(product => {
+      if (exchangeRate) {
+        return {
+          ...product,
+          price: convertCurrency(product.price, exchangeRate),
+          oldPrice: convertCurrency(product.oldPrice, exchangeRate),
+          basePrice: product.price,
+          baseOldPrice: product.oldPrice
+        }
+      }
+      return {
+        ...product,
+        basePrice: product.price,
+        baseOldPrice: product.oldPrice
+      }
+    })
+
 
     return {
       page,
