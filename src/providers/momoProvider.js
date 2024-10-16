@@ -1,14 +1,34 @@
 import { v4 as uuidv4 } from 'uuid'
-import { PARTNERS } from '~/configs/environment'
+import { APP, CLIENT, PARTNERS } from '~/configs/environment'
 import momoAxiosClient from '~/configs/momoAxiosClient'
+import { generateSignature } from '~/utils/auth'
 import { PARTNER_APIS } from '~/utils/constants'
 
 const { MOMO: { PARTNER_CODE, ACCESS_KEY, SECRET_KEY, ORDER_EXPIRE_TIME } } = PARTNERS
+const IPN_URL = `${APP.HOST}/api/v1/checkout/momo/callback`
+const REDIRECT_URL = `${CLIENT.URL}${CLIENT.PAID_ORDERS_PATH}`
+const REQUEST_TYPE = 'payWithMethod'
+
+const createSignature = ({ amount, extraData, orderId, orderInfo, requestId }) => {
+  const rawSignature = 'accessKey=' + ACCESS_KEY + '&amount=' + amount + '&extraData=' + extraData + '&ipnUrl=' + IPN_URL + '&orderId=' + orderId + '&orderInfo=' + orderInfo + '&partnerCode=' + PARTNER_CODE + '&redirectUrl=' + REDIRECT_URL + '&requestId=' + requestId + '&requestType=' + REQUEST_TYPE
+  return generateSignature(SECRET_KEY, rawSignature)
+}
+
+const verifySignature = (signature, { amount, extraData, orderId, orderInfo, requestId }) => {
+  const originalSignature = createSignature({
+    orderId,
+    amount,
+    extraData,
+    orderInfo,
+    requestId,
+    requestType: REQUEST_TYPE
+  })
+  return signature === originalSignature
+}
 
 /**
  * Create pay URL | includes: payExpireTime in minutes
  * @param {{
- *  partnerClientId: string,
  *  orderId: string,
  *  items: [{
  *    id: string,
@@ -20,54 +40,51 @@ const { MOMO: { PARTNER_CODE, ACCESS_KEY, SECRET_KEY, ORDER_EXPIRE_TIME } } = PA
  *    totalPrice: number
  *  }],
  *  amount: number,
- *  shippingFee: number,
- *  transactionDescription: string,
- *  redirectUrl: string,
- *  ipnUrl: string
- *  payExpireTime: number
+ *  taxAmount: number,
+ *  orderInfo: string,
+ *  extraData: object
  * }} data
  * @returns {Promise<object>}
  */
-const createPayUrl = async ({
-  partnerClientId,
-  orderId = '',
+const initPayment = async ({
+  orderId,
   items,
   amount,
-  shippingFee,
-  transactionDescription = '',
-  extraData = '',
-  redirectUrl,
-  ipnUrl
+  taxAmount,
+  orderInfo = '',
+  extraData = {}
 }) => {
   const requestId = uuidv4()
-  const requestType = 'payWithMethod'
+  const base64ExtraData = Buffer.from(JSON.stringify(extraData)).toString('base64')
 
-  const rawSignature = 'accessKey=' + ACCESS_KEY + '&amount=' + amount + '&extraData=' + extraData + '&ipnUrl=' + ipnUrl + '&orderId=' + orderId + '&orderInfo=' + transactionDescription + '&partnerCode=' + PARTNER_CODE + '&redirectUrl=' + redirectUrl + '&requestId=' + requestId + '&requestType=' + requestType
-  const crypto = require('crypto')
-  const signature = crypto.createHmac('sha256', SECRET_KEY)
-    .update(rawSignature)
-    .digest('hex')
+  const signature = createSignature({
+    amount,
+    extraData: base64ExtraData,
+    orderId,
+    orderInfo,
+    requestId
+  })
 
-  return await momoAxiosClient.post(PARTNER_APIS.MOMO.APIS.CREATE_PAY_URL, {
+  return await momoAxiosClient.post(PARTNER_APIS.MOMO.APIS.INIT_PAYMENT, {
     partnerCode: PARTNER_CODE,
-    partnerName: 'Test',
     requestId,
-    requestType,
+    requestType: REQUEST_TYPE,
     lang: 'en',
     signature,
-    partnerClientId,
     orderId,
     amount,
-    taxAmount: shippingFee,
-    orderInfo: transactionDescription,
-    redirectUrl,
-    ipnUrl,
-    extraData: '',
+    taxAmount: taxAmount,
+    orderInfo,
+    redirectUrl: REDIRECT_URL,
+    ipnUrl: IPN_URL,
+    extraData: base64ExtraData,
     items,
     orderExpireTime: ORDER_EXPIRE_TIME
   })
 }
 
 export default {
-  createPayUrl
+  createSignature,
+  verifySignature,
+  initPayment
 }

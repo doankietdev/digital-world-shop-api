@@ -3,18 +3,15 @@ import { connectDB } from '~/configs/mongodb'
 import orderModel from '~/models/orderModel'
 import productModel from '~/models/productModel'
 import userModel from '~/models/userModel'
+import momoProvider from '~/providers/momoProvider'
 import paypalProvider from '~/providers/paypalProvider'
 import checkoutRepo from '~/repositories/checkoutRepo'
 import ApiError from '~/utils/ApiError'
-import { ORDER_STATUSES, PAYMENT_METHODS } from '~/utils/constants'
-import cartService from './cartService'
+import { ORDER_STATUSES, PAYMENT_METHODS, TRANSACTION_STATUS } from '~/utils/constants'
+import { convertCurrency } from '~/utils/util'
+import currencyService from './currencyService'
 import orderService from './orderService'
 import userService from './userService'
-import momoProvider from '~/providers/momoProvider'
-import currencyService from './currencyService'
-import { convertCurrency } from '~/utils/util'
-import { APP, CLIENT } from '~/configs/environment'
-import paymentMethodService from './paymentMethodService'
 import transactionService from './transactionService'
 
 /**
@@ -309,7 +306,7 @@ const capturePayPalOrder = async ({ userId, paypalOrderId, orderProducts }) => {
   throw new ApiError(StatusCodes.BAD_REQUEST, 'Something went wrong')
 }
 
-const createMomoPayUrl = async (userId, reqBody) => {
+const initMomoPayment = async (userId, reqBody) => {
   const newOrder = await order(userId, reqBody)
   const fullOrder = await orderService.getOrderOfCurrentUser(userId, newOrder._id)
 
@@ -317,9 +314,8 @@ const createMomoPayUrl = async (userId, reqBody) => {
   const exchangeRate = await currencyService.getExchangeRate(currency)
   if (!exchangeRate) throw new Error('Exchange rate not found')
 
-  return await momoProvider.createPayUrl({
-    partnerClientId: userId,
-    orderId: newOrder._id,
+  return await momoProvider.initPayment({
+    orderId: newOrder._id.toString(),
     items: fullOrder.products.map(({ product, variant, quantity, price }) => {
       const vndPrice = convertCurrency(price, exchangeRate)
       return {
@@ -333,32 +329,51 @@ const createMomoPayUrl = async (userId, reqBody) => {
       }
     }),
     amount: fullOrder.totalPayment,
-    shippingFee: fullOrder.shippingFee,
-    transactionDescription: `Pay for ${APP.BRAND_NAME} - ${fullOrder._id}`,
-    redirectUrl: `${CLIENT.URL}${CLIENT.PAID_ORDERS_PATH}`,
-    ipnUrl: `${APP.HOST}/api/v1/checkout/momo/callback`
+    taxAmount: fullOrder.shippingFee,
+    orderInfo: `${fullOrder._id}`,
+    extraData: { userId }
   })
 }
 
-const momoCallback = async (payload) => {
-  const { orderId, resultCode } = payload
+const callbackMomo = async (payload) => {
+  const {
+    orderId,
+    amount,
+    resultCode,
+    extraData,
+    transId
+  } = payload
 
-  console.log(payload)
+  const foundOrder = orderService.getById(orderId)
+  if (!foundOrder) throw new ApiError(StatusCodes.BAD_REQUEST, 'Order not found')
 
-  // if (resultCode !== 0) {
-  //   return
-  // }
-  // const newPaymentMethod = await paymentMethodService.createNew({
-  //   userId,
-  //   methodType: PAYMENT_METHODS.MOMO
+  if (resultCode !== 0) {
+    return
+  }
+
+  // const isValidSignature = momoProvider.verifySignature(signature, {
+  //   orderId,
+  //   amount,
+  //   extraData,
+  //   orderInfo,
+  //   requestId
   // })
+  // if (!isValidSignature) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid signature')
 
-  // const newTransaction = await transactionService.createNew({
-  //   userId,
-  //   orderId: newOrder._id,
-  //   paymentMethodId: newPaymentMethod._id,
-  //   amount: fullOrder.totalPayment
-  // })
+  const originalExtraData = Buffer.from(extraData, 'base64').toString('ascii')
+  const { userId } = JSON.parse(originalExtraData) || {}
+  if (!userId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing userId in extraData')
+  }
+
+  transactionService.createNew({
+    userId,
+    orderId,
+    paymentMethod: PAYMENT_METHODS.MOMO,
+    amount,
+    status: TRANSACTION_STATUS.COMPLETED,
+    referenceId: transId
+  })
   await orderService.updateStatusById(orderId, ORDER_STATUSES.PAID)
 }
 
@@ -414,7 +429,7 @@ export default {
   order,
   createPayPalOrder,
   capturePayPalOrder,
-  createMomoPayUrl,
-  momoCallback,
+  initMomoPayment,
+  callbackMomo,
   cancelOrder
 }

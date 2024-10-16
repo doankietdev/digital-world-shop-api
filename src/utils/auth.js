@@ -1,10 +1,17 @@
 import bcrypt from 'bcrypt'
+import crypto from 'crypto'
 import CryptoJS from 'crypto-js'
 import jwt from 'jsonwebtoken'
 import forge from 'node-forge'
 import { AUTH } from '~/configs/environment'
 
 const { rsa, publicKeyToPem, privateKeyToPem } = forge.pki
+
+export const generateSignature = (secret, data) => {
+  return crypto.createHmac('sha256', secret)
+    .update(data)
+    .digest('hex')
+}
 
 export const hash = async (string) => {
   const salt = bcrypt.genSaltSync(10)

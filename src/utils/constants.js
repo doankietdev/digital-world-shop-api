@@ -116,7 +116,7 @@ export const PARTNER_APIS = {
   MOMO: {
     API_ROOT: 'https://test-payment.momo.vn',
     APIS: {
-      CREATE_PAY_URL: '/v2/gateway/api/create'
+      INIT_PAYMENT: '/v2/gateway/api/create'
     }
   }
 }

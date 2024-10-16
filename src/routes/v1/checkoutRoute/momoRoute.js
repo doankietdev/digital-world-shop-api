@@ -6,12 +6,12 @@ const router = express.Router()
 
 router
   .route('/callback')
-  .post(checkoutController.momoCallback)
+  .post(checkoutController.callbackMomo)
 
 router.use(authMiddleware.authenticate)
 
 router
-  .route('/create-pay-url')
-  .post(checkoutController.createMomoPayUrl)
+  .route('/init-payment')
+  .post(checkoutController.initMomoPayment)
 
 export default router

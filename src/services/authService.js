@@ -164,7 +164,7 @@ const signIn = async ({ email, password, agent }) => {
       { code: (await hash(verificationToken)).hashed, expiresAt: Date.now() + AUTH.EMAIL_VERIFICATION_TOKEN_LIFE },
       { upsert: true, new: true }
     )
-    
+
     sendMailWithHTML({
       email,
       subject: 'Verify Account',

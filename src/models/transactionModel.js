@@ -1,7 +1,7 @@
 'use strict'
 
 import { model, Schema } from 'mongoose'
-import { COLLECTION_NAMES, MODEL_NAMES, TRANSACTION_STATUS } from '~/utils/constants'
+import { COLLECTION_NAMES, MODEL_NAMES, PAYMENT_METHODS, TRANSACTION_STATUS } from '~/utils/constants'
 
 const transactionSchema = new Schema({
   userId: {
@@ -14,9 +14,9 @@ const transactionSchema = new Schema({
     ref: MODEL_NAMES.ORDER,
     required: true
   },
-  paymentMethodId: {
-    type: Schema.Types.ObjectId,
-    ref: MODEL_NAMES.PAYMENT_METHOD,
+  paymentMethod: {
+    type: String,
+    enum: [PAYMENT_METHODS.CASH, PAYMENT_METHODS.MOMO, PAYMENT_METHODS.PAYPAL],
     required: true
   },
   amount: {

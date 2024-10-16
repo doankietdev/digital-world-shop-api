@@ -10,13 +10,42 @@ import { ORDER_STATUSES, PARTNER_APIS } from '~/utils/constants'
 import ghnAxiosClient from '~/configs/ghnAxiosClient'
 import productModel from '~/models/productModel'
 
+const getById = async (id) => {
+  return orderModel.findOne({ _id: id }).lean()
+}
+
 const getOrderOfCurrentUser = async (userId, orderId) => {
   try {
-    const { items: [foundOrder] } = await getOrdersOfCurrentUser(userId, {
-      _id: orderId
-    })
+    let foundOrder = await orderModel
+      .findOne({ _id: orderId, user: userId })
+      .select('-user')
+      .populate({
+        path: 'products.product',
+        select:
+            '-specs -brand -category -price -quantity -ratings -createdAt -updatedAt'
+      })
     if (!foundOrder)
       throw new ApiError(StatusCodes.NOT_FOUND, 'Order not found')
+
+    // attach shippingAddress
+    foundOrder = {
+      ...mongooseHelper.convertMongooseObjectToVanillaObject(foundOrder),
+      shippingAddress: await addressService.getUserAddress({ userId, addressId: foundOrder.shippingAddress })
+    }
+
+    // attach variant object
+    for (const orderProduct of foundOrder.products) {
+      orderProduct.variant = {
+        ...orderProduct.product.variants.find(
+          (variant) =>
+            variant._id.toString() === orderProduct.variant.toString()
+        ),
+        quantity: undefined // delete quantity field
+      }
+      delete orderProduct.product.quantity
+      delete orderProduct.product.variants
+    }
+
     return foundOrder
   } catch (error) {
     if (error.name === ApiError.name) throw error
@@ -197,6 +226,7 @@ const updateShippingAddress = async ({ userId, orderId, addressId }) => {
 }
 
 export default {
+  getById,
   getOrderOfCurrentUser,
   getOrdersOfCurrentUser,
   updateStatus,
