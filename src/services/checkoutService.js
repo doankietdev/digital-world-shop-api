@@ -13,6 +13,7 @@ import currencyService from './currencyService'
 import orderService from './orderService'
 import userService from './userService'
 import transactionService from './transactionService'
+import cartService from './cartService'
 
 /**
  * @param {*} userId
@@ -234,13 +235,13 @@ const order = async (userId, reqBody) => {
       paymentMethod,
       user: foundUser._id
     })
-    // cartService.deleteFromCart({
-    //   userId,
-    //   products: reqBody.orderProducts.map(orderProduct => ({
-    //     productId: orderProduct.productId,
-    //     variantId: orderProduct.variantId
-    //   }))
-    // }).then().catch(() => {})
+    await cartService.deleteFromCart({
+      userId,
+      products: reqBody.orderProducts.map(orderProduct => ({
+        productId: orderProduct.productId,
+        variantId: orderProduct.variantId
+      }))
+    }).then().catch(() => {})
 
     await session.commitTransaction()
     return newOrder
