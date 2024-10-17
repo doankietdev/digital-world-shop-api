@@ -7,13 +7,14 @@ import momoProvider from '~/providers/momoProvider'
 import paypalProvider from '~/providers/paypalProvider'
 import checkoutRepo from '~/repositories/checkoutRepo'
 import ApiError from '~/utils/ApiError'
-import { ORDER_STATUSES, PAYMENT_METHODS, TRANSACTION_STATUS } from '~/utils/constants'
+import { ORDER_STATUSES, PARTNER_APIS, PAYMENT_METHODS, TRANSACTION_STATUS } from '~/utils/constants'
 import { convertCurrency } from '~/utils/util'
 import currencyService from './currencyService'
 import orderService from './orderService'
 import userService from './userService'
 import transactionService from './transactionService'
 import cartService from './cartService'
+import ghnAxiosClient from '~/configs/ghnAxiosClient'
 
 /**
  * @param {*} userId
@@ -145,17 +146,17 @@ const review = async (userId, reqBody) => {
     .lean()
   if (!foundUser) throw new Error('User not found')
   if (foundUser.defaultAddress) {
-    // const { total: shippingFee } = await ghnAxiosClient.post(
-    //   PARTNER_APIS.GHN.APIS.CALCULATE_FEE,
-    //   {
-    //     to_ward_code: foundUser.defaultAddress.wardCode,
-    //     to_district_id: foundUser.defaultAddress.districtId,
-    //     weight: totalWeight,
-    //     service_id: PARTNER_APIS.GHN.SERVICE_ID,
-    //     service_type_id: PARTNER_APIS.GHN.SERVICE_TYPE_ID
-    //   }
-    // )
-    const shippingFee = 0
+    const { total: shippingFee } = await ghnAxiosClient.post(
+      PARTNER_APIS.GHN.APIS.CALCULATE_FEE,
+      {
+        to_ward_code: foundUser.defaultAddress.wardCode,
+        to_district_id: foundUser.defaultAddress.districtId,
+        weight: totalWeight,
+        service_id: PARTNER_APIS.GHN.SERVICE_ID,
+        service_type_id: PARTNER_APIS.GHN.SERVICE_TYPE_ID
+      }
+    )
+    // const shippingFee = 0
     reviewInfo = {
       ...reviewInfo,
       shippingFee,

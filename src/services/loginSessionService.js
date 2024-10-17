@@ -1,6 +1,8 @@
 'use strict'
 
+import { StatusCodes } from 'http-status-codes'
 import loginSessionModel from '~/models/loginSessionModel'
+import ApiError from '~/utils/ApiError'
 import { cleanObject } from '~/utils/formatter'
 
 /**
@@ -74,6 +76,10 @@ const getMany = async (query) => {
   return await loginSessionModel.find(filter).lean()
 }
 
+const getByUserId = async (userId) => {
+  return await loginSessionModel.find({ userId }).select('-publicKey').lean()
+}
+
 /**
  * Delete login session by id
  * @param {string} id
@@ -89,15 +95,22 @@ const deleteById = async (id = '') => {
  * @param {string} userId
  */
 const deleteManyByUserId = async (userId = '') => {
-  const { deletedCount } = await loginSessionModel.deleteOne({ userId }).lean()
+  const { deletedCount } = await loginSessionModel.deleteMany({ userId })
   if (deletedCount === 0) return false
   return true
+}
+
+const logoutSessionForCurrentUser = async ({ loginSessionId, userId }) => {
+  const { deletedCount } = await loginSessionModel.deleteOne({ _id: loginSessionId, userId })
+  if (!deletedCount) throw new ApiError(StatusCodes.NOT_FOUND, 'Login session not found')
 }
 
 export default {
   createNew,
   getOne,
   getMany,
+  getByUserId,
   deleteById,
-  deleteManyByUserId
+  deleteManyByUserId,
+  logoutSessionForCurrentUser
 }

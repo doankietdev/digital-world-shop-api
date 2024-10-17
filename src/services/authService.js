@@ -400,7 +400,7 @@ const refreshToken = async ({ userId, refreshToken, agent }) => {
 
   if (foundUsedRefreshToken || !foundLoginSession) {
     await loginSessionService.deleteManyByUserId(userId)
-    throw new Error('Users using blacklisted tokens or abnormal IP')
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Users using blacklisted tokens or abnormal IP')
   }
 
   try {
