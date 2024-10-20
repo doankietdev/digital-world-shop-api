@@ -3,38 +3,101 @@ import mongooseHelper from '~/helpers/mongooseHelper'
 import orderModel from '~/models/orderModel'
 import ApiError from '~/utils/ApiError'
 import { parseQueryParams } from '~/utils/formatter'
-import { calculateTotalPages } from '~/utils/util'
+import { calculateTotalPages, convertCurrency } from '~/utils/util'
 import addressService from './addressService'
 import addressModel from '~/models/addressModel'
 import { ORDER_STATUSES, PARTNER_APIS } from '~/utils/constants'
 import ghnAxiosClient from '~/configs/ghnAxiosClient'
 import productModel from '~/models/productModel'
+import currencyService from './currencyService'
 
 const getById = async (id) => {
   return orderModel.findOne({ _id: id }).lean()
 }
 
-const getOrderOfCurrentUser = async (userId, orderId) => {
-  try {
-    let foundOrder = await orderModel
-      .findOne({ _id: orderId, user: userId })
+const getOrderOfCurrentUser = async (userId, orderId, currency) => {
+  const foundOrder = await orderModel
+    .findOne({ _id: orderId, user: userId })
+    .select('-user')
+    .populate({
+      path: 'products.product',
+      select:
+          '-specs -brand -category -price -quantity -ratings -createdAt -updatedAt'
+    })
+  if (!foundOrder)
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Order not found')
+
+  const exchangeRate = await currencyService.getExchangeRate(currency)
+  if (!exchangeRate) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid currency')
+
+  // attach shippingAddress
+  let order = mongooseHelper.convertMongooseObjectToVanillaObject(foundOrder)
+  order = {
+    ...order,
+    shippingFee: convertCurrency(order.shippingFee, exchangeRate),
+    totalProductsPrice: convertCurrency(order.totalProductsPrice, exchangeRate),
+    totalPayment: convertCurrency(order.totalPayment, exchangeRate),
+    shippingAddress: await addressService.getUserAddress({ userId, addressId: order.shippingAddress })
+  }
+
+  // attach variant object and convert currency
+  for (const orderProduct of order.products) {
+    orderProduct.variant = {
+      ...orderProduct.product.variants.find(
+        (variant) =>
+          variant._id.toString() === orderProduct.variant.toString()
+      ),
+      quantity: undefined // delete quantity field
+    }
+    orderProduct.oldPrice = convertCurrency(orderProduct.oldPrice, exchangeRate)
+    orderProduct.price = convertCurrency(orderProduct.price, exchangeRate)
+    delete orderProduct.product.quantity
+    delete orderProduct.product.variants
+  }
+
+  return order
+}
+
+const getOrdersOfCurrentUser = async (userId, reqQuery) => {
+  const { query, limit, page, skip, sort, _currency } = parseQueryParams(reqQuery)
+
+  const [foundOrders, totalOrders] = await Promise.all([
+    orderModel
+      .find({ ...query, user: userId })
+      .limit(limit)
+      .skip(skip)
+      .sort(sort)
       .select('-user')
       .populate({
         path: 'products.product',
         select:
-            '-specs -brand -category -price -quantity -ratings -createdAt -updatedAt'
-      })
-    if (!foundOrder)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Order not found')
+          '-specs -brand -category -price -quantity -ratings -createdAt -updatedAt'
+      }),
+    orderModel.find({ ...query, user: userId }).countDocuments()
+  ])
 
-    // attach shippingAddress
-    foundOrder = {
-      ...mongooseHelper.convertMongooseObjectToVanillaObject(foundOrder),
-      shippingAddress: await addressService.getUserAddress({ userId, addressId: foundOrder.shippingAddress })
-    }
+  const exchangeRate = await currencyService.getExchangeRate(_currency)
+  if (!exchangeRate) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid currency')
 
-    // attach variant object
-    for (const orderProduct of foundOrder.products) {
+  // attach shippingAddress and convert currency
+  let orders = []
+  for (let order of foundOrders) {
+    order = mongooseHelper.convertMongooseObjectToVanillaObject(order)
+    orders = [
+      ...orders,
+      {
+        ...order,
+        shippingFee: convertCurrency(order.shippingFee, exchangeRate),
+        totalProductsPrice: convertCurrency(order.totalProductsPrice, exchangeRate),
+        totalPayment: convertCurrency(order.totalPayment, exchangeRate),
+        shippingAddress: await addressService.getUserAddress({ userId, addressId: order.shippingAddress })
+      }
+    ]
+  }
+
+  // attach variant object and convert currency
+  for (const order of orders) {
+    for (const orderProduct of order.products) {
       orderProduct.variant = {
         ...orderProduct.product.variants.find(
           (variant) =>
@@ -42,79 +105,19 @@ const getOrderOfCurrentUser = async (userId, orderId) => {
         ),
         quantity: undefined // delete quantity field
       }
+      orderProduct.oldPrice = convertCurrency(orderProduct.oldPrice, exchangeRate)
+      orderProduct.price = convertCurrency(orderProduct.price, exchangeRate)
       delete orderProduct.product.quantity
       delete orderProduct.product.variants
     }
-
-    return foundOrder
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Get order of current user failed'
-    )
   }
-}
 
-const getOrdersOfCurrentUser = async (userId, reqQuery) => {
-  try {
-    const { query, limit, page, skip, sort } = parseQueryParams(reqQuery)
-
-    const [foundOrders, totalOrders] = await Promise.all([
-      orderModel
-        .find({ ...query, user: userId })
-        .limit(limit)
-        .skip(skip)
-        .sort(sort)
-        .select('-user')
-        .populate({
-          path: 'products.product',
-          select:
-            '-specs -brand -category -price -quantity -ratings -createdAt -updatedAt'
-        }),
-      orderModel.find({ ...query, user: userId }).countDocuments()
-    ])
-
-    let orders = []
-    // attach shippingAddress
-    for (const order of foundOrders) {
-      orders = [
-        ...orders,
-        {
-          ...mongooseHelper.convertMongooseObjectToVanillaObject(order),
-          shippingAddress: await addressService.getUserAddress({ userId, addressId: order.shippingAddress })
-        }
-      ]
-    }
-
-    // attach variant object
-    for (const order of orders) {
-      for (const orderProduct of order.products) {
-        orderProduct.variant = {
-          ...orderProduct.product.variants.find(
-            (variant) =>
-              variant._id.toString() === orderProduct.variant.toString()
-          ),
-          quantity: undefined // delete quantity field
-        }
-        delete orderProduct.product.quantity
-        delete orderProduct.product.variants
-      }
-    }
-
-    return {
-      page,
-      limit,
-      totalPages: calculateTotalPages(totalOrders, limit),
-      totalItems: orders.length,
-      items: orders
-    }
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Get orders of current user failed'
-    )
+  return {
+    page,
+    limit,
+    totalPages: calculateTotalPages(totalOrders, limit),
+    totalItems: orders.length,
+    items: orders
   }
 }
 

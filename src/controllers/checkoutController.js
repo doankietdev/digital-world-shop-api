@@ -7,7 +7,7 @@ const review = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get order review successfully',
     metadata: {
-      ...(await checkoutService.review(req.user?._id, req.body))
+      ...(await checkoutService.review(req.user?._id, req.body, req.query._currency))
     }
   }).send(res)
 })

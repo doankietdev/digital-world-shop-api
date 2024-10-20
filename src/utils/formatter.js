@@ -108,3 +108,7 @@ export const cleanObject = (originalObject = {}) => {
     return { ...cleanedObject, [key]: value }
   }, {})
 }
+
+export const formatUSDCash = (amount) => {
+  return Math.round((amount + Number.EPSILON) * 100) / 100
+}

@@ -2,7 +2,7 @@ export const DEV_ENV = 'dev'
 
 export const PROD_ENV = 'prod'
 
-export const WHITE_LIST_DOMAINS = ['http://localhost:3000']
+export const WHITE_LIST_DOMAINS = ['http://localhost:3000', 'https://s52gemz.localto.net']
 
 export const HEADER_KEYS = {
   USER_ID: 'x-user-id',
@@ -94,6 +94,7 @@ export const PARTNER_APIS = {
       GET_PROVINCES: '/master-data/province',
       GET_DISTRICTS: '/master-data/district',
       GET_WARDS: '/master-data/ward',
+      GET_AVAILABLE_SERVICES: '/v2/shipping-order/available-services',
       CALCULATE_FEE: '/v2/shipping-order/fee'
     },
     SERVICE_ID: 53321,
@@ -136,6 +137,8 @@ export const INVALID_REDIS_KEY = {
   INVALID_CACHE_DISCOUNT: 'INVALID_CACHE_DISCOUNT'
 }
 
-export const REDIS_KEY = {
+export const REDIS_KEYS = {
   EXCHANGE_RATES: 'EXCHANGE_RATES'
 }
+
+export const BIG_DISCOUNTS_PRICE_CONDITION = 50

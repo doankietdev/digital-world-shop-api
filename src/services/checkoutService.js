@@ -15,6 +15,8 @@ import userService from './userService'
 import transactionService from './transactionService'
 import cartService from './cartService'
 import ghnAxiosClient from '~/configs/ghnAxiosClient'
+import { PARTNERS } from '~/configs/environment'
+import { formatUSDCash } from '~/utils/formatter'
 
 /**
  * @param {*} userId
@@ -52,7 +54,7 @@ import ghnAxiosClient from '~/configs/ghnAxiosClient'
  *  shippingFee: number,
  *  totalWeight: number}>}
  */
-const review = async (userId, reqBody) => {
+const review = async (userId, reqBody, currency = 'USD') => {
   const { orderProducts } = reqBody || {}
   const checkedProducts = await checkoutRepo.checkProductsAvailable(
     orderProducts
@@ -93,11 +95,20 @@ const review = async (userId, reqBody) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
 
   let totalWeight = 0
+  const exchangeRateBaseUsd = await currencyService.getExchangeRate(currency)
+  if (!exchangeRateBaseUsd) throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot review order')
+
   const responseOrderProducts = orderProducts.map(orderProduct => {
-    const productApplyDiscount = productsApplyDiscount.find(
+    let productApplyDiscount = productsApplyDiscount.find(
       productApplyDiscount =>
         productApplyDiscount._id.equals(orderProduct.productId)
     )
+
+    productApplyDiscount = {
+      ...productApplyDiscount,
+      oldPrice: convertCurrency(productApplyDiscount.oldPrice, exchangeRateBaseUsd),
+      price: convertCurrency(productApplyDiscount.price, exchangeRateBaseUsd)
+    }
 
     const weight = productApplyDiscount.specs.find(
       spec => spec.k === 'weight'
@@ -146,17 +157,38 @@ const review = async (userId, reqBody) => {
     .lean()
   if (!foundUser) throw new Error('User not found')
   if (foundUser.defaultAddress) {
-    const { total: shippingFee } = await ghnAxiosClient.post(
+    const services = await ghnAxiosClient.post(
+      PARTNER_APIS.GHN.APIS.GET_AVAILABLE_SERVICES,
+      {
+        from_district: 1455,
+        to_district: foundUser.defaultAddress.districtId,
+        shop_id: PARTNERS.GHN.SHOP_ID
+      }
+    )
+    if (!services.length) throw new ApiError(StatusCodes.BAD_REQUEST, 'Delivery service is not available')
+
+    const service = services[0]
+
+    let { total: shippingFee } = await ghnAxiosClient.post(
       PARTNER_APIS.GHN.APIS.CALCULATE_FEE,
       {
         to_ward_code: foundUser.defaultAddress.wardCode,
         to_district_id: foundUser.defaultAddress.districtId,
         weight: totalWeight,
-        service_id: PARTNER_APIS.GHN.SERVICE_ID,
-        service_type_id: PARTNER_APIS.GHN.SERVICE_TYPE_ID
+        service_id: service.service_id,
+        service_type_id: service.service_type_id
+      },
+      {
+        headers: { shop_id: PARTNERS.GHN.SHOP_ID }
       }
     )
-    // const shippingFee = 0
+
+    if (currency === 'USD') {
+      const exchangeRate = await currencyService.getExchangeRate('VND')
+      if (!exchangeRate) throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot review order')
+      shippingFee = formatUSDCash(shippingFee / exchangeRate)
+    }
+
     reviewInfo = {
       ...reviewInfo,
       shippingFee,
@@ -228,11 +260,11 @@ const order = async (userId, reqBody) => {
         product: product._id,
         variant: product.variant._id,
         quantity,
-        oldPrice: product.oldPrice,
-        price: product.price
+        oldPrice: formatUSDCash(product.oldPrice),
+        price: formatUSDCash(product.price)
       })),
       shippingAddress: foundUser.defaultAddress,
-      shippingFee: shippingFee ?? 0,
+      shippingFee: formatUSDCash(shippingFee ?? 0),
       paymentMethod,
       user: foundUser._id
     })

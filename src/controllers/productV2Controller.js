@@ -27,6 +27,15 @@ const getProducts = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const getBigDiscountProducts = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Get big discount products successfully',
+    metadata: {
+      ...(await productV2Service.getBigDiscountProducts(req.query))
+    }
+  }).send(res)
+})
+
 const search = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Search products successfully',
@@ -38,5 +47,6 @@ export default {
   getProductBySlug,
   getProduct,
   getProducts,
+  getBigDiscountProducts,
   search
 }
