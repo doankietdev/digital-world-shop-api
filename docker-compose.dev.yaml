@@ -19,9 +19,7 @@ services:
   redis:
     image: redis:7.4.1
     container_name: redis
-    restart: always
-    environment:
-      REDIS_PASSWORD: dev
+    restart: always 
     ports:
       - 6379:6379
     volumes:
@@ -29,7 +27,7 @@ services:
       - redis_config:/usr/local/etc/redis/redis.conf
     networks:
       - digital-shop-api
-    command: redis-server --requirepass $REDIS_PASSWORD
+    command: redis-server --requirepass dev
   
   digital-shop-api:
     build:

@@ -147,6 +147,12 @@ const signIn = async ({ email, password, agent }) => {
       'Incorrect email or password'
     )
 
+  if (!user.password)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Incorrect email or password'
+    )
+
   const isValidPassword = await verifyHashed(password, user.password)
   if (!isValidPassword)
     throw new ApiError(
