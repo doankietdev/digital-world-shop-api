@@ -43,8 +43,15 @@ const redisClient = RedisDB.getInstance().getRedis()
 
 const requestToKey = (req) => {
   // build a custom object to use as part of the Redis key
-  const reqDataToHash = {
-    query: req.query, body: req.body
+  let reqDataToHash = {
+    query: req.query,
+    body: req.body
+  }
+  if (req.user) {
+    reqDataToHash = {
+      ...reqDataToHash,
+      userId: req.user._id.toString()
+    }
   }
   // `${req.path}@...` to make it easier to find
   // keys on a Redis client

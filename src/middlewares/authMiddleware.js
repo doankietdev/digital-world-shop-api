@@ -25,7 +25,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
 
     const decodedUser = verifyToken(accessToken, foundLoginSession.publicKey)
 
-    const foundUser = await userModel.findOne({ _id: decodedUser.userId })
+    const foundUser = await userModel.findOne({ _id: decodedUser.userId }).lean()
     if (!foundUser) throw new Error('User not found')
     if (foundUser.blocked) throw new Error('Account has been blocked')
     if (!foundUser.verified) throw new Error('Account has not been verified')

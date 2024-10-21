@@ -6,6 +6,7 @@ import {
   requestToKey,
   writeData
 } from '~/services/redis.service'
+import asyncHandler from '~/utils/asyncHandler'
 
 export const redisCachingMiddleware = (
   options = {
@@ -15,7 +16,7 @@ export const redisCachingMiddleware = (
   compression = false, // enable compression and decompression by default
   invalidKey = ''
 ) => {
-  return async (req, res, next) => {
+  return asyncHandler(async (req, res, next) => {
     if (isRedisWorking()) {
       const key = `${requestToKey(req)}_${invalidKey}`
       if (req.method === 'GET') {
@@ -53,5 +54,5 @@ export const redisCachingMiddleware = (
     } else {
       next()
     }
-  }
+  })
 }
