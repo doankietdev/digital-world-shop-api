@@ -4,10 +4,12 @@ import { StatusCodes } from 'http-status-codes'
 import loginSessionModel from '~/models/loginSessionModel'
 import ApiError from '~/utils/ApiError'
 import { cleanObject } from '~/utils/formatter'
+import { v4 as uuidv4 } from 'uuid'
 
 /**
  * Create new login session
  * @param {{
+ *  clientId: String,
  *  userId: String,
  *  publicKey: String,
  *  ip: String,
@@ -26,9 +28,10 @@ import { cleanObject } from '~/utils/formatter'
  *  }}} payload
  */
 const createNew = async (payload = {}) => {
-  const { userId, ip, browser, os } = payload
+  const { clientId = uuidv4(), userId, ip, browser, os } = payload
 
   const filter = cleanObject({
+    clientId,
     userId,
     ip,
     'browser.name': browser?.name,
@@ -46,11 +49,18 @@ const createNew = async (payload = {}) => {
 
 /**
  * Get login session
- * @param {{ userId: string, ip: string, browserName: string, osName: string }} query
+ * @param {{
+ *  clientId: string,
+ *  userId: string,
+ *  ip: string,
+ *  browserName: string,
+ *  osName: string
+ * }} query
  */
 const getOne = async (query = {}) => {
-  const { userId, ip, browserName, osName } = query
+  const { clientId, userId, ip, browserName, osName } = query
   const filter = cleanObject({
+    clientId,
     userId,
     ip,
     'browser.name': browserName,
@@ -62,11 +72,18 @@ const getOne = async (query = {}) => {
 
 /**
  * Get login sessions by user id
- * @param {{ userId: string, ip: string, browserName: string, osName: string }} query
+ * @param {{
+ *  clientId: string,
+ *  userId: string,
+ *  ip: string,
+ *  browserName: string,
+ *  osName: string
+ * }} query
  */
 const getMany = async (query) => {
-  const { userId, ip, browserName, osName } = query
+  const { clientId, userId, ip, browserName, osName } = query
   const filter = cleanObject({
+    clientId,
     userId,
     ip,
     'browser.name': browserName,

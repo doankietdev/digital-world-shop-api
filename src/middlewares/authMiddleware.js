@@ -7,14 +7,16 @@ import { verifyToken } from '~/utils/auth'
 import { HEADER_KEYS } from '~/utils/constants'
 
 const authenticate = asyncHandler(async (req, res, next) => {
+  const clientId = req.headers[HEADER_KEYS.CLIENT_ID]
   const userId = req.headers[HEADER_KEYS.USER_ID]
   const accessToken = req.headers[HEADER_KEYS.AUTHORIZATION]?.substring('Bearer '.length)
-  if (!userId || !accessToken) {
+  if (!clientId || !userId || !accessToken) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
   }
 
   try {
     const foundLoginSession = await loginSessionService.getOne({
+      clientId,
       userId,
       ip: req?.agent?.ip,
       browserName: req?.agent?.browser?.name,

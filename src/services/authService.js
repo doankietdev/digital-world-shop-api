@@ -48,13 +48,13 @@ const createAuthTokenPair = async (data = {}) => {
     AUTH.REFRESH_TOKEN_LIFE
   )
 
-  await loginSessionService.createNew({
+  const { clientId } = await loginSessionService.createNew({
     ...agent,
     userId,
     publicKey
   })
 
-  return { accessToken, refreshToken }
+  return { clientId, accessToken, refreshToken }
 }
 
 const signUp = async ({ firstName, lastName, email, password }) => {
@@ -183,7 +183,7 @@ const signIn = async ({ email, password, agent }) => {
     )
   }
 
-  const { accessToken, refreshToken } = await createAuthTokenPair({
+  const { clientId, accessToken, refreshToken } = await createAuthTokenPair({
     userId: user._id.toString(),
     email: user.email,
     agent
@@ -191,6 +191,7 @@ const signIn = async ({ email, password, agent }) => {
 
   return {
     user: await userService.getUser(user._id),
+    clientId,
     accessToken,
     refreshToken
   }
@@ -213,7 +214,7 @@ const signInWithGoogle = async ({
     if (foundUserWithGoogleId.blocked)
       throw new ApiError(StatusCodes.FORBIDDEN, 'Account has been blocked')
 
-    const { accessToken, refreshToken } = await createAuthTokenPair({
+    const { clientId, accessToken, refreshToken } = await createAuthTokenPair({
       userId: foundUserWithGoogleId._id.toString(),
       email: foundUserWithGoogleId.email,
       agent
@@ -221,6 +222,7 @@ const signInWithGoogle = async ({
 
     return {
       user: await userService.getUser(foundUserWithGoogleId._id),
+      clientId,
       accessToken,
       refreshToken
     }
@@ -239,7 +241,7 @@ const signInWithGoogle = async ({
   })
   await cartService.createNewCart({ userId: newUser._id })
 
-  const { accessToken, refreshToken } = await createAuthTokenPair({
+  const { clientId, accessToken, refreshToken } = await createAuthTokenPair({
     userId: newUser._id.toString(),
     email: newUser.email,
     agent
@@ -247,6 +249,7 @@ const signInWithGoogle = async ({
 
   return {
     user: await userService.getUser(newUser._id),
+    clientId,
     accessToken,
     refreshToken
   }
@@ -381,8 +384,8 @@ const resetPassword = async ({ email, token, newPassword }) => {
   })
 }
 
-const refreshToken = async ({ userId, refreshToken, agent }) => {
-  if (!userId || !refreshToken)
+const refreshToken = async ({ clientId, userId, refreshToken, agent }) => {
+  if (!clientId || !userId || !refreshToken)
     throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
   const [foundUsedRefreshToken, foundLoginSession] = await Promise.all([
@@ -391,6 +394,7 @@ const refreshToken = async ({ userId, refreshToken, agent }) => {
       code: refreshToken
     }),
     loginSessionService.getOne({
+      clientId,
       userId,
       ip: agent?.ip,
       browserName: agent?.browser?.name,

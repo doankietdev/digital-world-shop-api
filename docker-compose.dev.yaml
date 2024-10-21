@@ -31,11 +31,11 @@ services:
       - digital-shop-api
     command: redis-server --requirepass $REDIS_PASSWORD
   
-  digital-shop:
+  digital-shop-api:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: digital-shop
+    container_name: digital-shop-api
     env_file: ./.env.dev
     ports:
       - '5600:5600'
@@ -60,4 +60,5 @@ volumes:
 
 networks:
   digital-shop-api:
+    name: digital-shop-api
     driver: bridge

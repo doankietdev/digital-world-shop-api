@@ -6,6 +6,11 @@ import { COLLECTION_NAMES, MODEL_NAMES } from '~/utils/constants'
 
 const loginSessionSchema = new Schema(
   {
+    clientId: {
+      type: String,
+      unique: true,
+      required: true
+    },
     userId: {
       type: Schema.Types.ObjectId,
       required: true,
