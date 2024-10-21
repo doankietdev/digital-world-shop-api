@@ -2,7 +2,7 @@ export const DEV_ENV = 'dev'
 
 export const PROD_ENV = 'prod'
 
-export const WHITE_LIST_DOMAINS = ['http://localhost:3000', 'https://s52gemz.localto.net']
+export const WHITE_LIST_DOMAINS = ['http://localhost:3000']
 
 export const HEADER_KEYS = {
   CLIENT_ID: 'x-client-id',
