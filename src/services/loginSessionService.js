@@ -93,8 +93,15 @@ const getMany = async (query) => {
   return await loginSessionModel.find(filter).lean()
 }
 
-const getByUserId = async (userId) => {
-  return await loginSessionModel.find({ userId }).select('-publicKey').lean()
+const getByUserId = async (userId, clientId) => {
+  const sessions = await loginSessionModel.find({ userId }).select('-publicKey').sort('-updatedAt').lean()
+  for (const session of sessions) {
+    if (session.clientId === clientId) {
+      session.isCurrent = true
+      break
+    }
+  }
+  return sessions
 }
 
 /**
@@ -117,9 +124,14 @@ const deleteManyByUserId = async (userId = '') => {
   return true
 }
 
-const logoutSessionForCurrentUser = async ({ loginSessionId, userId }) => {
+const logoutSessionForCurrentUser = async ({ loginSessionId, userId, currentLoginSessionId }) => {
+  if (loginSessionId === currentLoginSessionId.toString()) throw new ApiError(StatusCodes.BAD_REQUEST, 'Unable to log out of the current login session')
   const { deletedCount } = await loginSessionModel.deleteOne({ _id: loginSessionId, userId })
   if (!deletedCount) throw new ApiError(StatusCodes.NOT_FOUND, 'Login session not found')
+}
+
+const logoutAllSessionsForCurrentUser = async ({ userId, currentLoginSessionId }) => {
+  await loginSessionModel.deleteMany({ _id: { $ne: currentLoginSessionId }, userId })
 }
 
 export default {
@@ -129,5 +141,6 @@ export default {
   getByUserId,
   deleteById,
   deleteManyByUserId,
-  logoutSessionForCurrentUser
+  logoutSessionForCurrentUser,
+  logoutAllSessionsForCurrentUser
 }
