@@ -1,9 +1,14 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
 import ms from 'ms'
-import { DEV_ENV, PROD_ENV } from '~/utils/constants'
+import { DEV_ENV, PROD_ENV, TEST_ENV } from '~/utils/constants'
+
+const NODE_ENV = process.env.NODE_ENV
+
+dotenv.config({ path: NODE_ENV ? `.env.${NODE_ENV}` : '.env' })
+
+export const BUILD_MODE = [DEV_ENV, PROD_ENV, TEST_ENV].includes(NODE_ENV) ? NODE_ENV : DEV_ENV
 
 const {
-  NODE_ENV,
   MONGODB_URI,
   DATABASE_NAME,
   APP_HOST,
@@ -41,8 +46,6 @@ const {
   REDIS_PASSWORD,
   MAX_AVATAR_SIZE
 } = process.env
-
-export const BUILD_MODE = NODE_ENV !== DEV_ENV && NODE_ENV !== PROD_ENV ? DEV_ENV : NODE_ENV
 
 export const APP = {
   HOST: APP_HOST || 'localhost',

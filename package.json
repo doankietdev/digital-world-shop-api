@@ -11,9 +11,10 @@
     "clean": "rm -rf build && mkdir build",
     "build-babel": "babel ./src -d ./build/src && babel ./server.js -d ./build",
     "build": "npm run clean && npm run build-babel",
-    "production": "npm run build && node ./build/server.js",
-    "dev": "nodemon --legacy-watch --exec babel-node ./server.js",
-    "test": "cross-env NODE_ENV=dev jest --testTimeout=10000 --forceExit"
+    "production": "cross-env NODE_ENV=prod npm run build && node ./build/server.js",
+    "dev": "cross-env NODE_ENV=dev nodemon --legacy-watch --exec babel-node ./server.js",
+    "test": "cross-env NODE_ENV=test jest --testTimeout=10000 --forceExit",
+    "test:watch": "cross-env NODE_ENV=test jest --watch --testTimeout=10000 --forceExit"
   },
   "dependencies": {
     "@babel/runtime": "^7.22.10",
