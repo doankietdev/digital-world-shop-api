@@ -4,8 +4,6 @@ import request from "supertest";
 
 dotenv.config({ path: ".env.test" });
 
-console.log(`[getCredentials] process.env.EMAIL: ${process.env.EMAIL_LOGIN}`);
-
 export const getCredentials = async (email = process.env.EMAIL_LOGIN, password = process.env.PASSWORD_LOGIN) => {
   try {
     const response = await request(app)
