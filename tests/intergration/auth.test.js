@@ -1,10 +1,9 @@
 import request from 'supertest'
 import app from '~/app'
-import { getCredentials } from '../credentials'
 import userModel from '~/models/userModel'
 
 describe('Auth API', () => {
-  let MOCK_USER_INFO = {
+  const MOCK_USER_INFO = {
     firstName: 'Test',
     lastName: 'Integration',
     email: 'test@gmail.com',
@@ -12,44 +11,40 @@ describe('Auth API', () => {
   }
 
   it('should sign up successfully', async () => {
-    try {
-      const response = await request(app)
-        .post('/api/v1/auth/sign-up')
-        .set('Content-Type', 'application/json')
-        .send(MOCK_USER_INFO)
+    const response = await request(app)
+      .post('/api/v1/auth/sign-up')
+      .set('Content-Type', 'application/json')
+      .send(MOCK_USER_INFO)
 
-      expect(response.status).toBe(201)
-      expect(response.body).toEqual({
-        statusCode: 201,
-        message: `An email has been sent to ${MOCK_USER_INFO.email}. Please check and verify your account before sign in!`,
-        metadata: {
-          email: MOCK_USER_INFO.email,
-          token: expect.any(String)
-        }
+    expect(response.status).toBe(201)
+    expect(response.body).toEqual({
+      statusCode: 201,
+      message: `An email has been sent to ${MOCK_USER_INFO.email}. Please check and verify your account before sign in!`,
+      metadata: {
+        email: MOCK_USER_INFO.email,
+        token: expect.any(String)
+      }
+    })
+
+    const email = response.body?.metadata?.email
+    const token = response.body?.metadata?.token
+
+    const verificationResponse = await request(app)
+      .post('/api/v1/auth/verify-account')
+      .set('Content-Type', 'application/json')
+      .send({
+        email,
+        token
       })
 
-      const email = response.body?.metadata?.email
-      const token = response.body?.metadata?.token
-
-      const verificationResponse = await request(app)
-        .post('/api/v1/auth/verify-account')
-        .set('Content-Type', 'application/json')
-        .send({
-          email,
-          token
-        })
-
-      expect(verificationResponse.status).toBe(200)
-      expect(verificationResponse.body).toEqual({
-        statusCode: 200,
-        message: 'Account verified successfully! Now you can sign in to buy our products! Have a good day!',
-        metadata: {
-          email: email
-        }
-      })
-    } finally {
-      // await userModel.deleteOne({ email: MOCK_USER_INFO.email })
-    }
+    expect(verificationResponse.status).toBe(200)
+    expect(verificationResponse.body).toEqual({
+      statusCode: 200,
+      message: 'Account verified successfully! Now you can sign in to buy our products! Have a good day!',
+      metadata: {
+        email: email
+      }
+    })
   })
 
   it('should sign in successfully', async () => {
