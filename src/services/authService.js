@@ -25,7 +25,7 @@ import cartService from './cartService'
 import loginSessionService from './loginSessionService'
 import userService from './userService'
 import usedRefreshTokenService from './usedRefreshTokenService'
-import { DEV_ENV } from '~/utils/constants'
+import { DEV_ENV, TEST_ENV } from '~/utils/constants'
 
 /**
  * Create auth token pair
@@ -103,7 +103,7 @@ const signUp = async ({ firstName, lastName, email, password }) => {
 
   await cartService.createNewCart({ userId: newUser._id })
 
-  if (BUILD_MODE === DEV_ENV) {
+  if (BUILD_MODE === DEV_ENV || BUILD_MODE === TEST_ENV) {
     return {
       email: newUser.email,
       token
