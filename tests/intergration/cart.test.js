@@ -98,35 +98,58 @@ describe("Cart API", () => {
   });
 
   it("Call /api/v2/update-variant", async () => {
-    // TODO: [Fix this test case]
-    // const requestBody = {
-    //   productId: mockCart.productId,
-    //   variantId: alterVariantId,
-    //   oldVariantId: mockCart.variantId,
-    // };
+    const requestBody = {
+      productId: mockCart.productId,
+      variantId: alterVariantId,
+      oldVariantId: mockCart.variantId,
+    };
 
-    // const response = await request(app)
-    //   .post("/api/v2/carts/update-variant")
-    //   .set("Content-Type", "application/json")
-    //   .set("Authorization", `Bearer ${ACCESS_TOKEN}`)
-    //   .set("X-Client-Id", CLIENT_ID)
-    //   .set("X-User-Id", USER._id)
-    //   .send(requestBody);
+    const response = await request(app)
+      .post("/api/v2/carts/update-variant")
+      .set("Content-Type", "application/json")
+      .set("Authorization", `Bearer ${ACCESS_TOKEN}`)
+      .set("X-Client-Id", CLIENT_ID)
+      .set("X-User-Id", USER._id)
+      .send(requestBody);
 
+    const foundProduct = response.body.metadata.cart.products.find(
+      (item) => item.product._id === requestBody.productId && item.variantId === requestBody.variantId
+    );
 
-    // const foundProduct = response.body.metadata.cart.products.find(
-    //   (item) => item.product._id === mockCart.productId && item.variantId === mockCart.variantId
-    // );
-
-    // mockCart = { ...mockCart, variantId: alterVariantId };
-    // expect(response.status).toBe(200);
-    // expect(response.body.statusCode).toBe(200);
-    // expect(response.body.message).toBe("Update variant to cart successfully");
-    // expect(response.body.metadata.cart.userId).toBe(USER._id);
-    // expect(foundProduct).toBeDefined();
+    mockCart = { ...mockCart, variantId: alterVariantId };
+    expect(response.status).toBe(200);
+    expect(response.body.statusCode).toBe(200);
+    expect(response.body.message).toBe("Update variant to cart successfully");
+    expect(response.body.metadata.cart.userId).toBe(USER._id);
+    expect(foundProduct).toBeDefined();
   });
 
-  it("Call /api/v2/delete-products", async () => {
-    // TODO: [Fix this test case]
+  it("Call /api/v2/carts/delete-products", async () => {
+    const requestBody = {
+      products: [
+        {
+          productId: mockCart.productId,
+          variantId: mockCart.variantId,
+        },
+      ],
+    };
+
+    const response = await request(app)
+      .post("/api/v2/carts/delete-products")
+      .set("Content-Type", "application/json")
+      .set("Authorization", `Bearer ${ACCESS_TOKEN}`)
+      .set("X-Client-Id", CLIENT_ID)
+      .set("X-User-Id", USER._id)
+      .send(requestBody);
+
+      const foundProduct = response.body.metadata.cart.products.find(
+        (item) => item.product._id === mockCart.productId && item.variantId === mockCart.variantId
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body.statusCode).toBe(200);
+      expect(response.body.message).toBe("Delete products from cart successfully");
+      expect(response.body.metadata.cart.userId).toBe(USER._id);
+      expect(foundProduct).toBeUndefined();
   });
 });
