@@ -325,33 +325,21 @@ const updateVariantToCart = async ({ userId, product }, currency) => {
  * @returns {Promise<object>}
  */
 const deleteFromCart = async ({ userId, products }, currency) => {
-  const session = await mongoose.startSession()
-  session.startTransaction()
-
-  try {
-    const updateOperations = products.map(({ productId, variantId }) => ({
-      updateOne: {
-        filter: {
-          userId,
-          'products.productId': productId,
-          'products.variantId': variantId
-        },
-        update: {
-          $pull: { products: { productId, variantId } },
-          $inc: { countProducts: -1 }
-        }
+  const updateOperations = products.map(({ productId, variantId }) => ({
+    updateOne: {
+      filter: {
+        userId,
+        'products.productId': productId,
+        'products.variantId': variantId
+      },
+      update: {
+        $pull: { products: { productId, variantId } },
+        $inc: { countProducts: -1 }
       }
-    }))
-
-    await cartModel.bulkWrite(updateOperations, { session })
-    await session.commitTransaction()
-    await session.endSession()
-    return await getCart(userId, currency)
-  } catch (error) {
-    await session.abortTransaction()
-    await session.endSession()
-    throw error
-  }
+    }
+  }))
+  await cartModel.bulkWrite(updateOperations)
+  return await getCart(userId, currency)
 }
 
 const getCart = async (userId, currency) => {
