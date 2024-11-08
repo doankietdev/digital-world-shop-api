@@ -14,6 +14,8 @@
     "production": "cross-env NODE_ENV=prod npm run build && node ./build/server.js",
     "dev": "cross-env NODE_ENV=dev nodemon --legacy-watch --exec babel-node ./server.js",
     "test": "cross-env NODE_ENV=test jest --testTimeout=10000 --forceExit",
+    "test:unit": "jest --testPathPattern=src",
+    "test:integration": "jest  --testPathPattern=tests/integration",
     "test:watch": "cross-env NODE_ENV=test jest --watch --testTimeout=10000 --forceExit"
   },
   "dependencies": {
