@@ -1,24 +1,11 @@
 import app from "~/app";
 import request from "supertest";
-import { getCredentials } from "../credentials";
 
 describe("Cart API", () => {
-  let USER;
-  let CREDENTIALS;
-  let CLIENT_ID;
-  let ACCESS_TOKEN;
-  let REFRESH_TOKEN;
   let mockCart;
   let currentCartQuantity = 0;
   let alterVariantId = "";
   beforeEach(async () => {
-    // Prepare test data
-    CREDENTIALS = await getCredentials();
-    USER = CREDENTIALS?.user;
-    CLIENT_ID = CREDENTIALS?.clientId;
-    ACCESS_TOKEN = CREDENTIALS?.accessToken;
-    REFRESH_TOKEN = CREDENTIALS?.refreshToken;
-    // Mock data
     mockCart = {
       productId: "667283d7322b41490e8f7569",
       variantId: "667283d7322b41490e8f756a",
@@ -30,9 +17,9 @@ describe("Cart API", () => {
     const response = await request(app)
       .post("/api/v2/carts/add-to-cart")
       .set("Content-Type", "application/json")
-      .set("Authorization", `Bearer ${ACCESS_TOKEN}`)
-      .set("X-Client-Id", CLIENT_ID)
-      .set("X-User-Id", USER._id)
+      .set("Authorization", `Bearer ${global.accessToken}`)
+      .set("X-Client-Id", global.clientId)
+      .set("X-User-Id", global.user?._id)
       .send(mockCart);
 
     const foundProduct = response.body.metadata.cart.products.find(
@@ -42,7 +29,7 @@ describe("Cart API", () => {
     expect(response.status).toBe(200);
     expect(response.body.statusCode).toBe(200);
     expect(response.body.message).toBe("Add product to cart successfully");
-    expect(response.body.metadata.cart.userId).toBe(USER._id);
+    expect(response.body.metadata.cart.userId).toBe(global.user?._id);
     expect(response.body.metadata.cart.countProducts).toBeGreaterThanOrEqual(mockCart.quantity);
     expect(foundProduct).toBeDefined();
   });
@@ -51,9 +38,9 @@ describe("Cart API", () => {
     const response = await request(app)
       .get("/api/v2/carts/get-user-cart")
       .set("Content-Type", "application/json")
-      .set("Authorization", `Bearer ${ACCESS_TOKEN}`)
-      .set("X-Client-Id", CLIENT_ID)
-      .set("X-User-Id", USER._id);
+      .set("Authorization", `Bearer ${global.accessToken}`)
+      .set("X-Client-Id", global.clientId)
+      .set("X-User-Id", global.user?._id);
 
     const foundProduct = response.body.metadata.cart.products.find(
       (item) => item.product._id === mockCart.productId && item.variantId === mockCart.variantId
@@ -62,7 +49,7 @@ describe("Cart API", () => {
     expect(response.status).toBe(200);
     expect(response.body.statusCode).toBe(200);
     expect(response.body.message).toBe("Get cart successfully");
-    expect(response.body.metadata.cart.userId).toBe(USER._id);
+    expect(response.body.metadata.cart.userId).toBe(global.user?._id);
     expect(foundProduct).toBeDefined();
     currentCartQuantity = foundProduct.quantity;
   });
@@ -76,9 +63,9 @@ describe("Cart API", () => {
     const response = await request(app)
       .post("/api/v2/carts/update-product-quantity")
       .set("Content-Type", "application/json")
-      .set("Authorization", `Bearer ${ACCESS_TOKEN}`)
-      .set("X-Client-Id", CLIENT_ID)
-      .set("X-User-Id", USER._id)
+      .set("Authorization", `Bearer ${global.accessToken}`)
+      .set("X-Client-Id", global.clientId)
+      .set("X-User-Id", global.user?._id)
       .send(requestBody);
 
     const foundProduct = response.body.metadata.cart.products.find(
@@ -88,7 +75,7 @@ describe("Cart API", () => {
     expect(response.status).toBe(200);
     expect(response.body.statusCode).toBe(200);
     expect(response.body.message).toBe("Update product quantity to cart successfully");
-    expect(response.body.metadata.cart.userId).toBe(USER._id);
+    expect(response.body.metadata.cart.userId).toBe(global.user?._id);
     expect(foundProduct).toBeDefined();
     expect(foundProduct.quantity).toBe(requestBody.quantity);
 
@@ -107,9 +94,9 @@ describe("Cart API", () => {
     const response = await request(app)
       .post("/api/v2/carts/update-variant")
       .set("Content-Type", "application/json")
-      .set("Authorization", `Bearer ${ACCESS_TOKEN}`)
-      .set("X-Client-Id", CLIENT_ID)
-      .set("X-User-Id", USER._id)
+      .set("Authorization", `Bearer ${global.accessToken}`)
+      .set("X-Client-Id", global.clientId)
+      .set("X-User-Id", global.user?._id)
       .send(requestBody);
 
     const foundProduct = response.body.metadata.cart.products.find(
@@ -120,7 +107,7 @@ describe("Cart API", () => {
     expect(response.status).toBe(200);
     expect(response.body.statusCode).toBe(200);
     expect(response.body.message).toBe("Update variant to cart successfully");
-    expect(response.body.metadata.cart.userId).toBe(USER._id);
+    expect(response.body.metadata.cart.userId).toBe(global.user?._id);
     expect(foundProduct).toBeDefined();
   });
 
@@ -137,19 +124,19 @@ describe("Cart API", () => {
     const response = await request(app)
       .post("/api/v2/carts/delete-products")
       .set("Content-Type", "application/json")
-      .set("Authorization", `Bearer ${ACCESS_TOKEN}`)
-      .set("X-Client-Id", CLIENT_ID)
-      .set("X-User-Id", USER._id)
+      .set("Authorization", `Bearer ${global.accessToken}`)
+      .set("X-Client-Id", global.clientId)
+      .set("X-User-Id", global.user?._id)
       .send(requestBody);
 
-      const foundProduct = response.body.metadata.cart.products.find(
-        (item) => item.product._id === mockCart.productId && item.variantId === mockCart.variantId
-      );
+    const foundProduct = response.body.metadata.cart.products.find(
+      (item) => item.product._id === mockCart.productId && item.variantId === mockCart.variantId
+    );
 
-      expect(response.status).toBe(200);
-      expect(response.body.statusCode).toBe(200);
-      expect(response.body.message).toBe("Delete products from cart successfully");
-      expect(response.body.metadata.cart.userId).toBe(USER._id);
-      expect(foundProduct).toBeUndefined();
+    expect(response.status).toBe(200);
+    expect(response.body.statusCode).toBe(200);
+    expect(response.body.message).toBe("Delete products from cart successfully");
+    expect(response.body.metadata.cart.userId).toBe(global.user?._id);
+    expect(foundProduct).toBeUndefined();
   });
 });

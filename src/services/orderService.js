@@ -99,7 +99,7 @@ const getOrdersOfCurrentUser = async (userId, reqQuery) => {
   for (const order of orders) {
     for (const orderProduct of order.products) {
       orderProduct.variant = {
-        ...orderProduct.product.variants.find(
+        ...orderProduct.product.variants?.find(
           (variant) =>
             variant._id.toString() === orderProduct.variant.toString()
         ),
@@ -187,6 +187,10 @@ const updateShippingAddress = async ({ userId, orderId, addressId }) => {
     if (foundOrder.status !== ORDER_STATUSES.PENDING && foundOrder.status !== ORDER_STATUSES.PAID) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot update shipping address')
     }
+
+
+    console.log('foundOrder', JSON.stringify(foundOrder))
+    console.log('foundAddress', JSON.stringify(foundAddress))
 
     const foundProducts = await productModel.find({
       '_id': {
