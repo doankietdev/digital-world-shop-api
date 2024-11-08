@@ -92,18 +92,20 @@ const signUp = async ({ firstName, lastName, email, password }) => {
     { upsert: true, new: true }
   )
 
-  sendMailWithHTML({
-    email,
-    subject: 'Verify Account',
-    pathToView: 'verify-email.ejs',
-    data: {
-      url: `${CLIENT.URL}/auth/verify-account?email=${newUser.email}&token=${token}`
-    }
-  })
+  if (BUILD_MODE !== TEST_ENV) {
+    sendMailWithHTML({
+      email,
+      subject: 'Verify Account',
+      pathToView: 'verify-email.ejs',
+      data: {
+        url: `${CLIENT.URL}/auth/verify-account?email=${newUser.email}&token=${token}`
+      }
+    })
+  }
 
   await cartService.createNewCart({ userId: newUser._id })
 
-  if (BUILD_MODE === DEV_ENV || BUILD_MODE === TEST_ENV) {
+  if (BUILD_MODE === TEST_ENV) {
     return {
       email: newUser.email,
       token
@@ -171,18 +173,20 @@ const signIn = async ({ email, password, agent }) => {
       { upsert: true, new: true }
     )
 
-    sendMailWithHTML({
-      email,
-      subject: 'Verify Account',
-      pathToView: 'verify-email.ejs',
-      data: {
-        url: `${CLIENT.URL}/auth/verify-account?email=${user.email}&token=${verificationToken}`
-      }
-    })
+    if (BUILD_MODE !== TEST_ENV) {
+      sendMailWithHTML({
+        email,
+        subject: 'Verify Account',
+        pathToView: 'verify-email.ejs',
+        data: {
+          url: `${CLIENT.URL}/auth/verify-account?email=${user.email}&token=${verificationToken}`
+        }
+      })
+    }
     throw new ApiError(
       StatusCodes.FORBIDDEN,
       'Account has not been verified. Please check your email and verify account!',
-      BUILD_MODE === DEV_ENV ? {
+      BUILD_MODE === DEV_ENV || BUILD_MODE === TEST_ENV ? {
         email: user.email,
         token: verificationToken
       } : {}
@@ -441,6 +445,7 @@ const refreshToken = async ({ clientId, userId, refreshToken, agent }) => {
 }
 
 export default {
+  createAuthTokenPair,
   signUp,
   signIn,
   signInWithGoogle,
