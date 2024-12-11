@@ -9,7 +9,7 @@ export const corsOptions = {
     if (!origin && [DEV_ENV, TEST_ENV].includes(BUILD_MODE)) {
       return callback(null, true)
     }
-    const isValidDomain = APP.WHITE_LIST_DOMAINS.includes(origin)
+    const isValidDomain = APP.WHITELIST_DOMAINS.includes(origin)
     if (isValidDomain) {
       return callback(null, true)
     }
