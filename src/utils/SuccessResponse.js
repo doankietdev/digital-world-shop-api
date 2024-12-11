@@ -4,7 +4,7 @@ class SuccessResponse {
   constructor({
     statusCode = StatusCodes.OK,
     message = ReasonPhrases.OK,
-    metadata = {}
+    metadata
   }) {
     this.statusCode = statusCode
     this.message = message

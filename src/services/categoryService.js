@@ -1,19 +1,14 @@
 import { StatusCodes } from 'http-status-codes'
 import categoryModel from '~/models/categoryModel'
 import ApiError from '~/utils/ApiError'
-import { parseQueryParams } from '~/utils/formatter'
+import { generateSlug, parseQueryParams } from '~/utils/formatter'
 import { calculateTotalPages } from '~/utils/util'
 
 const createNew = async (reqBody) => {
-  try {
-    return await categoryModel.create(reqBody)
-  } catch (error) {
-    if (error.name === 'ApiError') throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Create category failed'
-    )
-  }
+  return await categoryModel.create({
+    ...reqBody,
+    slug: generateSlug(reqBody.title)
+  })
 }
 
 const getCategory = async (id, reqQuery) => {

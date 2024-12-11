@@ -3,8 +3,8 @@ import { typeOf } from './util'
 
 export const parseQueryParams = (reqQuery = {}) => {
   const queryObj = { ...reqQuery }
-  const excludeFields = ['_limit', '_sort', '_page', '_fields']
-  excludeFields.forEach((field) => delete queryObj[field])
+  const underscoreFields = Object.keys(reqQuery).filter(field => field[0] === '_')
+  underscoreFields.forEach((field) => delete queryObj[field])
 
   let queryString = JSON.stringify(queryObj)
   const query = JSON.parse(
@@ -27,7 +27,11 @@ export const parseQueryParams = (reqQuery = {}) => {
     fields,
     skip,
     limit,
-    page
+    page,
+    ...(underscoreFields.reduce((acc, underscoreField) => ({
+      ...acc,
+      [underscoreField]: reqQuery[underscoreField]
+    }), {}))
   }
 }
 
@@ -103,4 +107,8 @@ export const cleanObject = (originalObject = {}) => {
     }
     return { ...cleanedObject, [key]: value }
   }, {})
+}
+
+export const formatUSDCash = (amount) => {
+  return Math.round((amount + Number.EPSILON) * 100) / 100
 }

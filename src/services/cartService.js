@@ -351,37 +351,22 @@ const updateVariantToCart = async ({ userId, product }) => {
  * @returns {Promise<object>}
  */
 const deleteFromCart = async ({ userId, products }) => {
-  const session = await mongoose.startSession()
-  session.startTransaction()
-
-  try {
-    const updateOperations = products.map(({ productId, variantId }) => ({
-      updateOne: {
-        filter: {
-          userId,
-          'products.productId': productId,
-          'products.variantId': variantId
-        },
-        update: {
-          $pull: { products: { productId, variantId } },
-          $inc: { countProducts: -1 }
-        }
+  const updateOperations = products.map(({ productId, variantId }) => ({
+    updateOne: {
+      filter: {
+        userId,
+        'products.productId': productId,
+        'products.variantId': variantId
+      },
+      update: {
+        $pull: { products: { productId, variantId } },
+        $inc: { countProducts: -1 }
       }
-    }))
+    }
+  }))
 
-    await cartModel.bulkWrite(updateOperations, { session })
-    await session.commitTransaction()
-    await session.endSession()
-    return await getCart({ userId })
-  } catch (error) {
-    await session.abortTransaction()
-    await session.endSession()
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Something went wrong'
-    )
-  }
+  await cartModel.bulkWrite(updateOperations)
+  return await getCart({ userId })
 }
 
 const getCart = async ({ userId }) => {

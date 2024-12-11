@@ -8,7 +8,8 @@ const getOrderOfCurrentUser = asyncHandler(async (req, res) => {
     metadata: {
       order: await orderService.getOrderOfCurrentUser(
         req.user?._id,
-        req.params.orderId
+        req.params.orderId,
+        req.query._currency
       )
     }
   }).send(res)

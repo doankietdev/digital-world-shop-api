@@ -1,10 +1,13 @@
-export const DEV_ENV = 'development'
+export const DEV_ENV = 'dev'
 
-export const PROD_ENV = 'production'
+export const PROD_ENV = 'prod'
+
+export const TEST_ENV = 'test'
 
 export const WHITE_LIST_DOMAINS = ['http://localhost:3000']
 
 export const HEADER_KEYS = {
+  CLIENT_ID: 'x-client-id',
   USER_ID: 'x-user-id',
   AUTHORIZATION: 'authorization'
 }
@@ -27,7 +30,17 @@ export const DISCOUNT_APPLY_TYPES = {
 export const PAYMENT_METHODS = {
   CASH_ON_DELIVERY: 'CASH_ON_DELIVERY',
   PAY_IN_STORE: 'PAY_IN_STORE',
-  ONLINE_PAYMENT: 'ONLINE_PAYMENT'
+  ONLINE_PAYMENT: 'ONLINE_PAYMENT',
+  MOMO: 'MOMO',
+  PAYPAL: 'PAYPAL',
+  CASH: 'CASH'
+}
+
+export const TRANSACTION_STATUS = {
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED'
 }
 
 export const ORDER_STATUSES = {
@@ -53,7 +66,9 @@ export const COLLECTION_NAMES = {
   EMAIL_TOKEN: 'email_tokens',
   PASSWORD_RESET_OTP: 'password_reset_otps',
   PASSWORD_RESET_TOKEN: 'password_reset_tokens',
-  PASSWORD_HISTORY: 'password_history'
+  PASSWORD_HISTORY: 'password_history',
+  PAYMENT_METHOD: 'payment_methods',
+  TRANSACTION: 'transactions'
 }
 
 export const MODEL_NAMES = {
@@ -70,7 +85,9 @@ export const MODEL_NAMES = {
   EMAIL_TOKEN: 'EmailToken',
   PASSWORD_RESET_OTP: 'PasswordResetOTP',
   PASSWORD_RESET_TOKEN: 'PasswordResetToken',
-  PASSWORD_HISTORY: 'PasswordHistory'
+  PASSWORD_HISTORY: 'PasswordHistory',
+  PAYMENT_METHOD: 'PaymentMethod',
+  TRANSACTION: 'Transaction'
 }
 
 export const PARTNER_APIS = {
@@ -80,6 +97,7 @@ export const PARTNER_APIS = {
       GET_PROVINCES: '/master-data/province',
       GET_DISTRICTS: '/master-data/district',
       GET_WARDS: '/master-data/ward',
+      GET_AVAILABLE_SERVICES: '/v2/shipping-order/available-services',
       CALCULATE_FEE: '/v2/shipping-order/fee'
     },
     SERVICE_ID: 53321,
@@ -91,6 +109,18 @@ export const PARTNER_APIS = {
       GENERATE_ACCESS_TOKEN: '/v1/oauth2/token',
       CREATE_ORDER: '/v2/checkout/orders',
       CAPTURE_ORDER: '/v2/checkout/orders/:orderId/capture'
+    }
+  },
+  CURRENCY_FREAKS: {
+    API_ROOT: 'https://api.currencyfreaks.com/v2.0',
+    APIS: {
+      GET_LATEST_CURRENCY_EXCHANGE_RATES: '/rates/latest'
+    }
+  },
+  MOMO: {
+    API_ROOT: 'https://test-payment.momo.vn',
+    APIS: {
+      INIT_PAYMENT: '/v2/gateway/api/create'
     }
   }
 }
@@ -109,3 +139,9 @@ export const INVALID_REDIS_KEY = {
   INVALID_CACHE_CATEGORY: 'INVALID_CACHE_CATEGORY',
   INVALID_CACHE_DISCOUNT: 'INVALID_CACHE_DISCOUNT'
 }
+
+export const REDIS_KEYS = {
+  EXCHANGE_RATES: 'EXCHANGE_RATES'
+}
+
+export const BIG_DISCOUNTS_PRICE_CONDITION = 50

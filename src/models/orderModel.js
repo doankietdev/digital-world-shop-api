@@ -55,10 +55,7 @@ const orderSchema = new Schema(
     shippingAddress: {
       type: Schema.Types.ObjectId,
       ref: MODEL_NAMES.ADDRESS,
-      required: [
-        true,
-        generateDBErrorMessage('is required', { showValue: false })
-      ]
+      default: null
     },
     paymentMethod: {
       type: String,

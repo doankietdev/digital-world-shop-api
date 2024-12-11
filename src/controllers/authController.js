@@ -100,10 +100,12 @@ const resetPassword = asyncHandler(async (req, res) => {
 })
 
 const refreshToken = asyncHandler(async (req, res) => {
+  const clientId = req.headers[HEADER_KEYS.CLIENT_ID]
   const userId = req.headers[HEADER_KEYS.USER_ID]
   new SuccessResponse({
     message: 'Refresh token successfully',
     metadata: await authService.refreshToken({
+      clientId,
       userId,
       refreshToken: req.body.refreshToken,
       agent: req.agent

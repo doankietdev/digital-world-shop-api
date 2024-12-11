@@ -11,17 +11,28 @@ import addressService from './addressService'
 import passwordHistoryModel from '~/models/passwordHistoryModel'
 
 const getUser = async (userId) => {
-  try {
-    const { items: [foundUser] } = await getUsers({ _id: userId })
-    if (!foundUser)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
-    return foundUser
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Something went wrong'
-    )
+  const [user, addresses] = await Promise.all([
+    userModel
+      .findOne({ _id: userId })
+      .select({
+        verificationToken: 0,
+        passwordResetOTP: 0,
+        passwordResetToken: 0,
+        passwordHistory: 0,
+        defaultAddress: 0,
+        password: 0,
+        publicKey: 0,
+        privateKey: 0,
+        accessTokens: 0,
+        refreshTokens: 0,
+        usedRefreshTokens: 0
+      })
+      .lean(),
+    addressService.getUserAddresses({ userId })
+  ])
+  return {
+    ...user,
+    addresses
   }
 }
 

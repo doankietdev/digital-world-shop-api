@@ -7,25 +7,27 @@ import { verifyToken } from '~/utils/auth'
 import { HEADER_KEYS } from '~/utils/constants'
 
 const authenticate = asyncHandler(async (req, res, next) => {
+  const clientId = req.headers[HEADER_KEYS.CLIENT_ID]
   const userId = req.headers[HEADER_KEYS.USER_ID]
   const accessToken = req.headers[HEADER_KEYS.AUTHORIZATION]?.substring('Bearer '.length)
-  if (!userId || !accessToken) {
+  if (!clientId || !userId || !accessToken) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
   }
 
   try {
-
     const foundLoginSession = await loginSessionService.getOne({
+      clientId,
       userId,
       ip: req?.agent?.ip,
       browserName: req?.agent?.browser?.name,
       osName: req?.agent?.os?.name
     })
+
     if (!foundLoginSession) throw new Error('Login session not found')
 
     const decodedUser = verifyToken(accessToken, foundLoginSession.publicKey)
 
-    const foundUser = await userModel.findOne({ _id: decodedUser.userId })
+    const foundUser = await userModel.findOne({ _id: decodedUser.userId }).lean()
     if (!foundUser) throw new Error('User not found')
     if (foundUser.blocked) throw new Error('Account has been blocked')
     if (!foundUser.verified) throw new Error('Account has not been verified')

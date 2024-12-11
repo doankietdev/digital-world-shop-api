@@ -1,3 +1,4 @@
+import { StatusCodes } from 'http-status-codes'
 import checkoutService from '~/services/checkoutService'
 import SuccessResponse from '~/utils/SuccessResponse'
 import asyncHandler from '~/utils/asyncHandler'
@@ -6,7 +7,7 @@ const review = asyncHandler(async (req, res) => {
   new SuccessResponse({
     message: 'Get order review successfully',
     metadata: {
-      ...(await checkoutService.review(req.user?._id, req.body))
+      ...(await checkoutService.review(req.user?._id, req.body, req.query._currency))
     }
   }).send(res)
 })
@@ -51,10 +52,28 @@ const capturePayPalOrder = asyncHandler(async (req, res) => {
   }).send(res)
 })
 
+const initMomoPayment = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: 'Init Momo payment successfully',
+    metadata: await checkoutService.initMomoPayment(req.user?._id, req.body)
+  }).send(res)
+})
+
+const callbackMomo = asyncHandler(async (req, res) => {
+  await checkoutService.callbackMomo(req.body)
+
+  new SuccessResponse({
+    statusCode: StatusCodes.NO_CONTENT,
+    message: 'Momo callback successfully'
+  }).send(res)
+})
+
 export default {
   review,
   order,
   createPayPalOrder,
   capturePayPalOrder,
+  initMomoPayment,
+  callbackMomo,
   cancelOrder
 }

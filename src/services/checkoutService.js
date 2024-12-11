@@ -3,14 +3,20 @@ import { connectDB } from '~/configs/mongodb'
 import orderModel from '~/models/orderModel'
 import productModel from '~/models/productModel'
 import userModel from '~/models/userModel'
+import momoProvider from '~/providers/momoProvider'
 import paypalProvider from '~/providers/paypalProvider'
 import checkoutRepo from '~/repositories/checkoutRepo'
-import orderRepo from '~/repositories/orderRepo'
 import ApiError from '~/utils/ApiError'
-import { ORDER_STATUSES, PAYMENT_METHODS } from '~/utils/constants'
-import cartService from './cartService'
+import { ORDER_STATUSES, PARTNER_APIS, PAYMENT_METHODS, TRANSACTION_STATUS } from '~/utils/constants'
+import { convertCurrency } from '~/utils/util'
+import currencyService from './currencyService'
 import orderService from './orderService'
 import userService from './userService'
+import transactionService from './transactionService'
+import cartService from './cartService'
+import ghnAxiosClient from '~/configs/ghnAxiosClient'
+import { PARTNERS } from '~/configs/environment'
+import { formatUSDCash } from '~/utils/formatter'
 
 /**
  * @param {*} userId
@@ -48,129 +54,151 @@ import userService from './userService'
  *  shippingFee: number,
  *  totalWeight: number}>}
  */
-const review = async (userId, reqBody) => {
-  try {
-    const { orderProducts } = reqBody || {}
-    const checkedProducts = await checkoutRepo.checkProductsAvailable(
-      orderProducts
-    )
-    const hasOrderProductExceedQuantity = checkedProducts.includes(null)
-    if (hasOrderProductExceedQuantity)
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
+const review = async (userId, reqBody, currency = 'USD') => {
+  const { orderProducts } = reqBody || {}
+  const checkedProducts = await checkoutRepo.checkProductsAvailable(
+    orderProducts
+  )
+  const hasOrderProductExceedQuantity = checkedProducts.includes(null)
+  if (hasOrderProductExceedQuantity)
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
 
-    const foundProducts = await productModel
-      .find({
-        _id: {
-          $in: orderProducts.map(orderProduct => orderProduct.productId)
-        }
-      })
-      .lean()
-    const productsApplyDiscount = await checkoutRepo.getProductsApplyDiscount(
-      foundProducts
-    )
+  const foundProducts = await productModel
+    .find({
+      _id: {
+        $in: orderProducts.map(orderProduct => orderProduct.productId)
+      }
+    })
+    .lean()
+  const productsApplyDiscount = await checkoutRepo.getProductsApplyDiscount(
+    foundProducts
+  )
 
-    const isValidOrder = orderProducts.some(orderProduct => {
-      productsApplyDiscount.some(productApplyDiscount => {
-        if (productApplyDiscount.oldPrice !== orderProduct.oldPrice)
-          return false
-        if (productApplyDiscount.price !== orderProduct.price) {
-          return false
-        }
-        return true
-      })
-      const product = productsApplyDiscount.find(product =>
-        product._id.equals(orderProduct.productId)
-      )
-      if (!product) return false
-      if (product.oldPrice !== orderProduct.oldPrice) return false
-      if (product.price !== orderProduct.price) return false
+  const isValidOrder = orderProducts.some(orderProduct => {
+    productsApplyDiscount.some(productApplyDiscount => {
+      if (productApplyDiscount.oldPrice !== orderProduct.oldPrice)
+        return false
+      if (productApplyDiscount.price !== orderProduct.price) {
+        return false
+      }
       return true
     })
-    if (!isValidOrder)
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
+    const product = productsApplyDiscount.find(product =>
+      product._id.equals(orderProduct.productId)
+    )
+    if (!product) return false
+    if (product.oldPrice !== orderProduct.oldPrice) return false
+    if (product.price !== orderProduct.price) return false
+    return true
+  })
+  if (!isValidOrder)
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Order wrong')
 
-    let totalWeight = 0
-    const responseOrderProducts = orderProducts.map(orderProduct => {
-      const productApplyDiscount = productsApplyDiscount.find(
-        productApplyDiscount =>
-          productApplyDiscount._id.equals(orderProduct.productId)
-      )
+  let totalWeight = 0
+  const exchangeRateBaseUsd = await currencyService.getExchangeRate(currency)
+  if (!exchangeRateBaseUsd) throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot review order')
 
-      const weight = productApplyDiscount.specs.find(
-        spec => spec.k === 'weight'
-      )
-      if (weight) totalWeight = totalWeight + weight.v * orderProduct.quantity
-
-      return {
-        product: {
-          ...productApplyDiscount,
-          variant: {
-            ...productApplyDiscount.variants?.find(
-              variant => variant?._id.toString() === orderProduct.variantId
-            ),
-            quantity: undefined
-          },
-          variants: undefined,
-          specs: undefined
-        },
-        quantity: orderProduct.quantity,
-        totalPrice: productApplyDiscount.oldPrice * orderProduct.quantity,
-        totalPriceApplyDiscount:
-          productApplyDiscount.price * orderProduct.quantity
-      }
-    })
-
-    const totalPriceApplyDiscount = responseOrderProducts.reduce(
-      (acc, orderProduct) => (acc += orderProduct.totalPriceApplyDiscount),
-      0
+  const responseOrderProducts = orderProducts.map(orderProduct => {
+    let productApplyDiscount = productsApplyDiscount.find(
+      productApplyDiscount =>
+        productApplyDiscount._id.equals(orderProduct.productId)
     )
 
-    let reviewInfo = {
-      orderProducts: responseOrderProducts,
-      totalPrice: responseOrderProducts.reduce(
-        (acc, orderProduct) => (acc += orderProduct.totalPrice),
-        0
-      ),
-      totalPriceApplyDiscount,
-      totalPayment: totalPriceApplyDiscount
+    productApplyDiscount = {
+      ...productApplyDiscount,
+      oldPrice: convertCurrency(productApplyDiscount.oldPrice, exchangeRateBaseUsd),
+      price: convertCurrency(productApplyDiscount.price, exchangeRateBaseUsd)
     }
 
-    const foundUser = await userModel
-      .findOne({
-        _id: userId
-      })
-      .populate('defaultAddress')
-      .lean()
-    if (!foundUser) throw new Error('User not found')
-    if (foundUser.defaultAddress) {
-      // const { total: shippingFee } = await ghnAxiosClient.post(
-      //   PARTNER_APIS.GHN.APIS.CALCULATE_FEE,
-      //   {
-      //     to_ward_code: foundUser.defaultAddress.wardCode,
-      //     to_district_id: foundUser.defaultAddress.districtId,
-      //     weight: totalWeight,
-      //     service_id: PARTNER_APIS.GHN.SERVICE_ID,
-      //     service_type_id: PARTNER_APIS.GHN.SERVICE_TYPE_ID
-      //   }
-      // )
-      const shippingFee = 0
-      reviewInfo = {
-        ...reviewInfo,
-        shippingFee,
-        totalPayment: shippingFee + reviewInfo.totalPriceApplyDiscount
-      }
-    }
+    const weight = productApplyDiscount.specs.find(
+      spec => spec.k === 'weight'
+    )
+    if (weight) totalWeight = totalWeight + weight.v * orderProduct.quantity
 
     return {
-      ...reviewInfo,
-      totalWeight
+      product: {
+        ...productApplyDiscount,
+        variant: {
+          ...productApplyDiscount.variants?.find(
+            variant => variant?._id.toString() === orderProduct.variantId
+          ),
+          quantity: undefined
+        },
+        variants: undefined,
+        specs: undefined
+      },
+      quantity: orderProduct.quantity,
+      totalPrice: productApplyDiscount.oldPrice * orderProduct.quantity,
+      totalPriceApplyDiscount:
+        productApplyDiscount.price * orderProduct.quantity
     }
-  } catch (error) {
-    if (error.name === ApiError.name) throw error
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Something went wrong'
+  })
+
+  const totalPriceApplyDiscount = responseOrderProducts.reduce(
+    (acc, orderProduct) => (acc += orderProduct.totalPriceApplyDiscount),
+    0
+  )
+
+  let reviewInfo = {
+    orderProducts: responseOrderProducts,
+    totalPrice: responseOrderProducts.reduce(
+      (acc, orderProduct) => (acc += orderProduct.totalPrice),
+      0
+    ),
+    totalPriceApplyDiscount,
+    totalPayment: totalPriceApplyDiscount
+  }
+
+  const foundUser = await userModel
+    .findOne({
+      _id: userId
+    })
+    .populate('defaultAddress')
+    .lean()
+  if (!foundUser) throw new Error('User not found')
+  if (foundUser.defaultAddress) {
+    const services = await ghnAxiosClient.post(
+      PARTNER_APIS.GHN.APIS.GET_AVAILABLE_SERVICES,
+      {
+        from_district: 1455,
+        to_district: foundUser.defaultAddress.districtId,
+        shop_id: PARTNERS.GHN.SHOP_ID
+      }
     )
+    if (!services.length) throw new ApiError(StatusCodes.BAD_REQUEST, 'Delivery service is not available')
+
+    const service = services[0]
+
+    let { total: shippingFee } = await ghnAxiosClient.post(
+      PARTNER_APIS.GHN.APIS.CALCULATE_FEE,
+      {
+        to_ward_code: foundUser.defaultAddress.wardCode,
+        to_district_id: foundUser.defaultAddress.districtId,
+        weight: totalWeight,
+        service_id: service.service_id,
+        service_type_id: service.service_type_id
+      },
+      {
+        headers: { shop_id: PARTNERS.GHN.SHOP_ID }
+      }
+    )
+
+    if (currency === 'USD') {
+      const exchangeRate = await currencyService.getExchangeRate('VND')
+      if (!exchangeRate) throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot review order')
+      shippingFee = formatUSDCash(shippingFee / exchangeRate)
+    }
+
+    reviewInfo = {
+      ...reviewInfo,
+      shippingFee,
+      totalPayment: shippingFee + reviewInfo.totalPriceApplyDiscount
+    }
+  }
+
+  return {
+    ...reviewInfo,
+    totalWeight
   }
 }
 
@@ -214,7 +242,7 @@ const order = async (userId, reqBody) => {
     })
     if (!foundUser) throw new Error('User not found')
 
-    if (!foundUser.defaultAddress)
+    if (!foundUser.defaultAddress && paymentMethod !== PAYMENT_METHODS.PAY_IN_STORE)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'User has not set a default address')
 
     const { shippingFee, orderProducts } = await review(userId, reqBody)
@@ -232,11 +260,11 @@ const order = async (userId, reqBody) => {
         product: product._id,
         variant: product.variant._id,
         quantity,
-        oldPrice: product.oldPrice,
-        price: product.price
+        oldPrice: formatUSDCash(product.oldPrice),
+        price: formatUSDCash(product.price)
       })),
       shippingAddress: foundUser.defaultAddress,
-      shippingFee: shippingFee ?? 0,
+      shippingFee: formatUSDCash(shippingFee ?? 0),
       paymentMethod,
       user: foundUser._id
     })
@@ -246,10 +274,10 @@ const order = async (userId, reqBody) => {
         productId: orderProduct.productId,
         variantId: orderProduct.variantId
       }))
-    })
+    }).then().catch(() => {})
 
     await session.commitTransaction()
-    return await orderRepo.findById(newOrder._id)
+    return newOrder
   } catch (error) {
     await session.abortTransaction()
     throw error
@@ -260,7 +288,7 @@ const order = async (userId, reqBody) => {
 
 const createPayPalOrder = async (userId, reqBody) => {
   const [
-    { shippingFee = 0, totalPriceApplyDiscount, totalPayment }
+    { shippingFee = 0, totalPriceApplyDiscount, totalPayment, orderProducts }
     // { firstName, lastName, email, defaultAddress }
   ] = await Promise.all([
     review(userId, reqBody),
@@ -268,25 +296,25 @@ const createPayPalOrder = async (userId, reqBody) => {
   ])
 
   return await paypalProvider.createOrder({
-    // items: orderProducts.map((orderProduct) => ({
-    //   name: orderProduct.product.title,
-    //   quantity: orderProduct.quantity,
-    //   unit_amount: {
-    //     currency_code: 'USD',
-    //     value: Math.round(orderProduct.product.price / 23500)
-    //   }
-    // })),
+    items: orderProducts.map((orderProduct) => ({
+      name: orderProduct.product.title,
+      quantity: orderProduct.quantity,
+      unit_amount: {
+        currency_code: 'USD',
+        value: orderProduct.product.price
+      }
+    })),
     amount: {
       currency_code: 'USD',
-      value: Math.round(totalPayment / 23500),
+      value: totalPayment,
       breakdown: {
         item_total: {
           currency_code: 'USD',
-          value: Math.round(totalPriceApplyDiscount / 23500)
+          value: totalPriceApplyDiscount
         },
         shipping: {
           currency_code: 'USD',
-          value: Math.round(shippingFee / 23500)
+          value: shippingFee
         }
       }
     }
@@ -310,6 +338,86 @@ const capturePayPalOrder = async ({ userId, paypalOrderId, orderProducts }) => {
     return paypalOrderData
   }
   throw new ApiError(StatusCodes.BAD_REQUEST, 'Something went wrong')
+}
+
+const initMomoPayment = async (userId, reqBody) => {
+  const newOrder = await order(userId, {
+    ...reqBody,
+    paymentMethod: PAYMENT_METHODS.ONLINE_PAYMENT
+  })
+  const fullOrder = await orderService.getOrderOfCurrentUser(userId, newOrder._id)
+
+  const currency = 'VND'
+  const exchangeRate = await currencyService.getExchangeRate(currency)
+  if (!exchangeRate) throw new Error('Exchange rate not found')
+
+  const amount = Math.round(convertCurrency(fullOrder.totalPayment, exchangeRate))
+  if (amount < 1000 || amount > 50000000)
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Total payment must be above 1.000 VND and below 50.000.000 VND')
+
+  const { payUrl } = await momoProvider.initPayment({
+    orderId: newOrder._id.toString(),
+    items: fullOrder.products.map(({ product, variant, quantity, price }) => {
+      const vndPrice = convertCurrency(price, exchangeRate)
+      return {
+        id: product._id,
+        name: `${product.title} | ${variant.name}`,
+        imageUrl: product.thumb?.url,
+        price: vndPrice,
+        currency,
+        quantity,
+        totalPrice: vndPrice * quantity
+      }
+    }),
+    amount: amount,
+    taxAmount: Math.round(convertCurrency(fullOrder.shippingFee, exchangeRate)),
+    orderInfo: `${fullOrder._id}`,
+    extraData: { userId }
+  })
+
+  return { payUrl }
+}
+
+const callbackMomo = async (payload) => {
+  const {
+    orderId,
+    amount,
+    resultCode,
+    extraData,
+    transId
+  } = payload
+
+  const foundOrder = orderService.getById(orderId)
+  if (!foundOrder) throw new ApiError(StatusCodes.BAD_REQUEST, 'Order not found')
+
+  if (resultCode !== 0) {
+    return
+  }
+
+  // const isValidSignature = momoProvider.verifySignature(signature, {
+  //   orderId,
+  //   amount,
+  //   extraData,
+  //   orderInfo,
+  //   requestId
+  // })
+  // if (!isValidSignature) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid signature')
+
+  const originalExtraData = Buffer.from(extraData, 'base64').toString('ascii')
+  const { userId } = JSON.parse(originalExtraData) || {}
+  if (!userId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing userId in extraData')
+  }
+
+  transactionService.createNew({
+    userId,
+    orderId,
+    paymentMethod: PAYMENT_METHODS.MOMO,
+    amount,
+    status: TRANSACTION_STATUS.COMPLETED,
+    referenceId: transId
+  })
+  await orderService.updateStatusById(orderId, ORDER_STATUSES.PAID)
 }
 
 const cancelOrder = async (userId, orderId) => {
@@ -364,5 +472,7 @@ export default {
   order,
   createPayPalOrder,
   capturePayPalOrder,
+  initMomoPayment,
+  callbackMomo,
   cancelOrder
 }

@@ -7,7 +7,6 @@ import ApiError from '~/utils/ApiError'
 // eslint-disable-next-line no-unused-vars
 const errorHandlingMiddleware = (error, req, res, next) => {
   const isDevMode = BUILD_MODE === DEV_ENV
-
   if (error.name !== ApiError.name && !isDevMode) {
     error.status = StatusCodes.INTERNAL_SERVER_ERROR
     error.message = ReasonPhrases.INTERNAL_SERVER_ERROR

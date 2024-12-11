@@ -25,7 +25,7 @@ import cartService from './cartService'
 import loginSessionService from './loginSessionService'
 import userService from './userService'
 import usedRefreshTokenService from './usedRefreshTokenService'
-import { DEV_ENV } from '~/utils/constants'
+import { DEV_ENV, TEST_ENV } from '~/utils/constants'
 
 /**
  * Create auth token pair
@@ -48,13 +48,13 @@ const createAuthTokenPair = async (data = {}) => {
     AUTH.REFRESH_TOKEN_LIFE
   )
 
-  await loginSessionService.createNew({
+  const { clientId } = await loginSessionService.createNew({
     ...agent,
     userId,
     publicKey
   })
 
-  return { accessToken, refreshToken }
+  return { clientId, accessToken, refreshToken }
 }
 
 const signUp = async ({ firstName, lastName, email, password }) => {
@@ -92,21 +92,23 @@ const signUp = async ({ firstName, lastName, email, password }) => {
     { upsert: true, new: true }
   )
 
-  sendMailWithHTML({
-    email,
-    subject: 'Verify Account',
-    pathToView: 'verify-email.ejs',
-    data: {
-      url: `${CLIENT.URL}/auth/verify-account?email=${newUser.email}&token=${token}`
-    }
-  })
+  if (BUILD_MODE !== TEST_ENV) {
+    sendMailWithHTML({
+      email,
+      subject: 'Verify Account',
+      pathToView: 'verify-email.ejs',
+      data: {
+        url: `${CLIENT.URL}/auth/verify-account?email=${newUser.email}&token=${token}`
+      }
+    })
+  }
 
   await cartService.createNewCart({ userId: newUser._id })
 
-  if (BUILD_MODE === DEV_ENV) {
+  if (BUILD_MODE === TEST_ENV) {
     return {
       email: newUser.email,
-      token,
+      token
     }
   }
 
@@ -147,6 +149,12 @@ const signIn = async ({ email, password, agent }) => {
       'Incorrect email or password'
     )
 
+  if (!user.password)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Incorrect email or password'
+    )
+
   const isValidPassword = await verifyHashed(password, user.password)
   if (!isValidPassword)
     throw new ApiError(
@@ -158,31 +166,34 @@ const signIn = async ({ email, password, agent }) => {
     throw new ApiError(StatusCodes.FORBIDDEN, 'Account has been blocked')
 
   if (!user.verified) {
-    let verificationToken = user.verificationToken
-    if (!verificationToken) {
-      verificationToken = uuidv4()
-      user.verificationToken = verificationToken
-      await user.save()
+    const verificationToken = uuidv4()
+    await emailTokenModel.findOneAndUpdate(
+      { userId: user._id },
+      { code: (await hash(verificationToken)).hashed, expiresAt: Date.now() + AUTH.EMAIL_VERIFICATION_TOKEN_LIFE },
+      { upsert: true, new: true }
+    )
+
+    if (BUILD_MODE !== TEST_ENV) {
+      sendMailWithHTML({
+        email,
+        subject: 'Verify Account',
+        pathToView: 'verify-email.ejs',
+        data: {
+          url: `${CLIENT.URL}/auth/verify-account?email=${user.email}&token=${verificationToken}`
+        }
+      })
     }
-    sendMailWithHTML({
-      email,
-      subject: 'Verify Account',
-      pathToView: 'verify-email.ejs',
-      data: {
-        url: `${CLIENT.URL}/auth/verify-account?email=${user.email}&token=${verificationToken}`
-      }
-    })
     throw new ApiError(
       StatusCodes.FORBIDDEN,
       'Account has not been verified. Please check your email and verify account!',
-      BUILD_MODE === DEV_ENV ? {
+      BUILD_MODE === DEV_ENV || BUILD_MODE === TEST_ENV ? {
         email: user.email,
         token: verificationToken
       } : {}
     )
   }
 
-  const { accessToken, refreshToken } = await createAuthTokenPair({
+  const { clientId, accessToken, refreshToken } = await createAuthTokenPair({
     userId: user._id.toString(),
     email: user.email,
     agent
@@ -190,6 +201,7 @@ const signIn = async ({ email, password, agent }) => {
 
   return {
     user: await userService.getUser(user._id),
+    clientId,
     accessToken,
     refreshToken
   }
@@ -212,7 +224,7 @@ const signInWithGoogle = async ({
     if (foundUserWithGoogleId.blocked)
       throw new ApiError(StatusCodes.FORBIDDEN, 'Account has been blocked')
 
-    const { accessToken, refreshToken } = await createAuthTokenPair({
+    const { clientId, accessToken, refreshToken } = await createAuthTokenPair({
       userId: foundUserWithGoogleId._id.toString(),
       email: foundUserWithGoogleId.email,
       agent
@@ -220,6 +232,7 @@ const signInWithGoogle = async ({
 
     return {
       user: await userService.getUser(foundUserWithGoogleId._id),
+      clientId,
       accessToken,
       refreshToken
     }
@@ -238,7 +251,7 @@ const signInWithGoogle = async ({
   })
   await cartService.createNewCart({ userId: newUser._id })
 
-  const { accessToken, refreshToken } = await createAuthTokenPair({
+  const { clientId, accessToken, refreshToken } = await createAuthTokenPair({
     userId: newUser._id.toString(),
     email: newUser.email,
     agent
@@ -246,6 +259,7 @@ const signInWithGoogle = async ({
 
   return {
     user: await userService.getUser(newUser._id),
+    clientId,
     accessToken,
     refreshToken
   }
@@ -380,8 +394,8 @@ const resetPassword = async ({ email, token, newPassword }) => {
   })
 }
 
-const refreshToken = async ({ userId, refreshToken, agent }) => {
-  if (!userId || !refreshToken)
+const refreshToken = async ({ clientId, userId, refreshToken, agent }) => {
+  if (!clientId || !userId || !refreshToken)
     throw new ApiError(StatusCodes.UNAUTHORIZED, ReasonPhrases.UNAUTHORIZED)
 
   const [foundUsedRefreshToken, foundLoginSession] = await Promise.all([
@@ -390,6 +404,7 @@ const refreshToken = async ({ userId, refreshToken, agent }) => {
       code: refreshToken
     }),
     loginSessionService.getOne({
+      clientId,
       userId,
       ip: agent?.ip,
       browserName: agent?.browser?.name,
@@ -399,7 +414,7 @@ const refreshToken = async ({ userId, refreshToken, agent }) => {
 
   if (foundUsedRefreshToken || !foundLoginSession) {
     await loginSessionService.deleteManyByUserId(userId)
-    throw new Error('Users using blacklisted tokens or abnormal IP')
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Users using blacklisted tokens or abnormal IP')
   }
 
   try {
@@ -430,6 +445,7 @@ const refreshToken = async ({ userId, refreshToken, agent }) => {
 }
 
 export default {
+  createAuthTokenPair,
   signUp,
   signIn,
   signInWithGoogle,

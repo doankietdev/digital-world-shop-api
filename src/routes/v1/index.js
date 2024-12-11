@@ -10,6 +10,7 @@ import addressRoute from './addressRoute'
 import checkoutRoute from './checkoutRoute'
 import orderRoute from './orderRoute'
 import locationRoute from './locationRoute'
+import loginSessionRoute from './loginSessionRoute'
 
 const router = express.Router()
 
@@ -24,5 +25,6 @@ router.use('/addresses', addressRoute)
 router.use('/checkout', checkoutRoute)
 router.use('/orders', orderRoute)
 router.use('/locations', locationRoute)
+router.use('/sessions', loginSessionRoute)
 
 export default router

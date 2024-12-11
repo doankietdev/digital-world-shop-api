@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:8.0.0
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: dev
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - digital-shop-api
+
+  redis:
+    image: redis:7.4.1
+    container_name: redis
+    restart: always 
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/var/lib/redis/data
+      - redis_config:/usr/local/etc/redis/redis.conf
+    networks:
+      - digital-shop-api
+    command: redis-server --requirepass dev
+  
+  digital-shop-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: digital-shop-api
+    env_file: ./.env.dev
+    ports:
+      - '5600:5600'
+    volumes:
+      - ./src:/app/src
+    networks:
+      - digital-shop-api
+    depends_on:
+      - mongodb
+      - redis
+    command: yarn dev
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  redis_data:
+    driver: local
+  redis_config:
+    driver: local
+
+networks:
+  digital-shop-api:
+    name: digital-shop-api
+    driver: bridge

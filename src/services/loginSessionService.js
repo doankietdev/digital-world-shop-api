@@ -1,11 +1,15 @@
 'use strict'
 
+import { StatusCodes } from 'http-status-codes'
 import loginSessionModel from '~/models/loginSessionModel'
+import ApiError from '~/utils/ApiError'
 import { cleanObject } from '~/utils/formatter'
+import { v4 as uuidv4 } from 'uuid'
 
 /**
  * Create new login session
  * @param {{
+ *  clientId: String,
  *  userId: String,
  *  publicKey: String,
  *  ip: String,
@@ -24,9 +28,10 @@ import { cleanObject } from '~/utils/formatter'
  *  }}} payload
  */
 const createNew = async (payload = {}) => {
-  const { userId, ip, browser, os } = payload
+  const { clientId = uuidv4(), userId, ip, browser, os } = payload
 
   const filter = cleanObject({
+    clientId,
     userId,
     ip,
     'browser.name': browser?.name,
@@ -44,11 +49,18 @@ const createNew = async (payload = {}) => {
 
 /**
  * Get login session
- * @param {{ userId: string, ip: string, browserName: string, osName: string }} query
+ * @param {{
+ *  clientId: string,
+ *  userId: string,
+ *  ip: string,
+ *  browserName: string,
+ *  osName: string
+ * }} query
  */
 const getOne = async (query = {}) => {
-  const { userId, ip, browserName, osName } = query
+  const { clientId, userId, ip, browserName, osName } = query
   const filter = cleanObject({
+    clientId,
     userId,
     ip,
     'browser.name': browserName,
@@ -60,11 +72,18 @@ const getOne = async (query = {}) => {
 
 /**
  * Get login sessions by user id
- * @param {{ userId: string, ip: string, browserName: string, osName: string }} query
+ * @param {{
+ *  clientId: string,
+ *  userId: string,
+ *  ip: string,
+ *  browserName: string,
+ *  osName: string
+ * }} query
  */
 const getMany = async (query) => {
-  const { userId, ip, browserName, osName } = query
+  const { clientId, userId, ip, browserName, osName } = query
   const filter = cleanObject({
+    clientId,
     userId,
     ip,
     'browser.name': browserName,
@@ -72,6 +91,17 @@ const getMany = async (query) => {
   })
 
   return await loginSessionModel.find(filter).lean()
+}
+
+const getByUserId = async (userId, clientId) => {
+  const sessions = await loginSessionModel.find({ userId }).select('-publicKey').sort('-updatedAt').lean()
+  for (const session of sessions) {
+    if (session.clientId === clientId) {
+      session.isCurrent = true
+      break
+    }
+  }
+  return sessions
 }
 
 /**
@@ -89,15 +119,28 @@ const deleteById = async (id = '') => {
  * @param {string} userId
  */
 const deleteManyByUserId = async (userId = '') => {
-  const { deletedCount } = await loginSessionModel.deleteOne({ userId }).lean()
+  const { deletedCount } = await loginSessionModel.deleteMany({ userId })
   if (deletedCount === 0) return false
   return true
+}
+
+const logoutSessionForCurrentUser = async ({ loginSessionId, userId, currentLoginSessionId }) => {
+  if (loginSessionId === currentLoginSessionId.toString()) throw new ApiError(StatusCodes.BAD_REQUEST, 'Unable to log out of the current login session')
+  const { deletedCount } = await loginSessionModel.deleteOne({ _id: loginSessionId, userId })
+  if (!deletedCount) throw new ApiError(StatusCodes.NOT_FOUND, 'Login session not found')
+}
+
+const logoutAllSessionsForCurrentUser = async ({ userId, currentLoginSessionId }) => {
+  await loginSessionModel.deleteMany({ _id: { $ne: currentLoginSessionId }, userId })
 }
 
 export default {
   createNew,
   getOne,
   getMany,
+  getByUserId,
   deleteById,
-  deleteManyByUserId
+  deleteManyByUserId,
+  logoutSessionForCurrentUser,
+  logoutAllSessionsForCurrentUser
 }
