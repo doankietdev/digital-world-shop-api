@@ -13,8 +13,9 @@ const {
   DATABASE_NAME,
   APP_HOST,
   APP_PORT,
+  PORT,
+  WHITE_LIST_DOMAINS,
   BRAND_NAME,
-  CLIENT_URL,
   CLIENT_OTP_FORM_PATH,
   CLIENT_PAID_ORDERS_PATH,
   EMAIL_VERIFICATION_TOKEN_LIFE,
@@ -49,13 +50,14 @@ const {
 
 export const APP = {
   HOST: APP_HOST || 'localhost',
-  PORT: APP_PORT || 5600,
+  PORT: APP_PORT || PORT || 5600,
   BRAND_NAME: BRAND_NAME || 'Digital Shop',
-  MAX_AVATAR_SIZE: +MAX_AVATAR_SIZE || 5242880
+  MAX_AVATAR_SIZE: +MAX_AVATAR_SIZE || 5242880,
+  WHITE_LIST_DOMAINS: WHITE_LIST_DOMAINS?.split(',') || ['http://localhost:3000']
 }
 
 export const CLIENT = {
-  URL: CLIENT_URL || 'http://localhost:3000',
+  URL: APP.WHITE_LIST_DOMAINS[0],
   CLIENT_OTP_FORM_PATH: CLIENT_OTP_FORM_PATH || '/auth/password-reset-otp',
   PAID_ORDERS_PATH: CLIENT_PAID_ORDERS_PATH || '/user/purchase?status=PAID'
 }
