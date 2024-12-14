@@ -4,7 +4,7 @@ import { DEV_ENV, PROD_ENV, TEST_ENV } from '~/utils/constants'
 
 const NODE_ENV = process.env.NODE_ENV
 
-dotenv.config({ path: NODE_ENV ? `.env.${NODE_ENV}` : '.env' })
+dotenv.config({ path: NODE_ENV === PROD_ENV ? '.env' : `.env.${NODE_ENV}` })
 
 export const BUILD_MODE = [DEV_ENV, PROD_ENV, TEST_ENV].includes(NODE_ENV) ? NODE_ENV : DEV_ENV
 
@@ -12,6 +12,7 @@ const {
   MONGODB_URI,
   DATABASE_NAME,
   APP_HOST,
+  HOST,
   APP_PORT,
   PORT,
   WHITELIST_DOMAINS,
@@ -49,7 +50,7 @@ const {
 } = process.env
 
 export const APP = {
-  HOST: APP_HOST || 'localhost',
+  HOST: APP_HOST || HOST || 'localhost',
   PORT: APP_PORT || PORT || 5600,
   BRAND_NAME: BRAND_NAME || 'Digital Shop',
   MAX_AVATAR_SIZE: +MAX_AVATAR_SIZE || 5242880,
