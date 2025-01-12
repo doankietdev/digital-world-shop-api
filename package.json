@@ -2,9 +2,9 @@
   "name": "digital-world-shop-api",
   "private": true,
   "version": "1.0.0",
-  "author": "SE_GROUP",
+  "author": "Doan Anh Kiet",
   "engines": {
-    "node": "18.18.2"
+    "node": "18.*"
   },
   "scripts": {
     "lint": "eslint src --ext js --report-unused-disable-directives --max-warnings 0",
